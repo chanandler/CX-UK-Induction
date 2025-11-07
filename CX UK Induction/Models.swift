@@ -48,19 +48,30 @@ final class VisitorStore {
                         checkIn: date,
                         checkOut: nil)
         context.insert(v)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("SwiftData save error (signIn):", error)
+        }
     }
 
     func checkOut(_ context: ModelContext, _ visitor: Visitor, at date: Date = Date()) {
         visitor.checkOut = date
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("SwiftData save error (checkOut):", error)
+        }
     }
 
     func deleteArchived(_ context: ModelContext, at offsets: IndexSet, from visitors: [Visitor]) {
         for index in offsets {
             context.delete(visitors[index])
         }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("SwiftData save error (deleteArchived):", error)
+        }
     }
 }
-

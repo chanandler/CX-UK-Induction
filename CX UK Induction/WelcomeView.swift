@@ -15,6 +15,12 @@ struct WelcomeView: View {
     @State private var showingLeaving = false
     @State private var leavingSearch = ""
 
+    @State private var showRegisteredAlert = false
+    @State private var lastRegisteredName: String = ""
+    
+    @State private var showCheckoutBanner = false
+    @State private var lastCheckedOutName: String = ""
+
     var body: some View {
         Form {
             Section {
@@ -53,7 +59,27 @@ struct WelcomeView: View {
         .textInputAutocapitalization(.words)
         .autocorrectionDisabled()
         .sheet(isPresented: $showingLeaving) {
-            LeavingSearchSheet(activeVisitors: activeVisitors)
+            LeavingSearchSheet(activeVisitors: activeVisitors) { name in
+                lastCheckedOutName = name
+                showSignedOutBannerTemporarily()
+                showingLeaving = false
+            }
+        }
+        .alert("Registered", isPresented: $showRegisteredAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("\(lastRegisteredName) has been registered.")
+        }
+        .overlay(alignment: .top) {
+            if showCheckoutBanner {
+                Text("\(lastCheckedOutName) signed out")
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .padding(.top, 8)
+            }
         }
     }
 
@@ -65,16 +91,28 @@ struct WelcomeView: View {
     }
 
     private func submit() {
+        let name = firstName + " " + lastName
         store.signIn(context, firstName: firstName, lastName: lastName, company: company, visiting: visiting, carRegistration: carRegistration)
         firstName = ""; lastName = ""; company = ""; visiting = ""; carRegistration = ""
+        lastRegisteredName = name
+        showRegisteredAlert = true
+    }
+    
+    private func showSignedOutBannerTemporarily() {
+        withAnimation { showCheckoutBanner = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation { showCheckoutBanner = false }
+        }
     }
 }
 
 private struct LeavingSearchSheet: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
 
     let activeVisitors: [Visitor]
+    let onCheckedOut: (String) -> Void
     @State private var searchText = ""
 
     var body: some View {
@@ -104,13 +142,31 @@ private struct LeavingSearchSheet: View {
                     Section {
                         Button(role: .destructive) {
                             store.checkOut(context, v)
+                            onCheckedOut(v.fullName)
+                            dismiss()
                         } label: {
-                            Label("Confirm I'm leaving", systemImage: "door.right.hand.open")
+                            Label("Confirm leaving", systemImage: "door.right.hand.open")
                                 .frame(maxWidth: .infinity)
                         }
                     }
                 }
                 .navigationTitle(v.fullName)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .destructive) {
+                            store.checkOut(context, v)
+                            onCheckedOut(v.fullName)
+                            dismiss()
+                        } label: {
+                            Image(systemName: "door.right.hand.open")
+                        }
+                    }
+                }
             }
         }
         .presentationDetents([.medium, .large])
