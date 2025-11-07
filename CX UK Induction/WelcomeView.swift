@@ -40,20 +40,32 @@ struct WelcomeView: View {
             Section {
                 Button(action: submit) {
                     Label("Register", systemImage: "person.badge.plus")
+                        .font(.title2)
+                        .imageScale(.large)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .padding(.horizontal)
                 .disabled(!isValid)
-            }
-            Section {
+
                 Button {
                     showingLeaving = true
                 } label: {
                     Label("I'm leaving", systemImage: "door.right.hand.open")
+                        .font(.title2)
+                        .imageScale(.large)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
+                        .padding(.vertical, 20)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .padding(.horizontal)
             }
         }
         .textInputAutocapitalization(.words)

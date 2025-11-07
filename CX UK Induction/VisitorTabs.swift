@@ -28,6 +28,17 @@ struct ActiveVisitorsView: View {
             .navigationDestination(for: Visitor.self) { v in
                 VisitorDetail(visitor: v, isActive: true)
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        // Placeholder for future actions
+                        Button("Export CSV") { }
+                            .disabled(true)
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
         }
     }
 
@@ -40,12 +51,17 @@ struct ActiveVisitorsView: View {
     }
 }
 
+struct ShareItem: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
 struct ArchivedVisitorsView: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archived: [Visitor]
     @State private var searchText = ""
-    @State private var shareURL: URL?
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         NavigationStack {
@@ -63,17 +79,17 @@ struct ArchivedVisitorsView: View {
             .searchable(text: $searchText)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    if let url = shareURL {
-                        ShareLink(item: url) {
-                            Label("Export CSV", systemImage: "square.and.arrow.up")
-                        }
-                    } else {
+                    Menu {
                         Button {
-                            shareURL = exportCSV()
+                            if let url = exportCSV() {
+                                shareItem = ShareItem(url: url)
+                            }
                         } label: {
                             Label("Export CSV", systemImage: "square.and.arrow.up")
                         }
                         .disabled(filteredArchived.isEmpty)
+                    } label: {
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -81,9 +97,12 @@ struct ArchivedVisitorsView: View {
                 VisitorDetail(visitor: v, isActive: false)
             }
         }
+        .sheet(item: $shareItem) { item in
+            ShareView(url: item.url)
+        }
         .onChange(of: searchText) { _, _ in
-            // reset share URL when filter changes to regenerate file
-            shareURL = nil
+            // reset share item when filter changes to regenerate file
+            shareItem = nil
         }
     }
 
@@ -201,9 +220,24 @@ struct VisitorDetail: View {
     }
 }
 
+struct ShareView: View, Identifiable {
+    let url: URL
+    var id: URL { url }
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Export ready")
+                ShareLink(item: url) { Label("Share CSV", systemImage: "square.and.arrow.up") }
+            }
+            .padding()
+            .navigationTitle("Export")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
 #Preview {
     VisitorTabs()
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
