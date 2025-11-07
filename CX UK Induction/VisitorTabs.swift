@@ -35,7 +35,7 @@ struct ActiveVisitorsView: View {
         if searchText.isEmpty { return active }
         return active.filter { v in
             let q = searchText.lowercased()
-            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
+            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.visiting.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
         }
     }
 }
@@ -91,18 +91,19 @@ struct ArchivedVisitorsView: View {
         if searchText.isEmpty { return archived }
         return archived.filter { v in
             let q = searchText.lowercased()
-            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
+            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.visiting.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
         }
     }
 
     private func exportCSV() -> URL? {
-        let header = ["First Name","Last Name","Company","Car Registration","Check In","Check Out"]
+        let header = ["First Name","Last Name","Company","Visiting","Car Registration","Check In","Check Out"]
         let df = ISO8601DateFormatter()
         df.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let rows: [[String]] = filteredArchived.map { v in
             [v.firstName,
              v.lastName,
              v.company,
+             v.visiting,
              v.carRegistration,
              df.string(from: v.checkIn),
              v.checkOut.map { df.string(from: $0) } ?? ""]
@@ -137,6 +138,7 @@ struct VisitorRow: View {
             VStack(alignment: .leading) {
                 Text(visitor.fullName).font(.headline)
                 Text(visitor.company).font(.subheadline).foregroundStyle(.secondary)
+                Text("Visiting: \(visitor.visiting)").font(.caption).foregroundStyle(.secondary)
                 Text(visitor.carRegistration).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
@@ -170,6 +172,7 @@ struct VisitorDetail: View {
             Section("Visitor") {
                 LabeledContent("Name", value: visitor.fullName)
                 LabeledContent("Company", value: visitor.company)
+                LabeledContent("Visiting", value: visitor.visiting)
                 LabeledContent("Car", value: visitor.carRegistration)
                 LabeledContent("Checked in", value: dateTime(visitor.checkIn))
                 if let out = visitor.checkOut {
@@ -203,3 +206,4 @@ struct VisitorDetail: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+

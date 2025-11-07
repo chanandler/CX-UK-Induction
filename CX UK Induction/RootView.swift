@@ -5,7 +5,7 @@ struct RootView: View {
     var body: some View {
         NavigationSplitView {
             WelcomeView()
-                .navigationTitle("Induction")
+                .navigationTitle("Welcome to Cemex UK HQ")
         } detail: {
             VisitorTabs()
         }
@@ -17,3 +17,4 @@ struct RootView: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+

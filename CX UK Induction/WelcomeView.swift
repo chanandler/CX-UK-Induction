@@ -9,6 +9,7 @@ struct WelcomeView: View {
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var company = ""
+    @State private var visiting = ""
     @State private var carRegistration = ""
 
     @State private var showingLeaving = false
@@ -16,26 +17,34 @@ struct WelcomeView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Welcome")) {
-                Text("Please sign in below").font(.headline)
-            }
-            Section("Your details") {
+            Section {
                 TextField("First name", text: $firstName)
                 TextField("Last name", text: $lastName)
                 TextField("Company", text: $company)
+                TextField("Who are you visiting", text: $visiting)
                 TextField("Car registration", text: $carRegistration)
+            } header: {
+                Text("Your details")
+            } footer: {
+                if !isValid {
+                    Text("Please enter your details above and tap the 'Register' button to begin.")
+                        .foregroundStyle(.red)
+                }
             }
             Section {
                 Button(action: submit) {
-                    Label("Sign In", systemImage: "person.badge.plus")
+                    Label("Register", systemImage: "person.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(!isValid)
+            }
+            Section {
                 Button {
                     showingLeaving = true
                 } label: {
                     Label("I'm leaving", systemImage: "door.right.hand.open")
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
@@ -50,12 +59,14 @@ struct WelcomeView: View {
 
     private var isValid: Bool {
         !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func submit() {
-        store.signIn(context, firstName: firstName, lastName: lastName, company: company, carRegistration: carRegistration)
-        firstName = ""; lastName = ""; company = ""; carRegistration = ""
+        store.signIn(context, firstName: firstName, lastName: lastName, company: company, visiting: visiting, carRegistration: carRegistration)
+        firstName = ""; lastName = ""; company = ""; visiting = ""; carRegistration = ""
     }
 }
 
