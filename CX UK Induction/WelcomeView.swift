@@ -5,6 +5,9 @@ struct WelcomeView: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
+    
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.verticalSizeClass) private var vSizeClass
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -24,11 +27,47 @@ struct WelcomeView: View {
     var body: some View {
         Form {
             Section {
-                TextField("First name", text: $firstName)
-                TextField("Last name", text: $lastName)
-                TextField("Company", text: $company)
-                TextField("Who are you visiting", text: $visiting)
-                TextField("Car registration", text: $carRegistration)
+                if hSizeClass == .regular {
+                    HStack(alignment: .top, spacing: 16) {
+                        VStack {
+                            TextField("First name", text: $firstName)
+                                .textContentType(.givenName)
+                                .submitLabel(.next)
+                            TextField("Company", text: $company)
+                                .textContentType(.organizationName)
+                                .submitLabel(.next)
+                            TextField("Car registration", text: $carRegistration)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled(true)
+                                .submitLabel(.done)
+                        }
+                        VStack {
+                            TextField("Last name", text: $lastName)
+                                .textContentType(.familyName)
+                                .submitLabel(.next)
+                            TextField("Who are you visiting", text: $visiting)
+                                .textContentType(.name)
+                                .submitLabel(.done)
+                        }
+                    }
+                } else {
+                    TextField("First name", text: $firstName)
+                        .textContentType(.givenName)
+                        .submitLabel(.next)
+                    TextField("Last name", text: $lastName)
+                        .textContentType(.familyName)
+                        .submitLabel(.next)
+                    TextField("Company", text: $company)
+                        .textContentType(.organizationName)
+                        .submitLabel(.next)
+                    TextField("Who are you visiting", text: $visiting)
+                        .textContentType(.name)
+                        .submitLabel(.next)
+                    TextField("Car registration", text: $carRegistration)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled(true)
+                        .submitLabel(.done)
+                }
             } header: {
                 Text("Your details")
             } footer: {
@@ -70,6 +109,15 @@ struct WelcomeView: View {
         }
         .textInputAutocapitalization(.words)
         .autocorrectionDisabled()
+        .scrollDismissesKeyboard(.interactively)
+        .toolbar { // Keyboard dismissal in compact environments
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+            }
+        }
         .sheet(isPresented: $showingLeaving) {
             LeavingSearchSheet(activeVisitors: activeVisitors) { name in
                 lastCheckedOutName = name
@@ -141,6 +189,7 @@ private struct LeavingSearchSheet: View {
                     }
                 }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("Find your name")
             .searchable(text: $searchText, prompt: "Search by name, company, or car")
             .navigationDestination(for: Visitor.self) { v in
