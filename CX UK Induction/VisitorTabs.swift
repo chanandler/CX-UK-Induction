@@ -2,6 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct VisitorTabs: View {
+    // CEMEX Blue: HEX #023185 (RGB 2,49,133)
+    private let cemexBlue = Color(red: 2/255, green: 49/255, blue: 133/255)
+
     var body: some View {
         TabView {
             ActiveVisitorsView()
@@ -9,6 +12,7 @@ struct VisitorTabs: View {
             ArchivedVisitorsView()
                 .tabItem { Label("Archived", systemImage: "archivebox.fill") }
         }
+        .background(cemexBlue)
     }
 }
 
@@ -18,35 +22,46 @@ struct ActiveVisitorsView: View {
 
     var body: some View {
         NavigationStack {
-            List(filteredActive) { visitor in
-                NavigationLink(value: visitor) {
-                    VisitorRow(visitor: visitor)
+            ZStack {
+                // Ensures any transparency shows the brand blue
+                Color(red: 2/255, green: 49/255, blue: 133/255).ignoresSafeArea()
+
+                List {
+                    ForEach(filteredActive) { visitor in
+                        NavigationLink(value: visitor) {
+                            VisitorRowCard(visitor: visitor) // rounded card row
+                        }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .padding(.vertical, 4) // spacing between cards
+                    }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .overlay(ClearBackgroundView()) // clear UIKit superviews
             }
             .navigationTitle("Signed In")
             .searchable(text: $searchText)
             .navigationDestination(for: Visitor.self) { v in
                 VisitorDetail(visitor: v, isActive: true)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        // Placeholder for future actions
-                        Button("Export CSV") { }
-                            .disabled(true)
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .tabBar)
         }
+        .background(Color.clear)
+        .onAppear(perform: makeScrollAndListsTransparent)
+        .onDisappear(perform: restoreScrollAndListAppearance)
     }
 
     private var filteredActive: [Visitor] {
         if searchText.isEmpty { return active }
+        let q = searchText.lowercased()
         return active.filter { v in
-            let q = searchText.lowercased()
-            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.visiting.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
+            v.fullName.lowercased().contains(q)
+            || v.company.lowercased().contains(q)
+            || v.visiting.lowercased().contains(q)
+            || v.carRegistration.lowercased().contains(q)
         }
     }
 }
@@ -65,15 +80,27 @@ struct ArchivedVisitorsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(filteredArchived) { visitor in
-                    NavigationLink(value: visitor) {
-                        VisitorRow(visitor: visitor)
+            ZStack {
+                // Ensures any transparency shows the brand blue
+                Color(red: 2/255, green: 49/255, blue: 133/255).ignoresSafeArea()
+
+                List {
+                    ForEach(filteredArchived) { visitor in
+                        NavigationLink(value: visitor) {
+                            VisitorRowCard(visitor: visitor) // rounded card row
+                        }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .padding(.vertical, 4)
+                    }
+                    .onDelete { offsets in
+                        store.deleteArchived(context, at: offsets, from: filteredArchived)
                     }
                 }
-                .onDelete { offsets in
-                    store.deleteArchived(context, at: offsets, from: filteredArchived)
-                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .overlay(ClearBackgroundView())
             }
             .navigationTitle("Archived")
             .searchable(text: $searchText)
@@ -96,21 +123,28 @@ struct ArchivedVisitorsView: View {
             .navigationDestination(for: Visitor.self) { v in
                 VisitorDetail(visitor: v, isActive: false)
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .tabBar)
         }
         .sheet(item: $shareItem) { item in
             ShareView(url: item.url)
         }
         .onChange(of: searchText) { _, _ in
-            // reset share item when filter changes to regenerate file
             shareItem = nil
         }
+        .background(Color.clear)
+        .onAppear(perform: makeScrollAndListsTransparent)
+        .onDisappear(perform: restoreScrollAndListAppearance)
     }
 
     private var filteredArchived: [Visitor] {
         if searchText.isEmpty { return archived }
+        let q = searchText.lowercased()
         return archived.filter { v in
-            let q = searchText.lowercased()
-            return v.fullName.lowercased().contains(q) || v.company.lowercased().contains(q) || v.visiting.lowercased().contains(q) || v.carRegistration.lowercased().contains(q)
+            v.fullName.lowercased().contains(q)
+            || v.company.lowercased().contains(q)
+            || v.visiting.lowercased().contains(q)
+            || v.carRegistration.lowercased().contains(q)
         }
     }
 
@@ -149,6 +183,27 @@ struct ArchivedVisitorsView: View {
     }
 }
 
+// MARK: - Rounded “card” row matching the button shape
+
+private struct VisitorRowCard: View {
+    let visitor: Visitor
+
+    var body: some View {
+        HStack {
+            VisitorRow(visitor: visitor)
+                .padding(16)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.14)) // subtle card fill over blue
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
+        .padding(.horizontal, 12) // inset from list edges, similar to your button layout
+    }
+}
+
 struct VisitorRow: View {
     let visitor: Visitor
 
@@ -170,6 +225,7 @@ struct VisitorRow: View {
             }
             .font(.caption)
         }
+        .foregroundStyle(.white) // better contrast over the blue and translucent card
     }
 
     private func format(date: Date) -> String {
@@ -209,7 +265,13 @@ struct VisitorDetail: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle(visitor.fullName)
+        .onAppear(perform: makeFormsTransparent)
+        .onDisappear(perform: restoreFormAppearance)
+        .overlay(ClearBackgroundView())
     }
 
     private func dateTime(_ date: Date) -> String {
@@ -220,20 +282,66 @@ struct VisitorDetail: View {
     }
 }
 
+// Restored ShareView so .sheet(item:) compiles
 struct ShareView: View, Identifiable {
     let url: URL
     var id: URL { url }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 Text("Export ready")
-                ShareLink(item: url) { Label("Share CSV", systemImage: "square.and.arrow.up") }
+                ShareLink(item: url) {
+                    Label("Share CSV", systemImage: "square.and.arrow.up")
+                }
             }
             .padding()
             .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)
         }
+        .background(Color.clear)
     }
+}
+
+// MARK: - UIKit transparency helpers
+
+private struct ClearBackgroundView: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        DispatchQueue.main.async {
+            var current: UIView? = view
+            while let v = current {
+                v.backgroundColor = .clear
+                current = v.superview
+            }
+        }
+        return view
+    }
+    func updateUIView(_ uiView: UIView, context: Context) { }
+}
+
+private func makeScrollAndListsTransparent() {
+    UITableView.appearance().backgroundColor = .clear
+    UITableViewCell.appearance().backgroundColor = .clear
+    UIScrollView.appearance().backgroundColor = .clear
+}
+
+private func restoreScrollAndListAppearance() {
+    UITableView.appearance().backgroundColor = nil
+    UITableViewCell.appearance().backgroundColor = nil
+    UIScrollView.appearance().backgroundColor = nil
+}
+
+private func makeFormsTransparent() {
+    UITableView.appearance().backgroundColor = .clear
+    UITableViewCell.appearance().backgroundColor = .clear
+    UIScrollView.appearance().backgroundColor = .clear
+}
+
+private func restoreFormAppearance() {
+    UITableView.appearance().backgroundColor = nil
+    UITableViewCell.appearance().backgroundColor = nil
+    UIScrollView.appearance().backgroundColor = nil
 }
 
 #Preview {
