@@ -4,9 +4,6 @@ import SwiftData
 struct WelcomeView: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
-    @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
-    // Archived visitors so we can export from the cog
-    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
     
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
@@ -16,6 +13,7 @@ struct WelcomeView: View {
     @State private var company = ""
     @State private var visiting = ""
     @State private var carRegistration = ""
+    @State private var badgeNumber = ""
 
     @State private var showingLeaving = false
 
@@ -24,6 +22,10 @@ struct WelcomeView: View {
     
     @State private var showCheckoutBanner = false
     @State private var lastCheckedOutName: String = ""
+
+    // Add back activeVisitors query
+    @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
+    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
     
     // Share support for exported CSV (ActivityView presenter)
     struct ShareItem: Identifiable { let url: URL; var id: URL { url } }
@@ -31,104 +33,134 @@ struct WelcomeView: View {
     
     // About sheet
     @State private var showingAbout = false
+    
+    @State private var showingSignInBook = false
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Form {
-                Section {
-                    if hSizeClass == .regular {
-                        HStack(alignment: .top, spacing: 16) {
-                            VStack {
-                                TextField("First name", text: $firstName)
+            VStack {
+                Text("Welcome to Cemex UK HQ")
+                    .font(.largeTitle).bold()
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                Form {
+                    Section {
+                        if hSizeClass == .regular {
+                            HStack(alignment: .top, spacing: 16) {
+                                VStack(spacing: 8) {
+                                    inputTextField("First name", text: $firstName)
+                                        .textContentType(.givenName)
+                                        .submitLabel(.next)
+                                    inputTextField("Company", text: $company)
+                                        .textContentType(.organizationName)
+                                        .submitLabel(.next)
+                                    inputTextField("Car registration", text: $carRegistration)
+                                        .textInputAutocapitalization(.characters)
+                                        .autocorrectionDisabled(true)
+                                        .submitLabel(.next)
+                                }
+                                VStack(spacing: 8) {
+                                    inputTextField("Last name", text: $lastName)
+                                        .textContentType(.familyName)
+                                        .submitLabel(.next)
+                                    inputTextField("Who are you visiting", text: $visiting)
+                                        .textContentType(.name)
+                                        .submitLabel(.next)
+                                    inputTextField("Badge Number", text: $badgeNumber)
+                                        .submitLabel(.done)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        } else {
+                            VStack(spacing: 8) {
+                                inputTextField("First name", text: $firstName)
                                     .textContentType(.givenName)
                                     .submitLabel(.next)
-                                TextField("Company", text: $company)
+                                inputTextField("Last name", text: $lastName)
+                                    .textContentType(.familyName)
+                                    .submitLabel(.next)
+                                inputTextField("Company", text: $company)
                                     .textContentType(.organizationName)
                                     .submitLabel(.next)
-                                TextField("Car registration", text: $carRegistration)
+                                inputTextField("Who are you visiting", text: $visiting)
+                                    .textContentType(.name)
+                                    .submitLabel(.next)
+                                inputTextField("Badge Number", text: $badgeNumber)
+                                    .submitLabel(.next)
+                                inputTextField("Car registration", text: $carRegistration)
                                     .textInputAutocapitalization(.characters)
                                     .autocorrectionDisabled(true)
                                     .submitLabel(.done)
                             }
-                            VStack {
-                                TextField("Last name", text: $lastName)
-                                    .textContentType(.familyName)
-                                    .submitLabel(.next)
-                                TextField("Who are you visiting", text: $visiting)
-                                    .textContentType(.name)
-                                    .submitLabel(.done)
-                            }
+                            .padding(.vertical, 4)
                         }
-                    } else {
-                        TextField("First name", text: $firstName)
-                            .textContentType(.givenName)
-                            .submitLabel(.next)
-                        TextField("Last name", text: $lastName)
-                            .textContentType(.familyName)
-                            .submitLabel(.next)
-                        TextField("Company", text: $company)
-                            .textContentType(.organizationName)
-                            .submitLabel(.next)
-                        TextField("Who are you visiting", text: $visiting)
-                            .textContentType(.name)
-                            .submitLabel(.next)
-                        TextField("Car registration", text: $carRegistration)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled(true)
-                            .submitLabel(.done)
+                    } header: {
+                        Text("Please enter your details")
+                            .font(.headline)
+                            .padding(.bottom, 8)
                     }
-                } header: {
-                    Text("Your details")
-                } footer: {
-                    if !isValid {
-                        Text("Please enter your details above and tap the 'Register' button to begin.")
-                            .foregroundStyle(.red)
+                    .padding(.horizontal, 0)
+                    .padding(.vertical, 0)
+                    Section {
+                        Button(action: submit) {
+                            Label("Register", systemImage: "person.badge.plus")
+                                .font(.title3)
+                                .imageScale(.large)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .padding(.horizontal)
+                        .disabled(!isValid)
+
+                        Button {
+                            showingLeaving = true
+                        } label: {
+                            Label("I'm leaving", systemImage: "door.right.hand.open")
+                                .font(.title3)
+                                .imageScale(.large)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .padding(.horizontal)
+                        
+                        Button {
+                            showingSignInBook = true
+                        } label: {
+                            Label("View Sign In Book", systemImage: "book.closed")
+                                .font(.title3)
+                                .imageScale(.large)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.bordered)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        .padding(.horizontal)
+
+                        // CEMEX logo below the "I'm leaving" button
+                        Image("cemex_logo") // use asset name without extension
+                            .renderingMode(.original)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 325)          // adjust width if you want larger/smaller (now 25% larger)
+                            .padding(.top, 12)
+                            .frame(maxWidth: .infinity)     // center horizontally
+                            .accessibilityHidden(true)
                     }
                 }
-                Section {
-                    Button(action: submit) {
-                        Label("Register", systemImage: "person.badge.plus")
-                            .font(.title2)
-                            .imageScale(.large)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .padding(.horizontal)
-                    .disabled(!isValid)
-
-                    Button {
-                        showingLeaving = true
-                    } label: {
-                        Label("I'm leaving", systemImage: "door.right.hand.open")
-                            .font(.title2)
-                            .imageScale(.large)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .padding(.horizontal)
-
-                    // CEMEX logo below the "I'm leaving" button
-                    Image("cemex_logo") // use asset name without extension
-                        .renderingMode(.original)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 260)          // adjust width if you want larger/smaller
-                        .padding(.top, 12)
-                        .frame(maxWidth: .infinity)     // center horizontally
-                        .accessibilityHidden(true)
-                }
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .scrollDismissesKeyboard(.interactively)
             }
-            .textInputAutocapitalization(.words)
-            .autocorrectionDisabled()
-            .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -198,19 +230,49 @@ struct WelcomeView: View {
         .sheet(isPresented: $showingAbout) {
             AboutView()
         }
+        // Sign In Book sheet
+        .sheet(isPresented: $showingSignInBook) {
+            SignInBookView {
+                showingSignInBook = false
+            } onCheckedOut: { name in
+                lastCheckedOutName = name
+                showSignedOutBannerTemporarily()
+                showingSignInBook = false
+            }
+            .interactiveDismissDisabled()
+        }
+    }
+    
+    @ViewBuilder
+    private func inputTextField(_ title: String, text: Binding<String>) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(UIColor.systemBackground))
+                        .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
+                )
+            TextField(title, text: text)
+                .font(.title3)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 14)
+        }
+        .padding(.horizontal, 2)
     }
 
     private var isValid: Bool {
         !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func submit() {
         let name = firstName + " " + lastName
         store.signIn(context, firstName: firstName, lastName: lastName, company: company, visiting: visiting, carRegistration: carRegistration)
-        firstName = ""; lastName = ""; company = ""; visiting = ""; carRegistration = ""
+        firstName = ""; lastName = ""; company = ""; visiting = ""; carRegistration = ""; badgeNumber = ""
         lastRegisteredName = name
         showRegisteredAlert = true
     }
@@ -255,6 +317,87 @@ struct WelcomeView: View {
             return "\"\(escaped)\""
         }
         return field
+    }
+}
+
+struct SignInBookView: View {
+    @Environment(VisitorStore.self) private var store
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+
+    @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
+    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
+
+    let onDone: () -> Void
+    let onCheckedOut: (String) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Active") {
+                    if activeVisitors.isEmpty {
+                        Text("No active visitors")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(activeVisitors) { visitor in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(visitor.fullName)
+                                    .font(.headline)
+                                Text(visitor.company)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Checked in: \(time(visitor.checkIn))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+                Section("Archived") {
+                    if archivedVisitors.isEmpty {
+                        Text("No archived visitors")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(archivedVisitors) { visitor in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(visitor.fullName)
+                                    .font(.headline)
+                                Text(visitor.company)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Checked in: \(time(visitor.checkIn))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("Checked out: \(visitor.checkOut.map { time($0) } ?? "")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .background(Color.blue.ignoresSafeArea())
+            .navigationTitle("Sign In Book")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") {
+                        onDone()
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: .constant(false)) { } // placeholder to prevent warning
+        }
+    }
+
+    private func time(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.dateStyle = .none
+        df.timeStyle = .short
+        return df.string(from: date)
     }
 }
 
@@ -323,6 +466,16 @@ private struct LeavingSearchSheet: View {
                             Image(systemName: "door.right.hand.open")
                         }
                     }
+                }
+            }
+            if activeVisitors.isEmpty {
+                VStack {
+                    Spacer(minLength: 12)
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding()
                 }
             }
         }
@@ -415,14 +568,14 @@ private struct AboutView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("About")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+            
+            VStack {
+                Spacer(minLength: 12)
+                Button("Done") {
+                    dismiss()
                 }
+                .buttonStyle(.borderedProminent)
+                .padding()
             }
         }
     }
@@ -433,3 +586,4 @@ private struct AboutView: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
