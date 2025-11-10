@@ -16,6 +16,8 @@ struct WelcomeView: View {
     @State private var badgeNumber = ""
 
     @State private var showingLeaving = false
+    
+    @State private var showingRollCall = false
 
     @State private var showRegisteredAlert = false
     @State private var lastRegisteredName: String = ""
@@ -48,6 +50,9 @@ struct WelcomeView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 24)
                     .padding(.bottom, 8)
+                
+                Spacer(minLength: 24)
+                
                 Form {
                     Section {
                         if hSizeClass == .regular {
@@ -161,6 +166,8 @@ struct WelcomeView: View {
                             .accessibilityHidden(true)
                     }
                 }
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .scrollDismissesKeyboard(.interactively)
@@ -210,6 +217,12 @@ struct WelcomeView: View {
                     Label("Export CSV", systemImage: "square.and.arrow.up")
                 }
                 .disabled(archivedVisitors.isEmpty)
+                
+                Button {
+                    showingRollCall = true
+                } label: {
+                    Label("Fire Alarm Roll Call", systemImage: "alarm")
+                }
 
                 Button {
                     showingAbout = true
@@ -244,6 +257,9 @@ struct WelcomeView: View {
                 showingSignInBook = false
             }
             .interactiveDismissDisabled()
+        }
+        .sheet(isPresented: $showingRollCall) {
+            FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
         }
     }
     
@@ -418,77 +434,75 @@ private struct LeavingSearchSheet: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            List(filtered) { v in
-                Button {
-                    path.append(v)
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(v.fullName)
-                            Text(v.company).font(.caption).foregroundStyle(.secondary)
+            VStack {
+                Button("Close") {
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.top)
+                
+                List(filtered) { v in
+                    Button {
+                        path.append(v)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(v.fullName)
+                                Text(v.company).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(time(v.checkIn)).font(.caption)
                         }
-                        Spacer()
-                        Text(time(v.checkIn)).font(.caption)
+                    }
+                }
+                .listStyle(.insetGrouped)
+                .navigationTitle("Find your name")
+                .searchable(text: $searchText, prompt: "Search by name, company, or car")
+                .navigationDestination(for: Visitor.self) { v in
+                    Form {
+                        Section("Confirm") {
+                            LabeledContent("Name", value: v.fullName)
+                            LabeledContent("Company", value: v.company)
+                            LabeledContent("Car", value: v.carRegistration)
+                            LabeledContent("Checked in", value: time(v.checkIn))
+                        }
+                        Section {
+                            Button(role: .destructive) {
+                                store.checkOut(context, v)
+                                onCheckedOut(v.fullName)
+                                dismiss()
+                            } label: {
+                                Label("Confirm leaving", systemImage: "door.right.hand.open")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                    .navigationTitle(v.fullName)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Cancel") {
+                                dismiss()
+                            }
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(role: .destructive) {
+                                store.checkOut(context, v)
+                                onCheckedOut(v.fullName)
+                                dismiss()
+                            } label: {
+                                Image(systemName: "door.right.hand.open")
+                            }
+                        }
                     }
                 }
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Find your name")
-            .searchable(text: $searchText, prompt: "Search by name, company, or car")
-            .navigationDestination(for: Visitor.self) { v in
-                Form {
-                    Section("Confirm") {
-                        LabeledContent("Name", value: v.fullName)
-                        LabeledContent("Company", value: v.company)
-                        LabeledContent("Car", value: v.carRegistration)
-                        LabeledContent("Checked in", value: time(v.checkIn))
-                    }
-                    Section {
-                        Button(role: .destructive) {
-                            store.checkOut(context, v)
-                            onCheckedOut(v.fullName)
-                            dismiss()
-                        } label: {
-                            Label("Confirm leaving", systemImage: "door.right.hand.open")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                }
-                .navigationTitle(v.fullName)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Cancel") {
-                            dismiss()
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(role: .destructive) {
-                            store.checkOut(context, v)
-                            onCheckedOut(v.fullName)
-                            dismiss()
-                        } label: {
-                            Image(systemName: "door.right.hand.open")
-                        }
-                    }
-                }
+            .onAppear {
+                path.removeAll()
+                snapshot = activeVisitors
             }
-            if activeVisitors.isEmpty {
-                VStack {
-                    Spacer(minLength: 12)
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .padding()
-                }
+            .onChange(of: searchText) { _, _ in
+                if !path.isEmpty { path.removeAll() }
             }
-        }
-        .onAppear {
-            path.removeAll()
-            snapshot = activeVisitors
-        }
-        .onChange(of: searchText) { _, _ in
-            if !path.isEmpty { path.removeAll() }
         }
     }
 
@@ -585,9 +599,54 @@ private struct AboutView: View {
     }
 }
 
+struct FireAlarmRollCallView: View {
+    @Environment(VisitorStore.self) private var store
+    @Environment(\.modelContext) private var context
+    
+    @State private var confirmedOut: Set<Visitor.ID> = []
+    let visitors: [Visitor]
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List(visitors, id: \.id) { visitor in
+                HStack {
+                    Text(visitor.fullName)
+                    Spacer()
+                    if confirmedOut.contains(visitor.id) {
+                        Button("Confirmed") { }
+                            .buttonStyle(.bordered)
+                            .disabled(true)
+                    } else {
+                        Button("Confirm Out") {
+                            store.checkOut(context, visitor)
+                            confirmedOut.insert(visitor.id)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                    }
+                }
+                .padding(8)
+                .background(confirmedOut.contains(visitor.id) ? Color.green.opacity(0.12) : Color.red.opacity(0.12))
+                .cornerRadius(8)
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Fire Roll Call")
+            .toolbar {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("Done") {
+                        onDismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding()
+                }
+            }
+        }
+    }
+}
+
 #Preview {
     WelcomeView()
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
