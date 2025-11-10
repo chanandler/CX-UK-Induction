@@ -40,7 +40,11 @@ struct WelcomeView: View {
         ZStack(alignment: .bottomLeading) {
             VStack {
                 Text("Welcome to Cemex UK HQ")
-                    .font(.largeTitle).bold()
+                    .font(.system(size: 54, weight: .bold))
+                    .minimumScaleFactor(0.3)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 12)
                     .multilineTextAlignment(.center)
                     .padding(.top, 24)
                     .padding(.bottom, 8)
