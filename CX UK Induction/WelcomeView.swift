@@ -167,11 +167,12 @@ struct WelcomeView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
-                .background(Color.clear)
+                .background(Color(.systemBackground))
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .scrollDismissesKeyboard(.interactively)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -239,6 +240,7 @@ struct WelcomeView: View {
                     .padding([.leading, .bottom], 12)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Share sheet for CSV export
         .sheet(item: $shareItem, onDismiss: { shareItem = nil }) { item in
             ActivityView(activityItems: [item.url])
@@ -267,16 +269,17 @@ struct WelcomeView: View {
     private func inputTextField(_ title: String, text: Binding<String>) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground))
+                        .fill(Color(.systemBackground))
                         .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
                 )
             TextField(title, text: text)
                 .font(.title3)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 14)
+                .foregroundColor(.primary)
         }
         .padding(.horizontal, 2)
     }
@@ -399,7 +402,6 @@ struct SignInBookView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .background(Color.blue.ignoresSafeArea())
             .navigationTitle("Sign In Book")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
