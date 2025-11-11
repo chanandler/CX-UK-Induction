@@ -155,15 +155,7 @@ struct WelcomeView: View {
                         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                         .padding(.horizontal)
 
-                        // CEMEX logo below the "I'm leaving" button
-                        Image("cemex_logo") // use asset name without extension
-                            .renderingMode(.original)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 325)          // adjust width if you want larger/smaller (now 25% larger)
-                            .padding(.top, 12)
-                            .frame(maxWidth: .infinity)     // center horizontally
-                            .accessibilityHidden(true)
+                        // Removed the CEMEX logo from here as per instructions
                     }
                 }
                 .scrollContentBackground(.hidden)
@@ -262,6 +254,17 @@ struct WelcomeView: View {
         }
         .sheet(isPresented: $showingRollCall) {
             FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
+        }
+        // Added CEMEX logo overlay pinned to bottom center
+        .overlay(alignment: .bottom) {
+            Image("cemex_logo") // use asset name without extension
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 325)
+                .padding(.bottom, 16)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
         }
     }
     
