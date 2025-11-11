@@ -10,9 +10,22 @@
 		2221698B2EBE96B700020B39 /* CX UK Induction.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CX UK Induction.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		22707DC72EC3F0B20095A3F1 /* Exceptions for "CX UK Induction" folder in "CX UK Induction" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2221698A2EBE96B700020B39 /* CX UK Induction */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2221698D2EBE96B700020B39 /* CX UK Induction */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				22707DC72EC3F0B20095A3F1 /* Exceptions for "CX UK Induction" folder in "CX UK Induction" target */,
+			);
 			path = "CX UK Induction";
 			sourceTree = "<group>";
 		};
@@ -257,6 +270,7 @@
 				DEVELOPMENT_TEAM = 54GVQKRDJC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=*]" = "CX UK Induction/Info.plist\n";
 				INFOPLIST_KEY_CFBundleDisplayName = "HQ Induction";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -296,6 +310,7 @@
 				DEVELOPMENT_TEAM = 54GVQKRDJC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=iphone*]" = "CX UK Induction/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "HQ Induction";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -554,18 +554,8 @@ private struct AboutView: View {
     private var build: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
-    // Runtime fallback for "build date" (bundle creation date)
     private var buildDateTime: String {
-        let fm = FileManager.default
-        let bundleURL = Bundle.main.bundleURL
-        if let attrs = try? fm.attributesOfItem(atPath: bundleURL.path),
-           let date = attrs[.creationDate] as? Date {
-            let df = DateFormatter()
-            df.dateStyle = .medium
-            df.timeStyle = .short
-            return df.string(from: date)
-        }
-        return "Not available"
+        Bundle.main.object(forInfoDictionaryKey: "BuildDate") as? String ?? "Not available"
     }
 
     var body: some View {
@@ -654,3 +644,4 @@ struct FireAlarmRollCallView: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
