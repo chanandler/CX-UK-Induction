@@ -4,18 +4,22 @@ import SwiftData
 struct RootView: View {
     var body: some View {
         ZStack {
-            Color(red: 2/255, green: 49/255, blue: 133/255)
+            Color(.systemBackground)
                 .ignoresSafeArea()
 
             GeometryReader { geo in
                 ZStack {
                     RoundedRectangle(cornerRadius: 18)
-                        .fill(Color(red: 2/255, green: 49/255, blue: 133/255))
+                        .fill(Color(.systemBackground))
                         .padding(12)
 
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white)
+                        .fill(Color(.systemBackground))
                         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.secondary.opacity(0.16), lineWidth: 1)
+                        )
 
                     VStack(alignment: .center, spacing: 12) {
                         WelcomeView()

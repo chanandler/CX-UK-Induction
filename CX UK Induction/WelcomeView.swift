@@ -411,7 +411,6 @@ struct SignInBookView: View {
                     }
                 }
             }
-            .sheet(isPresented: .constant(false)) { } // placeholder to prevent warning
         }
     }
 
