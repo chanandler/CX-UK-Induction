@@ -329,6 +329,35 @@ struct WelcomeView: View {
         .sheet(isPresented: $showingRollCall) {
             FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
         }
+        .overlay(alignment: .top) {
+            if showCheckoutBanner {
+                VStack {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 8) {
+                        Text("Thank you for visiting.")
+                            .font(.largeTitle).bold()
+                            .multilineTextAlignment(.center)
+                        Text("Have a safe journey.")
+                            .font(.title2)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .padding(.vertical, 28)
+                    .padding(.horizontal, 24)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.green)
+                            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 6)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 24)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut(duration: 0.3), value: showCheckoutBanner)
+            }
+        }
         // Added CEMEX logo overlay pinned to bottom center
         .overlay(alignment: .bottom) {
             Image("cemex_logo") // use asset name without extension
@@ -474,7 +503,7 @@ struct WelcomeView: View {
     
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             withAnimation { showCheckoutBanner = false }
         }
     }
