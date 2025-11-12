@@ -42,6 +42,8 @@ final class Visitor: Identifiable, Hashable {
 
 @Observable
 final class VisitorStore {
+    var lastError: String?
+
     // Derived state for sorting/searching; SwiftData is the source of truth.
     func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, at date: Date = Date()) {
         let v = Visitor(firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -57,6 +59,7 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
+            lastError = "Sign-in save failed: \(error.localizedDescription)"
             print("SwiftData save error (signIn):", error)
         }
     }
@@ -66,6 +69,7 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
+            lastError = "Check-out save failed: \(error.localizedDescription)"
             print("SwiftData save error (checkOut):", error)
         }
     }
@@ -77,7 +81,9 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
+            lastError = "Delete archived failed: \(error.localizedDescription)"
             print("SwiftData save error (deleteArchived):", error)
         }
     }
 }
+

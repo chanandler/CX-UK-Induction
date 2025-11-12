@@ -31,8 +31,9 @@ struct WelcomeView: View {
     @State private var lastCheckedOutName: String = ""
 
     // Add back activeVisitors query
-    @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
-    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
+    @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
+    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\Visitor.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
+    @Query(sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var allVisitors: [Visitor]
     
     // Share support for exported CSV (ActivityView presenter)
     struct ShareItem: Identifiable { let url: URL; var id: URL { url } }
@@ -42,6 +43,11 @@ struct WelcomeView: View {
     @State private var showingAbout = false
     
     @State private var showingSignInBook = false
+    @State private var showDebugPanel = true
+
+    @State private var showPersistenceError = false
+
+    init() {}
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -186,97 +192,7 @@ struct WelcomeView: View {
                 .autocorrectionDisabled()
                 .scrollDismissesKeyboard(.interactively)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                }
-            }
-            .sheet(isPresented: $showingLeaving) {
-                LeavingSearchSheet(activeVisitors: activeVisitors) { name in
-                    lastCheckedOutName = name
-                    showSignedOutBannerTemporarily()
-                    showingLeaving = false
-                }
-                // Keep the sheet full height so the confirm button is visible without scrolling
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
-            .alert("Registered", isPresented: $showRegisteredAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("\(lastRegisteredName) has been registered.")
-            }
-            .overlay(alignment: .top) {
-                if showCheckoutBanner {
-                    Text("\(lastCheckedOutName) signed out")
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Capsule())
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .padding(.top, 8)
-                }
-            }
-            .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
-                Button("No", role: .cancel) {
-                    blockedCar = false
-                    pagerNumber = ""
-                    if pendingSubmit {
-                        submit()
-                        pendingSubmit = false
-                    }
-                }
-                Button("Yes") {
-                    blockedCar = true
-                    showPagerPrompt = true
-                }
-            } message: {
-                Text("Please let us know if your parking is blocking another vehicle.")
-            }
-            .sheet(isPresented: $showPagerPrompt) {
-                NavigationStack {
-                    Form {
-                        Section("Pager Number") {
-                            TextField("Enter pager number", text: $pagerNumber)
-                                .keyboardType(.numberPad)
-                        }
-                    }
-                    .navigationTitle("Contact Pager")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Cancel") {
-                                // Still keep blockedCar = true but no pager; dismiss
-                                showPagerPrompt = false
-                                if pendingSubmit {
-                                    submit()
-                                    pendingSubmit = false
-                                }
-                            }
-                        }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Save") {
-                                showPagerPrompt = false
-                                if pendingSubmit {
-                                    submit()
-                                    pendingSubmit = false
-                                }
-                            }
-                        }
-                    }
-                }
-                .onDisappear {
-                    if pendingSubmit {
-                        submit()
-                        pendingSubmit = false
-                    }
-                }
-                .interactiveDismissDisabled(true)
-            }
-
+            
             // Bottom-left cog with menu
             Menu {
                 Button {
@@ -318,6 +234,72 @@ struct WelcomeView: View {
         .sheet(isPresented: $showingAbout) {
             AboutView()
         }
+        .alert("Registered", isPresented: $showRegisteredAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("\(lastRegisteredName) has been registered.")
+        }
+        .sheet(isPresented: $showingLeaving) {
+            LeavingSearchSheet(activeVisitors: activeVisitors) { name in
+                lastCheckedOutName = name
+                showSignedOutBannerTemporarily()
+                showingLeaving = false
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        // Ask if they've blocked a car when a car reg is provided
+        .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
+            Button("No", role: .cancel) {
+                blockedCar = false
+                pagerNumber = ""
+                if pendingSubmit {
+                    submit()
+                    pendingSubmit = false
+                }
+            }
+            Button("Yes") {
+                blockedCar = true
+                showPagerPrompt = true
+            }
+        } message: {
+            Text("Please let us know if your parking is blocking another vehicle.")
+        }
+        
+        // Pager sheet to capture contact number when a car is blocked
+        .sheet(isPresented: $showPagerPrompt) {
+            NavigationStack {
+                Form {
+                    Section("Pager Number") {
+                        TextField("Enter pager number", text: $pagerNumber)
+                            .keyboardType(.numberPad)
+                    }
+                }
+                .navigationTitle("Contact Pager")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") {
+                            // Keep blockedCar = true but no pager; dismiss and submit if pending
+                            showPagerPrompt = false
+                            if pendingSubmit {
+                                submit()
+                                pendingSubmit = false
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Save") {
+                            showPagerPrompt = false
+                            if pendingSubmit {
+                                submit()
+                                pendingSubmit = false
+                            }
+                        }
+                    }
+                }
+            }
+            .interactiveDismissDisabled(true)
+        }
         // Sign In Book sheet
         .sheet(isPresented: $showingSignInBook) {
             SignInBookView {
@@ -342,8 +324,86 @@ struct WelcomeView: View {
                 .padding(.bottom, vSizeClass == .compact ? 40 : 16)
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
+                .allowsHitTesting(false)
+        }
+        .overlay(alignment: .topLeading) {
+            if showDebugPanel {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Diagnostics")
+                            .font(.caption).bold()
+                        Spacer()
+                        Button(action: { showDebugPanel = false }) {
+                            Image(systemName: "xmark.circle.fill").imageScale(.small)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Text("Active: \(activeVisitors.count)").font(.caption)
+                    Text("Archived: \(archivedVisitors.count)").font(.caption)
+                    Text("All: \(allVisitors.count)").font(.caption)
+                    if let err = store.lastError, !err.isEmpty {
+                        Text(err).font(.caption2).foregroundStyle(.red)
+                    }
+                    Divider().padding(.vertical, 2)
+                    Button("Seed Test Visitor") {
+                        let v = Visitor(firstName: "Test",
+                                        lastName: "Visitor",
+                                        company: "CEMEX",
+                                        visiting: "Reception",
+                                        carRegistration: "",
+                                        blockedCar: false,
+                                        pagerNumber: nil,
+                                        checkIn: Date(),
+                                        checkOut: nil)
+                        context.insert(v)
+                        do {
+                            try context.save()
+                        } catch {
+                            store.lastError = "Direct save failed: \(error.localizedDescription)"
+                            print("Direct SwiftData save error:", error)
+                        }
+                    }
+                    .font(.caption)
+                }
+                .padding(10)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .shadow(radius: 2)
+                .padding([.top, .leading], 12)
+            }
         }
         .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
+        .onChange(of: showPagerPrompt) { oldValue, newValue in
+            // If the pager sheet is dismissed by any means and a submit is pending, submit now
+            if oldValue == true && newValue == false {
+                if pendingSubmit {
+                    submit()
+                    pendingSubmit = false
+                }
+            }
+        }
+        .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
+            // If the blocked car alert disappears without moving to pager and a submit is pending, submit now
+            if oldValue == true && newValue == false {
+                if pendingSubmit && !showPagerPrompt && !blockedCar {
+                    submit()
+                    pendingSubmit = false
+                }
+            }
+        }
+        .onChange(of: store.lastError) { _, newValue in
+            if newValue != nil {
+                showPersistenceError = true
+            }
+        }
+        .alert("Save Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
+            Button("OK", role: .cancel) {
+                // clear the error so it won't re-trigger
+                store.lastError = nil
+            }
+        } message: { msg in
+            Text(msg)
+        }
     }
     
     @ViewBuilder
@@ -382,6 +442,9 @@ struct WelcomeView: View {
                      carRegistration: carRegistration,
                      blockedCar: blockedCar,
                      pagerNumber: pagerNumber)
+        if store.lastError != nil {
+            return
+        }
         firstName = ""
         lastName = ""
         company = ""
