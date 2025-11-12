@@ -510,17 +510,42 @@ struct WelcomeView: View {
     
     // CSV export (duplicated here so WelcomeView can export independently)
     private func exportCSV(from visitors: [Visitor]) -> URL? {
-        let header = ["First Name","Last Name","Company","Visiting","Car Registration","Check In","Check Out"]
-        let df = ISO8601DateFormatter()
-        df.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let header = [
+            "First Name",
+            "Last Name",
+            "Company",
+            "Visiting",
+            "Car Registration",
+            "Badge Number",
+            "Date Signed In",
+            "Date Signed Out"
+        ]
+        let df = DateFormatter()
+        // Format: dd/MM/YY HH:mm (day/month/two-digit year, 24-hour, minute)
+        // Using lowercase dd for day-of-month and yy for two-digit year
+        df.locale = Locale(identifier: "en_GB")
+        df.timeZone = TimeZone(secondsFromGMT: 0) // optional: force UTC; remove if you want local time
+        df.dateFormat = "dd/MM/yy HH:mm"
         let rows: [[String]] = visitors.map { v in
-            [v.firstName,
-             v.lastName,
-             v.company,
-             v.visiting,
-             v.carRegistration,
-             df.string(from: v.checkIn),
-             v.checkOut.map { df.string(from: $0) } ?? ""]
+            let car = v.carRegistration.trimmingCharacters(in: .whitespacesAndNewlines)
+            let carValue = car.isEmpty ? "None" : car
+            let badgeValue: String
+            if let any = (v as AnyObject) as? NSObject, any.responds(to: Selector(("badgeNumber"))) {
+                // Attempt KVC-style access if available (defensive in case model doesn't have badgeNumber)
+                badgeValue = (any.value(forKey: "badgeNumber") as? String) ?? ""
+            } else {
+                badgeValue = ""
+            }
+            return [
+                v.firstName,
+                v.lastName,
+                v.company,
+                v.visiting,
+                carValue,
+                badgeValue,
+                df.string(from: v.checkIn),
+                v.checkOut.map { df.string(from: $0) } ?? ""
+            ]
         }
         let csv = ([header] + rows).map { row in
             row.map { escapeCSV($0) }.joined(separator: ",")
@@ -570,9 +595,7 @@ struct SignInBookView: View {
                                 Text(visitor.company)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Checked in: \(time(visitor.checkIn))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                Text("Checked in: \(dateTime(visitor.checkIn))")
                             }
                             .padding(.vertical, 4)
                         }
@@ -590,12 +613,8 @@ struct SignInBookView: View {
                                 Text(visitor.company)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Checked in: \(time(visitor.checkIn))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text("Checked out: \(visitor.checkOut.map { time($0) } ?? "")")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                Text("Checked in: \(dateTime(visitor.checkIn))")
+                                Text("Checked out: \(visitor.checkOut.map { dateTime($0) } ?? "")")
                             }
                             .padding(.vertical, 4)
                         }
@@ -615,9 +634,9 @@ struct SignInBookView: View {
         }
     }
 
-    private func time(_ date: Date) -> String {
+    private func dateTime(_ date: Date) -> String {
         let df = DateFormatter()
-        df.dateStyle = .none
+        df.dateStyle = .medium
         df.timeStyle = .short
         return df.string(from: date)
     }
@@ -647,7 +666,7 @@ private struct LeavingSearchSheet: View {
                                 Text(v.company).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(time(v.checkIn)).font(.caption)
+                            Text(dateTime(v.checkIn)).font(.caption)
                         }
                     }
                 }
@@ -667,7 +686,7 @@ private struct LeavingSearchSheet: View {
                             LabeledContent("Name", value: v.fullName)
                             LabeledContent("Company", value: v.company)
                             LabeledContent("Car", value: v.carRegistration)
-                            LabeledContent("Checked in", value: time(v.checkIn))
+                            LabeledContent("Checked in", value: dateTime(v.checkIn))
                         }
                         Section {
                             Button(role: .destructive) {
@@ -718,9 +737,9 @@ private struct LeavingSearchSheet: View {
         }
     }
 
-    private func time(_ date: Date) -> String {
+    private func dateTime(_ date: Date) -> String {
         let df = DateFormatter()
-        df.dateStyle = .none
+        df.dateStyle = .medium
         df.timeStyle = .short
         return df.string(from: date)
     }
