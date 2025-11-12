@@ -268,6 +268,13 @@ struct WelcomeView: View {
                         }
                     }
                 }
+                .onDisappear {
+                    if pendingSubmit {
+                        submit()
+                        pendingSubmit = false
+                    }
+                }
+                .interactiveDismissDisabled(true)
             }
 
             // Bottom-left cog with menu
@@ -336,6 +343,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
         }
+        .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
     }
     
     @ViewBuilder
@@ -361,8 +369,7 @@ struct WelcomeView: View {
         !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func submit() {
