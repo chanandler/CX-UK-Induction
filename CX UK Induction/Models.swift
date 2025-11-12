@@ -88,5 +88,56 @@ final class VisitorStore {
             print("SwiftData save error (deleteArchived):", error)
         }
     }
-}
 
+    func autoCheckoutPreviousDay(_ context: ModelContext, at checkoutTime: Date = Date()) {
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: Date())
+        // Fetch active visitors (checkOut == nil) whose checkIn is before today
+        let descriptor = FetchDescriptor<Visitor>(
+            predicate: #Predicate { $0.checkOut == nil && $0.checkIn < startOfToday }
+        )
+        do {
+            let results = try context.fetch(descriptor)
+            // Set their checkOut to 07:00 of today for consistency
+            var comps = cal.dateComponents([.year, .month, .day], from: Date())
+            comps.hour = 7
+            comps.minute = 0
+            comps.second = 0
+            let sevenAM = cal.date(from: comps) ?? Date()
+            for v in results {
+                v.checkOut = sevenAM
+            }
+            if !results.isEmpty {
+                try context.save()
+            }
+        } catch {
+            lastError = "Auto-checkout failed: \(error.localizedDescription)"
+            print("SwiftData fetch/save error (autoCheckout):", error)
+        }
+    }
+
+    @discardableResult
+    func autoCheckoutPreviousDayReturningCount(_ context: ModelContext, at checkoutTime: Date = Date()) -> Int {
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: Date())
+        let descriptor = FetchDescriptor<Visitor>(
+            predicate: #Predicate { $0.checkOut == nil && $0.checkIn < startOfToday }
+        )
+        do {
+            let results = try context.fetch(descriptor)
+            if results.isEmpty { return 0 }
+            var comps = cal.dateComponents([.year, .month, .day], from: Date())
+            comps.hour = 7
+            comps.minute = 0
+            comps.second = 0
+            let sevenAM = cal.date(from: comps) ?? Date()
+            for v in results { v.checkOut = sevenAM }
+            try context.save()
+            return results.count
+        } catch {
+            lastError = "Auto-checkout failed: \(error.localizedDescription)"
+            print("SwiftData fetch/save error (autoCheckout):", error)
+            return 0
+        }
+    }
+}

@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct WelcomeView: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
     
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.verticalSizeClass) private var vSizeClass
@@ -29,6 +31,15 @@ struct WelcomeView: View {
     
     @State private var showCheckoutBanner = false
     @State private var lastCheckedOutName: String = ""
+    
+    @AppStorage("lastCompany") private var lastCompany: String = ""
+    @AppStorage("lastVisiting") private var lastVisiting: String = ""
+    @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = true
+    @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 7
+    @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
+
+    @State private var showingSettings = false
+    @State private var autoCheckoutToast: String? = nil
 
     // Add back activeVisitors query
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
@@ -215,6 +226,27 @@ struct WelcomeView: View {
                 } label: {
                     Label("About", systemImage: "info.circle")
                 }
+                
+                Toggle(isOn: $autoCheckoutEnabled) {
+                    Label("Auto-checkout at 07:00", systemImage: autoCheckoutEnabled ? "checkmark.circle" : "circle")
+                }
+                Divider()
+                Button {
+                    showingSettings = true
+                } label: {
+                    Label("Settings", systemImage: "slider.horizontal.3")
+                }
+                Button {
+                    let count = store.autoCheckoutPreviousDayReturningCount(context)
+                    if count > 0 {
+                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
+                    } else {
+                        autoCheckoutToast = "No visitors to auto-archive"
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { autoCheckoutToast = nil }
+                } label: {
+                    Label("Run Auto-checkout Now", systemImage: "bolt.fill")
+                }
             } label: {
                 Image(systemName: "gearshape.fill")
                     .imageScale(.large)
@@ -233,6 +265,10 @@ struct WelcomeView: View {
         // About sheet
         .sheet(isPresented: $showingAbout) {
             AboutView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            AutoCheckoutSettingsView(enabled: $autoCheckoutEnabled, hour: $autoCheckoutHour, minute: $autoCheckoutMinute)
+                .presentationDetents([.medium])
         }
         .alert("Registered", isPresented: $showRegisteredAlert) {
             Button("OK", role: .cancel) { }
@@ -328,6 +364,22 @@ struct WelcomeView: View {
         }
         .sheet(isPresented: $showingRollCall) {
             FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
+        }
+        .overlay(alignment: .topTrailing) {
+            if let msg = autoCheckoutToast {
+                Text(msg)
+                    .font(.footnote)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(.systemBackground).opacity(0.95))
+                            .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
+                    )
+                    .padding(.top, 16)
+                    .padding(.trailing, 16)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .overlay(alignment: .top) {
             if showCheckoutBanner {
@@ -433,6 +485,23 @@ struct WelcomeView: View {
                 .padding([.top, .leading], 12)
             }
         }
+        .onAppear {
+            if company.isEmpty { company = lastCompany }
+            if visiting.isEmpty { visiting = lastVisiting }
+        }
+        .onAppear {
+            if autoCheckoutEnabled {
+                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
+                    guard let store = store else { return }
+                    let count = store.autoCheckoutPreviousDayReturningCount(context)
+                    if count > 0 {
+                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
+                    }
+                }
+            } else {
+                AutoCheckoutManager.shared.cancel()
+            }
+        }
         .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
         .onChange(of: showPagerPrompt) { oldValue, newValue in
             // If the pager sheet is dismissed by any means and a submit is pending, submit now
@@ -465,6 +534,50 @@ struct WelcomeView: View {
         } message: { msg in
             Text(msg)
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                if autoCheckoutEnabled {
+                    AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
+                        guard let store = store else { return }
+                        let count = store.autoCheckoutPreviousDayReturningCount(context)
+                        if count > 0 {
+                            autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
+                        }
+                    }
+                }
+            }
+        }
+        .onChange(of: autoCheckoutEnabled) { _, enabled in
+            if enabled {
+                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
+                    guard let store = store else { return }
+                    let count = store.autoCheckoutPreviousDayReturningCount(context)
+                    if count > 0 {
+                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
+                    }
+                }
+            } else {
+                AutoCheckoutManager.shared.cancel()
+            }
+        }
+        .onChange(of: autoCheckoutHour) { _, _ in
+            if autoCheckoutEnabled {
+                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
+                    guard let store = store else { return }
+                    let count = store.autoCheckoutPreviousDayReturningCount(context)
+                    if count > 0 { autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")" }
+                }
+            }
+        }
+        .onChange(of: autoCheckoutMinute) { _, _ in
+            if autoCheckoutEnabled {
+                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
+                    guard let store = store else { return }
+                    let count = store.autoCheckoutPreviousDayReturningCount(context)
+                    if count > 0 { autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")" }
+                }
+            }
+        }
     }
     
     @ViewBuilder
@@ -495,6 +608,8 @@ struct WelcomeView: View {
 
     private func submit() {
         let name = firstName + " " + lastName
+        lastCompany = company
+        lastVisiting = visiting
         store.signIn(context,
                      firstName: firstName,
                      lastName: lastName,
@@ -521,6 +636,9 @@ struct WelcomeView: View {
     
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.success)
     }
     
     // CSV export (duplicated here so WelcomeView can export independently)
@@ -869,9 +987,38 @@ struct FireAlarmRollCallView: View {
     }
 }
 
+private struct AutoCheckoutSettingsView: View {
+    @Binding var enabled: Bool
+    @Binding var hour: Int
+    @Binding var minute: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Auto-checkout") {
+                    Toggle("Enable auto-checkout", isOn: $enabled)
+                    HStack {
+                        Picker("Hour", selection: $hour) {
+                            ForEach(0..<24, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
+                        }
+                        Picker("Minute", selection: $minute) {
+                            ForEach([0,5,10,15,20,25,30,35,40,45,50,55], id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
+                        }
+                    }
+                    .labelsHidden()
+                }
+            }
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+}
+
 #Preview {
     WelcomeView()
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
