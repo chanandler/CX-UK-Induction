@@ -10,16 +10,20 @@ final class Visitor: Identifiable, Hashable {
     var company: String
     var visiting: String
     var carRegistration: String
+    var blockedCar: Bool
+    var pagerNumber: String?
     var checkIn: Date
     var checkOut: Date?
 
-    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, checkIn: Date = Date(), checkOut: Date? = nil) {
+    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, checkIn: Date = Date(), checkOut: Date? = nil) {
         self.id = id
         self.firstName = firstName
         self.lastName = lastName
         self.company = company
         self.visiting = visiting
         self.carRegistration = carRegistration
+        self.blockedCar = blockedCar
+        self.pagerNumber = pagerNumber
         self.checkIn = checkIn
         self.checkOut = checkOut
     }
@@ -39,12 +43,14 @@ final class Visitor: Identifiable, Hashable {
 @Observable
 final class VisitorStore {
     // Derived state for sorting/searching; SwiftData is the source of truth.
-    func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, at date: Date = Date()) {
+    func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, at date: Date = Date()) {
         let v = Visitor(firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
                         lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
                         company: company.trimmingCharacters(in: .whitespacesAndNewlines),
                         visiting: visiting.trimmingCharacters(in: .whitespacesAndNewlines),
                         carRegistration: carRegistration.trimmingCharacters(in: .whitespacesAndNewlines),
+                        blockedCar: blockedCar,
+                        pagerNumber: pagerNumber,
                         checkIn: date,
                         checkOut: nil)
         context.insert(v)

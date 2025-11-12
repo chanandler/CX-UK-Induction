@@ -14,8 +14,13 @@ struct WelcomeView: View {
     @State private var visiting = ""
     @State private var carRegistration = ""
     @State private var badgeNumber = ""
+    @State private var blockedCar: Bool = false
+    @State private var pagerNumber: String = ""
 
     @State private var showingLeaving = false
+    @State private var showBlockedCarPrompt = false
+    @State private var showPagerPrompt = false
+    @State private var pendingSubmit = false
     
     @State private var showingRollCall = false
 
@@ -68,6 +73,11 @@ struct WelcomeView: View {
                                         .textInputAutocapitalization(.characters)
                                         .autocorrectionDisabled(true)
                                         .submitLabel(.next)
+                                        .onSubmit {
+                                            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                                showBlockedCarPrompt = true
+                                            }
+                                        }
                                 }
                                 VStack(spacing: 8) {
                                     inputTextField("Last name", text: $lastName)
@@ -101,6 +111,11 @@ struct WelcomeView: View {
                                     .textInputAutocapitalization(.characters)
                                     .autocorrectionDisabled(true)
                                     .submitLabel(.done)
+                                    .onSubmit {
+                                        if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                            showBlockedCarPrompt = true
+                                        }
+                                    }
                             }
                             .padding(.vertical, 4)
                         }
@@ -112,7 +127,14 @@ struct WelcomeView: View {
                     .padding(.horizontal, 0)
                     .padding(.vertical, 0)
                     Section {
-                        Button(action: submit) {
+                        Button(action: {
+                            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                pendingSubmit = true
+                                showBlockedCarPrompt = true
+                            } else {
+                                submit()
+                            }
+                        }) {
                             Label("Register", systemImage: "person.badge.plus")
                                 .font(.title3)
                                 .imageScale(.large)
@@ -199,6 +221,54 @@ struct WelcomeView: View {
                         .padding(.top, 8)
                 }
             }
+            .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
+                Button("No", role: .cancel) {
+                    blockedCar = false
+                    pagerNumber = ""
+                    if pendingSubmit {
+                        submit()
+                        pendingSubmit = false
+                    }
+                }
+                Button("Yes") {
+                    blockedCar = true
+                    showPagerPrompt = true
+                }
+            } message: {
+                Text("Please let us know if your parking is blocking another vehicle.")
+            }
+            .sheet(isPresented: $showPagerPrompt) {
+                NavigationStack {
+                    Form {
+                        Section("Pager Number") {
+                            TextField("Enter pager number", text: $pagerNumber)
+                                .keyboardType(.numberPad)
+                        }
+                    }
+                    .navigationTitle("Contact Pager")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Cancel") {
+                                // Still keep blockedCar = true but no pager; dismiss
+                                showPagerPrompt = false
+                                if pendingSubmit {
+                                    submit()
+                                    pendingSubmit = false
+                                }
+                            }
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Save") {
+                                showPagerPrompt = false
+                                if pendingSubmit {
+                                    submit()
+                                    pendingSubmit = false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             // Bottom-left cog with menu
             Menu {
@@ -262,7 +332,7 @@ struct WelcomeView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: 325)
-                .padding(.bottom, 16)
+                .padding(.bottom, vSizeClass == .compact ? 40 : 16)
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
         }
@@ -297,8 +367,22 @@ struct WelcomeView: View {
 
     private func submit() {
         let name = firstName + " " + lastName
-        store.signIn(context, firstName: firstName, lastName: lastName, company: company, visiting: visiting, carRegistration: carRegistration)
-        firstName = ""; lastName = ""; company = ""; visiting = ""; carRegistration = ""; badgeNumber = ""
+        store.signIn(context,
+                     firstName: firstName,
+                     lastName: lastName,
+                     company: company,
+                     visiting: visiting,
+                     carRegistration: carRegistration,
+                     blockedCar: blockedCar,
+                     pagerNumber: pagerNumber)
+        firstName = ""
+        lastName = ""
+        company = ""
+        visiting = ""
+        carRegistration = ""
+        badgeNumber = ""
+        blockedCar = false
+        pagerNumber = ""
         lastRegisteredName = name
         showRegisteredAlert = true
     }
@@ -439,12 +523,6 @@ private struct LeavingSearchSheet: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack {
-                Button("Close") {
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .padding(.top)
-                
                 List(filtered) { v in
                     Button {
                         path.append(v)
@@ -462,6 +540,13 @@ private struct LeavingSearchSheet: View {
                 .listStyle(.insetGrouped)
                 .navigationTitle("Find your name")
                 .searchable(text: $searchText, prompt: "Search by name, company, or car")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
                 .navigationDestination(for: Visitor.self) { v in
                     Form {
                         Section("Confirm") {
@@ -580,14 +665,12 @@ private struct AboutView: View {
                 Spacer()
             }
             .padding()
-            
-            VStack {
-                Spacer(minLength: 12)
-                Button("Done") {
-                    dismiss()
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") {
+                        dismiss()
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .padding()
             }
         }
     }
@@ -627,12 +710,10 @@ struct FireAlarmRollCallView: View {
             .listStyle(.insetGrouped)
             .navigationTitle("Fire Roll Call")
             .toolbar {
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
                         onDismiss()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .padding()
                 }
             }
         }
