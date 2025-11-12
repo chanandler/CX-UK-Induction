@@ -270,7 +270,22 @@ struct WelcomeView: View {
         .sheet(isPresented: $showPagerPrompt) {
             NavigationStack {
                 Form {
-                    Section("Pager Number") {
+                    Section {
+                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will page you. We would appreciate your prompt attention if your pager buzzes. Enter the pager number in the box below and tap save.")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(Color.orange.opacity(0.15))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                                    )
+                            )
+                            .padding(.vertical, 4)
                         TextField("Enter pager number", text: $pagerNumber)
                             .keyboardType(.numberPad)
                     }
@@ -728,7 +743,7 @@ private struct AboutView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("About")
                         .font(.headline)
-                    Text("Developed by Clint Yarwood for visitor registration at CEMEX UK HQ.")
+                    Text("Developed by Clint Yarwood (Cemex UK IT) for visitor registration at CEMEX UK HQ.")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal)
@@ -751,23 +766,27 @@ struct FireAlarmRollCallView: View {
     @Environment(\.modelContext) private var context
     
     @State private var confirmedOut: Set<Visitor.ID> = []
+    @State private var snapshot: [Visitor] = []
     let visitors: [Visitor]
     let onDismiss: () -> Void
 
     var body: some View {
         NavigationStack {
-            List(visitors, id: \.id) { visitor in
+            List(snapshot, id: \.id) { visitor in
                 HStack {
                     Text(visitor.fullName)
                     Spacer()
                     if confirmedOut.contains(visitor.id) {
                         Button("Confirmed") { }
                             .buttonStyle(.bordered)
+                            .tint(.green)
                             .disabled(true)
                     } else {
                         Button("Confirm Out") {
                             store.checkOut(context, visitor)
-                            confirmedOut.insert(visitor.id)
+                            _ = withAnimation {
+                                confirmedOut.insert(visitor.id)
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
@@ -784,6 +803,12 @@ struct FireAlarmRollCallView: View {
                     Button("Done") {
                         onDismiss()
                     }
+                }
+            }
+            .onAppear {
+                // Take a local snapshot so rows persist visually after checkout
+                if snapshot.isEmpty {
+                    snapshot = visitors
                 }
             }
         }
