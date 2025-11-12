@@ -341,6 +341,23 @@ struct WelcomeView: View {
                             .font(.title2)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(.white.opacity(0.9))
+                        Button("Done") {
+                            withAnimation { showCheckoutBanner = false }
+                        }
+                        .font(.headline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color(.systemGray5))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color(.systemGray3), lineWidth: 1)
+                        )
+                        .foregroundStyle(.primary)
+                        .padding(.top, 12)
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .padding(.vertical, 28)
                     .padding(.horizontal, 24)
@@ -504,9 +521,6 @@ struct WelcomeView: View {
     
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            withAnimation { showCheckoutBanner = false }
-        }
     }
     
     // CSV export (duplicated here so WelcomeView can export independently)

@@ -249,6 +249,7 @@ struct VisitorDetail: View {
                 LabeledContent("Company", value: visitor.company)
                 LabeledContent("Visiting", value: visitor.visiting)
                 LabeledContent("Car", value: visitor.carRegistration)
+                LabeledContent("Badge Number", value: (visitor.badgeNumber?.isEmpty == false ? visitor.badgeNumber! : "—"))
                 LabeledContent("Checked in", value: dateTime(visitor.checkIn))
                 if let out = visitor.checkOut {
                     LabeledContent("Checked out", value: dateTime(out))
@@ -349,3 +350,4 @@ private func restoreFormAppearance() {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
