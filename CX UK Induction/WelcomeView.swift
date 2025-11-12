@@ -34,12 +34,8 @@ struct WelcomeView: View {
     
     @AppStorage("lastCompany") private var lastCompany: String = ""
     @AppStorage("lastVisiting") private var lastVisiting: String = ""
-    @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = true
-    @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 7
-    @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
 
     @State private var showingSettings = false
-    @State private var autoCheckoutToast: String? = nil
 
     // Add back activeVisitors query
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
@@ -227,25 +223,10 @@ struct WelcomeView: View {
                     Label("About", systemImage: "info.circle")
                 }
                 
-                Toggle(isOn: $autoCheckoutEnabled) {
-                    Label("Auto-checkout at 07:00", systemImage: autoCheckoutEnabled ? "checkmark.circle" : "circle")
-                }
-                Divider()
                 Button {
                     showingSettings = true
                 } label: {
                     Label("Settings", systemImage: "slider.horizontal.3")
-                }
-                Button {
-                    let count = store.autoCheckoutPreviousDayReturningCount(context)
-                    if count > 0 {
-                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
-                    } else {
-                        autoCheckoutToast = "No visitors to auto-archive"
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { autoCheckoutToast = nil }
-                } label: {
-                    Label("Run Auto-checkout Now", systemImage: "bolt.fill")
                 }
             } label: {
                 Image(systemName: "gearshape.fill")
@@ -267,7 +248,7 @@ struct WelcomeView: View {
             AboutView()
         }
         .sheet(isPresented: $showingSettings) {
-            AutoCheckoutSettingsView(enabled: $autoCheckoutEnabled, hour: $autoCheckoutHour, minute: $autoCheckoutMinute)
+            AutoCheckoutSettingsView(enabled: .constant(false), hour: .constant(7), minute: .constant(0))
                 .presentationDetents([.medium])
         }
         .alert("Registered", isPresented: $showRegisteredAlert) {
@@ -364,22 +345,6 @@ struct WelcomeView: View {
         }
         .sheet(isPresented: $showingRollCall) {
             FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
-        }
-        .overlay(alignment: .topTrailing) {
-            if let msg = autoCheckoutToast {
-                Text(msg)
-                    .font(.footnote)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(.systemBackground).opacity(0.95))
-                            .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
-                    )
-                    .padding(.top, 16)
-                    .padding(.trailing, 16)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
         }
         .overlay(alignment: .top) {
             if showCheckoutBanner {
@@ -489,19 +454,6 @@ struct WelcomeView: View {
             if company.isEmpty { company = lastCompany }
             if visiting.isEmpty { visiting = lastVisiting }
         }
-        .onAppear {
-            if autoCheckoutEnabled {
-                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
-                    guard let store = store else { return }
-                    let count = store.autoCheckoutPreviousDayReturningCount(context)
-                    if count > 0 {
-                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
-                    }
-                }
-            } else {
-                AutoCheckoutManager.shared.cancel()
-            }
-        }
         .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
         .onChange(of: showPagerPrompt) { oldValue, newValue in
             // If the pager sheet is dismissed by any means and a submit is pending, submit now
@@ -533,50 +485,6 @@ struct WelcomeView: View {
             }
         } message: { msg in
             Text(msg)
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                if autoCheckoutEnabled {
-                    AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
-                        guard let store = store else { return }
-                        let count = store.autoCheckoutPreviousDayReturningCount(context)
-                        if count > 0 {
-                            autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
-                        }
-                    }
-                }
-            }
-        }
-        .onChange(of: autoCheckoutEnabled) { _, enabled in
-            if enabled {
-                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
-                    guard let store = store else { return }
-                    let count = store.autoCheckoutPreviousDayReturningCount(context)
-                    if count > 0 {
-                        autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")"
-                    }
-                }
-            } else {
-                AutoCheckoutManager.shared.cancel()
-            }
-        }
-        .onChange(of: autoCheckoutHour) { _, _ in
-            if autoCheckoutEnabled {
-                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
-                    guard let store = store else { return }
-                    let count = store.autoCheckoutPreviousDayReturningCount(context)
-                    if count > 0 { autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")" }
-                }
-            }
-        }
-        .onChange(of: autoCheckoutMinute) { _, _ in
-            if autoCheckoutEnabled {
-                AutoCheckoutManager.shared.schedule(nextAt: autoCheckoutHour, minute: autoCheckoutMinute) { [weak store] in
-                    guard let store = store else { return }
-                    let count = store.autoCheckoutPreviousDayReturningCount(context)
-                    if count > 0 { autoCheckoutToast = "Auto-archived \(count) visitor\(count == 1 ? "" : "s")" }
-                }
-            }
         }
     }
     
