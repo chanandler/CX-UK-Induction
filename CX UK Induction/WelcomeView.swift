@@ -334,10 +334,10 @@ struct WelcomeView: View {
                 VStack {
                     Spacer(minLength: 0)
                     VStack(spacing: 8) {
-                        Text("Thank you for visiting.")
+                        Text("Thank you for visiting. Have a safe journey")
                             .font(.largeTitle).bold()
                             .multilineTextAlignment(.center)
-                        Text("Have a safe journey.")
+                        Text("Don't forget to return your badge and pager (if you have one) to reception. Thank you again.")
                             .font(.title2)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(.white.opacity(0.9))
@@ -485,7 +485,8 @@ struct WelcomeView: View {
                      visiting: visiting,
                      carRegistration: carRegistration,
                      blockedCar: blockedCar,
-                     pagerNumber: pagerNumber)
+                     pagerNumber: pagerNumber,
+                     badgeNumber: badgeNumber)
         if store.lastError != nil {
             return
         }
@@ -516,7 +517,6 @@ struct WelcomeView: View {
             "Company",
             "Visiting",
             "Car Registration",
-            "Badge Number",
             "Date Signed In",
             "Date Signed Out"
         ]
@@ -529,20 +529,12 @@ struct WelcomeView: View {
         let rows: [[String]] = visitors.map { v in
             let car = v.carRegistration.trimmingCharacters(in: .whitespacesAndNewlines)
             let carValue = car.isEmpty ? "None" : car
-            let badgeValue: String
-            if let any = (v as AnyObject) as? NSObject, any.responds(to: Selector(("badgeNumber"))) {
-                // Attempt KVC-style access if available (defensive in case model doesn't have badgeNumber)
-                badgeValue = (any.value(forKey: "badgeNumber") as? String) ?? ""
-            } else {
-                badgeValue = ""
-            }
             return [
                 v.firstName,
                 v.lastName,
                 v.company,
                 v.visiting,
                 carValue,
-                badgeValue,
                 df.string(from: v.checkIn),
                 v.checkOut.map { df.string(from: $0) } ?? ""
             ]
