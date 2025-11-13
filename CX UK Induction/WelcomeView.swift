@@ -24,6 +24,9 @@ struct WelcomeView: View {
     @State private var showPagerPrompt = false
     @State private var pendingSubmit = false
     
+    @State private var showingInduction = false
+    @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
+    
     @State private var showingRollCall = false
 
     @State private var showRegisteredAlert = false
@@ -201,7 +204,9 @@ struct WelcomeView: View {
                                 pendingSubmit = true
                                 showBlockedCarPrompt = true
                             } else {
-                                submit()
+                                // Defer final submit until after induction screens
+                                pendingSubmit = true
+                                showingInduction = true
                             }
                         }) {
                             Label("Register", systemImage: "person.badge.plus")
@@ -327,8 +332,8 @@ struct WelcomeView: View {
                 blockedCar = false
                 pagerNumber = ""
                 if pendingSubmit {
-                    submit()
-                    pendingSubmit = false
+                    showingInduction = true
+                    // pendingSubmit will be cleared in the induction completion handler
                 }
             }
             Button("Yes") {
@@ -386,8 +391,8 @@ struct WelcomeView: View {
                         Button("Save") {
                             showPagerPrompt = false
                             if pendingSubmit {
-                                submit()
-                                pendingSubmit = false
+                                showingInduction = true
+                                // pendingSubmit will be cleared in the induction completion handler
                             }
                         }
                         .disabled(pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -395,6 +400,17 @@ struct WelcomeView: View {
                 }
             }
             .interactiveDismissDisabled(true)
+        }
+        // Induction flow full-screen
+        .fullScreenCover(isPresented: $showingInduction) {
+            InductionFlowView(imageNames: inductionImages) { confirmed in
+                showingInduction = false
+                if confirmed {
+                    submit()
+                }
+                pendingSubmit = false
+            }
+            .ignoresSafeArea()
         }
         // Sign In Book sheet
         .sheet(isPresented: $showingSignInBook) {
@@ -516,19 +532,19 @@ struct WelcomeView: View {
         }
         .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
         .onChange(of: showPagerPrompt) { oldValue, newValue in
-            // If the pager sheet is dismissed by any means and a submit is pending, submit now
+            // If the pager sheet is dismissed by any means and a submit is pending, present induction now
             if oldValue == true && newValue == false {
                 if pendingSubmit {
-                    submit()
-                    pendingSubmit = false
+                    showingInduction = true
                 }
+                pendingSubmit = false
             }
         }
         .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
-            // If the blocked car alert disappears without moving to pager and a submit is pending, submit now
+            // If the blocked car alert disappears without moving to pager and a submit is pending, present induction now
             if oldValue == true && newValue == false {
                 if pendingSubmit && !showPagerPrompt && !blockedCar {
-                    submit()
+                    showingInduction = true
                     pendingSubmit = false
                 }
             }
@@ -670,6 +686,120 @@ struct WelcomeView: View {
             return "\"\(escaped)\""
         }
         return field
+    }
+}
+
+private struct InductionFlowView: View {
+    let imageNames: [String]
+    let onComplete: (Bool) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var index: Int = 0
+    @State private var acknowledged: Bool = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 8) {
+                TabView(selection: $index) {
+                    ForEach(Array(imageNames.enumerated()), id: \.offset) { i, name in
+                        ZoomableImage(name: name)
+                            .tag(i)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if index < imageNames.count - 1 {
+                    Button {
+                        withAnimation { index += 1 }
+                    } label: {
+                        Label("Next", systemImage: "chevron.right")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .padding(.horizontal)
+                } else {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Button(action: { acknowledged.toggle() }) {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(systemName: acknowledged ? "checkmark.square.fill" : "square")
+                                    .foregroundStyle(acknowledged ? .green : .secondary)
+                                    .imageScale(.large)
+                                Text("I have read and understood the induction information")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            onComplete(true)
+                        } label: {
+                            Label("Confirm and Continue", systemImage: "checkmark.circle.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .disabled(!acknowledged)
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            .navigationTitle("Visitor Induction")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { onComplete(false) }
+                }
+            }
+        }
+        .ignoresSafeArea(edges: [.bottom])
+    }
+}
+
+private struct ZoomableImage: View {
+    let name: String
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+
+    var body: some View {
+        GeometryReader { geo in
+            if let uiImage = UIImage(named: name) {
+                let image = Image(uiImage: uiImage)
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+                    .scaleEffect(scale)
+                    .gesture(MagnificationGesture()
+                        .onChanged { value in
+                            scale = min(max(1.0, lastScale * value), 4.0)
+                        }
+                        .onEnded { _ in
+                            lastScale = scale
+                        }
+                    )
+                    .animation(.easeInOut(duration: 0.15), value: scale)
+                    .accessibilityLabel(Text("Induction image"))
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(Color.gray.opacity(0.15))
+                    Text("Missing image: \(name)")
+                        .foregroundStyle(.secondary)
+                        .padding()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -1002,3 +1132,4 @@ private struct AutoCheckoutSettingsView: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
