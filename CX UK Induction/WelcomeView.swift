@@ -253,6 +253,7 @@ struct WelcomeView: View {
 
                         // Removed the CEMEX logo from here as per instructions
                     }
+                    // Removed the entire info Section including modifiers as per instructions
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
@@ -312,10 +313,15 @@ struct WelcomeView: View {
             AutoCheckoutSettingsView(enabled: .constant(false), hour: .constant(7), minute: .constant(0))
                 .presentationDetents([.medium])
         }
-        .alert("Registered", isPresented: $showRegisteredAlert) {
+        .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("\(lastRegisteredName) has been registered.")
+            Text("""
+            \(lastRegisteredName): Your information has been recorded successfully.
+
+            The information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk
+            """)
+            .multilineTextAlignment(.center)
         }
         .sheet(isPresented: $showingLeaving) {
             LeavingSearchSheet(activeVisitors: activeVisitors) { name in
