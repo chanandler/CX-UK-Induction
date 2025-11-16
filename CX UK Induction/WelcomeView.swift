@@ -355,7 +355,7 @@ struct WelcomeView: View {
             NavigationStack {
                 Form {
                     Section {
-                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will page you. We would appreciate your prompt attention if your pager buzzes. Enter the pager number in the box below and tap save.")
+                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Enter the pager number in the box below and tap save.")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
