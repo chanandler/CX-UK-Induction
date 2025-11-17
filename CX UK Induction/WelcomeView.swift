@@ -50,7 +50,6 @@ struct WelcomeView: View {
     @State private var showingAbout = false
     
     @State private var showingSignInBook = false
-    @State private var showDebugPanel = true
 
     @State private var showPersistenceError = false
 
@@ -489,52 +488,6 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
                 .allowsHitTesting(false)
-        }
-        .overlay(alignment: .topLeading) {
-            if showDebugPanel {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Diagnostics")
-                            .font(.caption).bold()
-                        Spacer()
-                        Button(action: { showDebugPanel = false }) {
-                            Image(systemName: "xmark.circle.fill").imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    Text("Active: \(activeVisitors.count)").font(.caption)
-                    Text("Archived: \(archivedVisitors.count)").font(.caption)
-                    Text("All: \(allVisitors.count)").font(.caption)
-                    if let err = store.lastError, !err.isEmpty {
-                        Text(err).font(.caption2).foregroundStyle(.red)
-                    }
-                    Divider().padding(.vertical, 2)
-                    Button("Seed Test Visitor") {
-                        let v = Visitor(firstName: "Test",
-                                        lastName: "Visitor",
-                                        company: "CEMEX",
-                                        visiting: "Reception",
-                                        carRegistration: "",
-                                        blockedCar: false,
-                                        pagerNumber: nil,
-                                        checkIn: Date(),
-                                        checkOut: nil)
-                        context.insert(v)
-                        do {
-                            try context.save()
-                        } catch {
-                            store.lastError = "Direct save failed: \(error.localizedDescription)"
-                            print("Direct SwiftData save error:", error)
-                        }
-                    }
-                    .font(.caption)
-                }
-                .padding(10)
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .shadow(radius: 2)
-                .padding([.top, .leading], 12)
-            }
         }
         .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
         .onChange(of: showPagerPrompt) { oldValue, newValue in
