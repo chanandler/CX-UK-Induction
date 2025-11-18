@@ -187,14 +187,33 @@ struct WelcomeView: View {
         // Pager sheet to capture contact number when a car is blocked
         .sheet(isPresented: $showPagerPrompt) {
             NavigationStack {
+                // Normalize current selection to just the numeric pager string
                 let trimmedCurrent = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-                let effectiveUsedPagers: Set<String> = {
-                    if trimmedCurrent.isEmpty { return usedPagers }
-                    return usedPagers.union([trimmedCurrent])
+                let currentNumeric: String = {
+                    let lower = trimmedCurrent.lowercased()
+                    if lower.hasPrefix("pager ") {
+                        return String(trimmedCurrent.dropFirst("pager ".count))
+                    }
+                    return trimmedCurrent
                 }()
+                // Build a normalized set of used pagers based on active visitors, stripping any "Pager " prefixes
+                let normalizedUsedPagers: Set<String> = Set(usedPagers.map { value in
+                    let lower = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                    if lower.hasPrefix("pager ") {
+                        return String(value.dropFirst("pager ".count))
+                    }
+                    return value.trimmingCharacters(in: .whitespacesAndNewlines)
+                })
+                // Do not include the currently selected pager in the disabled set so the user can keep it selected
+                let effectiveUsedPagers: Set<String> = normalizedUsedPagers.subtracting(currentNumeric.isEmpty ? [] : [currentNumeric])
+                
+                // Local computed error detection and message for pager in use validation
+                let pagerInUseError: Bool = !currentNumeric.isEmpty && normalizedUsedPagers.contains(currentNumeric)
+                let pagerInUseMessage: String = "That pager is currently in use. Please choose another."
+
                 Form {
                     Section {
-                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Enter the pager number in the box below and tap save.")
+                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Please select an available pager from the list.")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
@@ -214,7 +233,8 @@ struct WelcomeView: View {
                                 Text("Select a pager").tag("")
                                 ForEach(1...15, id: \.self) { i in
                                     let tag = String(i)
-                                    Text("Pager \(i)")
+                                    let isTaken = normalizedUsedPagers.contains(tag)
+                                    Text("Pager \(i) \(isTaken ? "(Taken 🔴)" : "(Available 🟢)")")
                                         .tag(tag)
                                         .disabled(effectiveUsedPagers.contains(tag))
                                 }
@@ -225,8 +245,9 @@ struct WelcomeView: View {
                             if pagerInvalid {
                                 Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
                             }
-                            if !trimmedCurrent.isEmpty && effectiveUsedPagers.contains(trimmedCurrent) {
-                                Text("That pager is currently in use. Please choose another.")
+                            // Show error if the currently selected pager is already in use
+                            if pagerInUseError {
+                                Text(pagerInUseMessage)
                                     .font(.caption2)
                                     .foregroundStyle(.red)
                             }
@@ -246,13 +267,19 @@ struct WelcomeView: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Save") {
+                            // Final guard: prevent saving a pager that's already in use
+                            if normalizedUsedPagers.contains(currentNumeric) || currentNumeric.isEmpty {
+                                // Reset selection and keep the sheet open for correction
+                                pagerNumber = ""
+                                return
+                            }
                             showPagerPrompt = false
                             if pendingSubmit {
                                 showingInduction = true
                                 // pendingSubmit will be cleared in the induction completion handler
                             }
                         }
-                        .disabled(trimmedCurrent.isEmpty || effectiveUsedPagers.contains(trimmedCurrent))
+                        .disabled(currentNumeric.isEmpty || normalizedUsedPagers.contains(currentNumeric))
                     }
                 }
             }
@@ -767,7 +794,7 @@ struct SignInBookView: View {
                                 Text(pagerString)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Badge: \(visitor.badgeNumber)")
+                                Text("Badge: \(visitor.badgeNumber ?? "")")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
@@ -798,7 +825,7 @@ struct SignInBookView: View {
                                 Text(pagerStringArchived)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Badge: \(visitor.badgeNumber)")
+                                Text("Badge: \(visitor.badgeNumber ?? "")")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
@@ -1234,3 +1261,4 @@ private struct CompactFormFields: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
