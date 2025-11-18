@@ -41,6 +41,11 @@ struct WelcomeView: View {
 
     @State private var showPersistenceError = false
 
+    @FocusState private var focusedField: Field?
+    private enum Field: Hashable {
+        case firstName, lastName, company, visiting, carReg, badge
+    }
+
     // Track pagers already in use by active visitors
     private var usedPagers: Set<String> {
         Set(activeVisitors
@@ -98,7 +103,8 @@ struct WelcomeView: View {
                                               visitingInvalid: visitingInvalid,
                                               badgeInvalid: badgeInvalid,
                                               badgeNumber: $badgeNumber,
-                                              showBlockedCarPrompt: $showBlockedCarPrompt)
+                                              showBlockedCarPrompt: $showBlockedCarPrompt,
+                                              focusedField: $focusedField)
                         } else {
                             CompactFormFields(firstName: $firstName,
                                               lastName: $lastName,
@@ -111,7 +117,8 @@ struct WelcomeView: View {
                                               visitingInvalid: visitingInvalid,
                                               badgeInvalid: badgeInvalid,
                                               badgeNumber: $badgeNumber,
-                                              showBlockedCarPrompt: $showBlockedCarPrompt)
+                                              showBlockedCarPrompt: $showBlockedCarPrompt,
+                                              focusedField: $focusedField)
                         }
                     } header: {
                         Text("Please enter your details to register your visit:")
@@ -130,7 +137,6 @@ struct WelcomeView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
-                .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .scrollDismissesKeyboard(.interactively)
             }
@@ -1125,12 +1131,19 @@ private struct RegularFormFields: View {
     let badgeInvalid: Bool
     @Binding var badgeNumber: String
     @Binding var showBlockedCarPrompt: Bool
+    @Binding var focusedField: WelcomeView.Field?
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("First name", text: $firstName)
+                        .focused($focusedField, equals: .firstName)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .lastName
+                        }
+                        .textInputAutocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1139,25 +1152,69 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Company", text: $company)
+                        .focused($focusedField, equals: .company)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .visiting
+                        }
+                        .textInputAutocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
                         )
                     if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
                 }
-                WelcomeView().inputTextField("Car registration", text: $carRegistration)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    // Moved Badge Number above Car registration
+                    WelcomeView().inputTextField("Badge Number", text: Binding(
+                        get: { badgeNumber },
+                        set: { newValue in
+                            let filtered = newValue.filter { $0.isNumber }
+                            badgeNumber = filtered
+                        }
+                    ))
+                    .focused($focusedField, equals: .badge)
+                    .keyboardType(.numberPad)
                     .submitLabel(.next)
                     .onSubmit {
-                        if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            showBlockedCarPrompt = true
-                        }
+                        focusedField = .carReg
                     }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                    if badgeInvalid {
+                        Text("Badge number is required").font(.caption2).foregroundStyle(.red)
+                    }
+                }
+                WelcomeView().inputTextField("Car registration", text: Binding(
+                    get: { carRegistration },
+                    set: { newValue in
+                        let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
+                        carRegistration = String(allowed)
+                    }
+                ))
+                .focused($focusedField, equals: .carReg)
+                .textInputAutocapitalization(.characters)
+                .keyboardType(.asciiCapable)
+                .autocorrectionDisabled(true)
+                .submitLabel(.done)
+                .onSubmit {
+                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        showBlockedCarPrompt = true
+                    }
+                    focusedField = nil
+                }
             }
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Last name", text: $lastName)
+                        .focused($focusedField, equals: .lastName)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .company
+                        }
+                        .textInputAutocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1166,28 +1223,17 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                        .focused($focusedField, equals: .visiting)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .badge
+                        }
+                        .textInputAutocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
                         )
                     if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("Badge Number", text: Binding(
-                        get: { badgeNumber },
-                        set: { newValue in
-                            let filtered = newValue.filter { $0.isNumber }
-                            badgeNumber = filtered
-                        }
-                    ))
-                    .keyboardType(.numberPad)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                    if badgeInvalid {
-                        Text("Badge number is required").font(.caption2).foregroundStyle(.red)
-                    }
                 }
             }
         }
@@ -1208,11 +1254,18 @@ private struct CompactFormFields: View {
     let badgeInvalid: Bool
     @Binding var badgeNumber: String
     @Binding var showBlockedCarPrompt: Bool
+    @Binding var focusedField: WelcomeView.Field?
 
     var body: some View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("First name", text: $firstName)
+                    .focused($focusedField, equals: .firstName)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .lastName
+                    }
+                    .textInputAutocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1221,6 +1274,12 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Last name", text: $lastName)
+                    .focused($focusedField, equals: .lastName)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .company
+                    }
+                    .textInputAutocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1229,6 +1288,12 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Company", text: $company)
+                    .focused($focusedField, equals: .company)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .visiting
+                    }
+                    .textInputAutocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1237,6 +1302,12 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                    .focused($focusedField, equals: .visiting)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .badge
+                    }
+                    .textInputAutocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1244,6 +1315,7 @@ private struct CompactFormFields: View {
                 if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
             }
             VStack(alignment: .leading, spacing: 4) {
+                // Moved Badge Number above Car registration
                 WelcomeView().inputTextField("Badge Number", text: Binding(
                     get: { badgeNumber },
                     set: { newValue in
@@ -1251,7 +1323,12 @@ private struct CompactFormFields: View {
                         badgeNumber = filtered
                     }
                 ))
+                .focused($focusedField, equals: .badge)
                 .keyboardType(.numberPad)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .carReg
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1260,15 +1337,24 @@ private struct CompactFormFields: View {
                     Text("Badge number is required").font(.caption2).foregroundStyle(.red)
                 }
             }
-            WelcomeView().inputTextField("Car registration", text: $carRegistration)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled(true)
-                .submitLabel(.done)
-                .onSubmit {
-                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        showBlockedCarPrompt = true
-                    }
+            WelcomeView().inputTextField("Car registration", text: Binding(
+                get: { carRegistration },
+                set: { newValue in
+                    let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
+                    carRegistration = String(allowed)
                 }
+            ))
+            .focused($focusedField, equals: .carReg)
+            .textInputAutocapitalization(.characters)
+            .keyboardType(.asciiCapable)
+            .autocorrectionDisabled(true)
+            .submitLabel(.done)
+            .onSubmit {
+                if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    showBlockedCarPrompt = true
+                }
+                focusedField = nil
+            }
         }
         .padding(.vertical, 4)
     }
