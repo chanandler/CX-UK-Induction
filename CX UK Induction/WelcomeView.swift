@@ -387,6 +387,7 @@ struct WelcomeView: View {
                 .padding(.vertical, 14)
                 .foregroundColor(.primary)
         }
+        .frame(height: 52)
         .padding(.horizontal, 2)
     }
 
@@ -1131,19 +1132,20 @@ private struct RegularFormFields: View {
     let badgeInvalid: Bool
     @Binding var badgeNumber: String
     @Binding var showBlockedCarPrompt: Bool
-    @Binding var focusedField: WelcomeView.Field?
+    let focusedField: FocusState<WelcomeView.Field?>.Binding
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("First name", text: $firstName)
-                        .focused($focusedField, equals: WelcomeView.Field.firstName)
+                        .focused(focusedField, equals: WelcomeView.Field.firstName)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = WelcomeView.Field.lastName
+                            focusedField.wrappedValue = WelcomeView.Field.lastName
                         }
                         .textInputAutocapitalization(.words)
+                        .autocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1152,12 +1154,13 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Company", text: $company)
-                        .focused($focusedField, equals: WelcomeView.Field.company)
+                        .focused(focusedField, equals: WelcomeView.Field.company)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = WelcomeView.Field.visiting
+                            focusedField.wrappedValue = WelcomeView.Field.visiting
                         }
                         .textInputAutocapitalization(.words)
+                        .autocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1173,11 +1176,10 @@ private struct RegularFormFields: View {
                             badgeNumber = filtered
                         }
                     ))
-                    .focused($focusedField, equals: WelcomeView.Field.badge)
-                    .keyboardType(.numberPad)
+                    .focused(focusedField, equals: WelcomeView.Field.badge)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = WelcomeView.Field.carReg
+                        focusedField.wrappedValue = WelcomeView.Field.carReg
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -1187,34 +1189,17 @@ private struct RegularFormFields: View {
                         Text("Badge number is required").font(.caption2).foregroundStyle(.red)
                     }
                 }
-                WelcomeView().inputTextField("Car registration", text: Binding(
-                    get: { carRegistration },
-                    set: { newValue in
-                        let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
-                        carRegistration = String(allowed)
-                    }
-                ))
-                .focused($focusedField, equals: WelcomeView.Field.carReg)
-                .textInputAutocapitalization(.characters)
-                .keyboardType(.asciiCapable)
-                .autocorrectionDisabled(true)
-                .submitLabel(.done)
-                .onSubmit {
-                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        showBlockedCarPrompt = true
-                    }
-                    focusedField = nil
-                }
             }
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Last name", text: $lastName)
-                        .focused($focusedField, equals: WelcomeView.Field.lastName)
+                        .focused(focusedField, equals: WelcomeView.Field.lastName)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = WelcomeView.Field.company
+                            focusedField.wrappedValue = WelcomeView.Field.company
                         }
                         .textInputAutocapitalization(.words)
+                        .autocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1223,17 +1208,36 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Who are you visiting", text: $visiting)
-                        .focused($focusedField, equals: WelcomeView.Field.visiting)
+                        .focused(focusedField, equals: WelcomeView.Field.visiting)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = WelcomeView.Field.badge
+                            focusedField.wrappedValue = WelcomeView.Field.badge
                         }
                         .textInputAutocapitalization(.words)
+                        .autocapitalization(.words)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
                         )
                     if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
+                }
+                WelcomeView().inputTextField("Car registration", text: Binding(
+                    get: { carRegistration },
+                    set: { newValue in
+                        let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
+                        carRegistration = String(allowed)
+                    }
+                ))
+                .focused(focusedField, equals: WelcomeView.Field.carReg)
+                .textInputAutocapitalization(.characters)
+                .keyboardType(.asciiCapable)
+                .autocorrectionDisabled(true)
+                .submitLabel(.done)
+                .onSubmit {
+                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        showBlockedCarPrompt = true
+                    }
+                    focusedField.wrappedValue = nil
                 }
             }
         }
@@ -1254,18 +1258,19 @@ private struct CompactFormFields: View {
     let badgeInvalid: Bool
     @Binding var badgeNumber: String
     @Binding var showBlockedCarPrompt: Bool
-    @Binding var focusedField: WelcomeView.Field?
+    let focusedField: FocusState<WelcomeView.Field?>.Binding
 
     var body: some View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("First name", text: $firstName)
-                    .focused($focusedField, equals: WelcomeView.Field.firstName)
+                    .focused(focusedField, equals: WelcomeView.Field.firstName)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = WelcomeView.Field.lastName
+                        focusedField.wrappedValue = WelcomeView.Field.lastName
                     }
                     .textInputAutocapitalization(.words)
+                    .autocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1274,12 +1279,13 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Last name", text: $lastName)
-                    .focused($focusedField, equals: WelcomeView.Field.lastName)
+                    .focused(focusedField, equals: WelcomeView.Field.lastName)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = WelcomeView.Field.company
+                        focusedField.wrappedValue = WelcomeView.Field.company
                     }
                     .textInputAutocapitalization(.words)
+                    .autocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1288,12 +1294,13 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Company", text: $company)
-                    .focused($focusedField, equals: WelcomeView.Field.company)
+                    .focused(focusedField, equals: WelcomeView.Field.company)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = WelcomeView.Field.visiting
+                        focusedField.wrappedValue = WelcomeView.Field.visiting
                     }
                     .textInputAutocapitalization(.words)
+                    .autocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1302,12 +1309,13 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Who are you visiting", text: $visiting)
-                    .focused($focusedField, equals: WelcomeView.Field.visiting)
+                    .focused(focusedField, equals: WelcomeView.Field.visiting)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = WelcomeView.Field.badge
+                        focusedField.wrappedValue = WelcomeView.Field.badge
                     }
                     .textInputAutocapitalization(.words)
+                    .autocapitalization(.words)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1323,11 +1331,10 @@ private struct CompactFormFields: View {
                         badgeNumber = filtered
                     }
                 ))
-                .focused($focusedField, equals: WelcomeView.Field.badge)
-                .keyboardType(.numberPad)
+                .focused(focusedField, equals: WelcomeView.Field.badge)
                 .submitLabel(.next)
                 .onSubmit {
-                    focusedField = WelcomeView.Field.carReg
+                    focusedField.wrappedValue = WelcomeView.Field.carReg
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -1344,7 +1351,7 @@ private struct CompactFormFields: View {
                     carRegistration = String(allowed)
                 }
             ))
-            .focused($focusedField, equals: WelcomeView.Field.carReg)
+            .focused(focusedField, equals: WelcomeView.Field.carReg)
             .textInputAutocapitalization(.characters)
             .keyboardType(.asciiCapable)
             .autocorrectionDisabled(true)
@@ -1353,7 +1360,7 @@ private struct CompactFormFields: View {
                 if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     showBlockedCarPrompt = true
                 }
-                focusedField = nil
+                focusedField.wrappedValue = nil
             }
         }
         .padding(.vertical, 4)
@@ -1365,3 +1372,4 @@ private struct CompactFormFields: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
+
