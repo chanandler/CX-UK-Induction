@@ -42,7 +42,7 @@ struct WelcomeView: View {
     @State private var showPersistenceError = false
 
     @FocusState private var focusedField: Field?
-    private enum Field: Hashable {
+    enum Field: Hashable {
         case firstName, lastName, company, visiting, carReg, badge
     }
 
@@ -1138,10 +1138,10 @@ private struct RegularFormFields: View {
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("First name", text: $firstName)
-                        .focused($focusedField, equals: .firstName)
+                        .focused($focusedField, equals: WelcomeView.Field.firstName)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = .lastName
+                            focusedField = WelcomeView.Field.lastName
                         }
                         .textInputAutocapitalization(.words)
                         .overlay(
@@ -1152,10 +1152,10 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Company", text: $company)
-                        .focused($focusedField, equals: .company)
+                        .focused($focusedField, equals: WelcomeView.Field.company)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = .visiting
+                            focusedField = WelcomeView.Field.visiting
                         }
                         .textInputAutocapitalization(.words)
                         .overlay(
@@ -1173,11 +1173,11 @@ private struct RegularFormFields: View {
                             badgeNumber = filtered
                         }
                     ))
-                    .focused($focusedField, equals: .badge)
+                    .focused($focusedField, equals: WelcomeView.Field.badge)
                     .keyboardType(.numberPad)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = .carReg
+                        focusedField = WelcomeView.Field.carReg
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -1194,7 +1194,7 @@ private struct RegularFormFields: View {
                         carRegistration = String(allowed)
                     }
                 ))
-                .focused($focusedField, equals: .carReg)
+                .focused($focusedField, equals: WelcomeView.Field.carReg)
                 .textInputAutocapitalization(.characters)
                 .keyboardType(.asciiCapable)
                 .autocorrectionDisabled(true)
@@ -1209,10 +1209,10 @@ private struct RegularFormFields: View {
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Last name", text: $lastName)
-                        .focused($focusedField, equals: .lastName)
+                        .focused($focusedField, equals: WelcomeView.Field.lastName)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = .company
+                            focusedField = WelcomeView.Field.company
                         }
                         .textInputAutocapitalization(.words)
                         .overlay(
@@ -1223,10 +1223,10 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     WelcomeView().inputTextField("Who are you visiting", text: $visiting)
-                        .focused($focusedField, equals: .visiting)
+                        .focused($focusedField, equals: WelcomeView.Field.visiting)
                         .submitLabel(.next)
                         .onSubmit {
-                            focusedField = .badge
+                            focusedField = WelcomeView.Field.badge
                         }
                         .textInputAutocapitalization(.words)
                         .overlay(
@@ -1260,10 +1260,10 @@ private struct CompactFormFields: View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("First name", text: $firstName)
-                    .focused($focusedField, equals: .firstName)
+                    .focused($focusedField, equals: WelcomeView.Field.firstName)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = .lastName
+                        focusedField = WelcomeView.Field.lastName
                     }
                     .textInputAutocapitalization(.words)
                     .overlay(
@@ -1274,10 +1274,10 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Last name", text: $lastName)
-                    .focused($focusedField, equals: .lastName)
+                    .focused($focusedField, equals: WelcomeView.Field.lastName)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = .company
+                        focusedField = WelcomeView.Field.company
                     }
                     .textInputAutocapitalization(.words)
                     .overlay(
@@ -1288,10 +1288,10 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Company", text: $company)
-                    .focused($focusedField, equals: .company)
+                    .focused($focusedField, equals: WelcomeView.Field.company)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = .visiting
+                        focusedField = WelcomeView.Field.visiting
                     }
                     .textInputAutocapitalization(.words)
                     .overlay(
@@ -1302,10 +1302,10 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 WelcomeView().inputTextField("Who are you visiting", text: $visiting)
-                    .focused($focusedField, equals: .visiting)
+                    .focused($focusedField, equals: WelcomeView.Field.visiting)
                     .submitLabel(.next)
                     .onSubmit {
-                        focusedField = .badge
+                        focusedField = WelcomeView.Field.badge
                     }
                     .textInputAutocapitalization(.words)
                     .overlay(
@@ -1323,11 +1323,11 @@ private struct CompactFormFields: View {
                         badgeNumber = filtered
                     }
                 ))
-                .focused($focusedField, equals: .badge)
+                .focused($focusedField, equals: WelcomeView.Field.badge)
                 .keyboardType(.numberPad)
                 .submitLabel(.next)
                 .onSubmit {
-                    focusedField = .carReg
+                    focusedField = WelcomeView.Field.carReg
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -1344,7 +1344,7 @@ private struct CompactFormFields: View {
                     carRegistration = String(allowed)
                 }
             ))
-            .focused($focusedField, equals: .carReg)
+            .focused($focusedField, equals: WelcomeView.Field.carReg)
             .textInputAutocapitalization(.characters)
             .keyboardType(.asciiCapable)
             .autocorrectionDisabled(true)
