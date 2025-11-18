@@ -135,43 +135,7 @@ struct WelcomeView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             
-            // Bottom-left cog with menu
-            Menu {
-                Button {
-                    if let url = exportCSV(from: archivedVisitors) {
-                        shareItem = ShareItem(url: url)
-                    }
-                } label: {
-                    Label("Export CSV", systemImage: "square.and.arrow.up")
-                }
-                .disabled(archivedVisitors.isEmpty)
-                
-                Button {
-                    showingRollCall = true
-                } label: {
-                    Label("Fire Alarm Roll Call", systemImage: "alarm")
-                }
-
-                Button {
-                    showingAbout = true
-                } label: {
-                    Label("About", systemImage: "info.circle")
-                }
-                
-                Button {
-                    showingSettings = true
-                } label: {
-                    Label("Settings", systemImage: "slider.horizontal.3")
-                }
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .imageScale(.large)
-                    .padding(12)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
-                    .padding([.leading, .bottom], 12)
-            }
+            settingsMenu
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Share sheet for CSV export
@@ -189,12 +153,9 @@ struct WelcomeView: View {
         .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("""
-            \(lastRegisteredName): Your information has been recorded successfully.
-
-            The information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk
-            """)
-            .multilineTextAlignment(.center)
+            let registeredMessage: String = "\(lastRegisteredName): Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk"
+            Text(registeredMessage)
+                .multilineTextAlignment(.center)
         }
         .sheet(isPresented: $showingLeaving) {
             LeavingSearchSheet(activeVisitors: activeVisitors) { name in
@@ -226,6 +187,11 @@ struct WelcomeView: View {
         // Pager sheet to capture contact number when a car is blocked
         .sheet(isPresented: $showPagerPrompt) {
             NavigationStack {
+                let trimmedCurrent = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                let effectiveUsedPagers: Set<String> = {
+                    if trimmedCurrent.isEmpty { return usedPagers }
+                    return usedPagers.union([trimmedCurrent])
+                }()
                 Form {
                     Section {
                         Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Enter the pager number in the box below and tap save.")
@@ -250,7 +216,7 @@ struct WelcomeView: View {
                                     let tag = String(i)
                                     Text("Pager \(i)")
                                         .tag(tag)
-                                        .disabled(usedPagers.contains(tag))
+                                        .disabled(effectiveUsedPagers.contains(tag))
                                 }
                             }
                             .labelsHidden()
@@ -259,7 +225,7 @@ struct WelcomeView: View {
                             if pagerInvalid {
                                 Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
                             }
-                            if !pagerNumber.isEmpty && usedPagers.contains(pagerNumber) {
+                            if !trimmedCurrent.isEmpty && effectiveUsedPagers.contains(trimmedCurrent) {
                                 Text("That pager is currently in use. Please choose another.")
                                     .font(.caption2)
                                     .foregroundStyle(.red)
@@ -286,7 +252,7 @@ struct WelcomeView: View {
                                 // pendingSubmit will be cleared in the induction completion handler
                             }
                         }
-                        .disabled(pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || usedPagers.contains(pagerNumber))
+                        .disabled(trimmedCurrent.isEmpty || effectiveUsedPagers.contains(trimmedCurrent))
                     }
                 }
             }
@@ -318,50 +284,7 @@ struct WelcomeView: View {
             FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
         }
         .overlay(alignment: .top) {
-            if showCheckoutBanner {
-                VStack {
-                    Spacer(minLength: 0)
-                    VStack(spacing: 8) {
-                        Text("Thank you for visiting. Have a safe journey")
-                            .font(.largeTitle).bold()
-                            .multilineTextAlignment(.center)
-                        Text("Don't forget to return your badge and pager (if you have one) to reception. Thank you again.")
-                            .font(.title2)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.white.opacity(0.9))
-                        Button("Done") {
-                            withAnimation { showCheckoutBanner = false }
-                        }
-                        .font(.headline)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(.systemGray5))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color(.systemGray3), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .padding(.top, 12)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    .padding(.vertical, 28)
-                    .padding(.horizontal, 24)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.green)
-                            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 6)
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 24)
-                    Spacer()
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.easeInOut(duration: 0.3), value: showCheckoutBanner)
-            }
+            checkoutBanner
         }
         // Added CEMEX logo overlay pinned to bottom center
         .overlay(alignment: .bottom) {
@@ -405,7 +328,14 @@ struct WelcomeView: View {
                 store.lastError = nil
             }
         } message: { msg in
-            Text(verbatim: String(describing: msg))
+            let messageString: String = {
+                if let error = msg as? any Error {
+                    return error.localizedDescription
+                } else {
+                    return String(describing: msg)
+                }
+            }()
+            Text(verbatim: messageString)
         }
     }
     
@@ -450,6 +380,15 @@ struct WelcomeView: View {
         guard requiredBasicsFilled && pagerOk else { return }
         
         let name = firstName + " " + lastName
+        
+        let normalizedPager: String = {
+            let trimmed = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.lowercased().hasPrefix("pager ") {
+                return String(trimmed.dropFirst("pager ".count))
+            }
+            return trimmed
+        }()
+        
         store.signIn(context,
                      firstName: firstName,
                      lastName: lastName,
@@ -457,7 +396,7 @@ struct WelcomeView: View {
                      visiting: visiting,
                      carRegistration: carRegistration,
                      blockedCar: blockedCar,
-                     pagerNumber: pagerNumber,
+                     pagerNumber: normalizedPager,
                      badgeNumber: badgeNumber)
         if store.lastError != nil {
             return
@@ -587,6 +526,94 @@ struct WelcomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
         .padding(.horizontal)
+    }
+    
+    private var settingsMenu: some View {
+        Menu {
+            Button {
+                if let url = exportCSV(from: archivedVisitors) {
+                    shareItem = ShareItem(url: url)
+                }
+            } label: {
+                Label("Export CSV", systemImage: "square.and.arrow.up")
+            }
+            .disabled(archivedVisitors.isEmpty)
+
+            Button {
+                showingRollCall = true
+            } label: {
+                Label("Fire Alarm Roll Call", systemImage: "alarm")
+            }
+
+            Button {
+                showingAbout = true
+            } label: {
+                Label("About", systemImage: "info.circle")
+            }
+            
+            Button {
+                showingSettings = true
+            } label: {
+                Label("Settings", systemImage: "slider.horizontal.3")
+            }
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .imageScale(.large)
+                .padding(12)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
+                .padding([.leading, .bottom], 12)
+        }
+    }
+
+    private var checkoutBanner: some View {
+        Group {
+            if showCheckoutBanner {
+                VStack {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 8) {
+                        Text("Thank you for visiting. Have a safe journey")
+                            .font(.largeTitle).bold()
+                            .multilineTextAlignment(.center)
+                        Text("Don't forget to return your badge and pager (if you have one) to reception. Thank you again.")
+                            .font(.title2)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.white.opacity(0.9))
+                        Button("Done") {
+                            withAnimation { showCheckoutBanner = false }
+                        }
+                        .font(.headline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color(.systemGray5))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color(.systemGray3), lineWidth: 1)
+                        )
+                        .foregroundStyle(.primary)
+                        .padding(.top, 12)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    .padding(.vertical, 28)
+                    .padding(.horizontal, 24)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.green)
+                            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 6)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 24)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut(duration: 0.3), value: showCheckoutBanner)
+            }
+        }
     }
 }
 
@@ -1207,4 +1234,3 @@ private struct CompactFormFields: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
