@@ -37,6 +37,17 @@ struct WelcomeView: View {
     
     @State private var showingSettings = false
 
+    @State private var showingSignInBook = false
+
+    @State private var showPersistenceError = false
+
+    // Track pagers already in use by active visitors
+    private var usedPagers: Set<String> {
+        Set(activeVisitors
+            .compactMap { $0.pagerNumber?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty })
+    }
+
     // Add back activeVisitors query
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\Visitor.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
@@ -49,10 +60,6 @@ struct WelcomeView: View {
     // About sheet
     @State private var showingAbout = false
     
-    @State private var showingSignInBook = false
-
-    @State private var showPersistenceError = false
-
     init() {}
     
     private var firstNameInvalid: Bool { firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -80,179 +87,46 @@ struct WelcomeView: View {
                 Form {
                     Section {
                         if hSizeClass == .regular {
-                            HStack(alignment: .top, spacing: 16) {
-                                VStack(spacing: 8) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        inputTextField("First name", text: $firstName)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                            )
-                                        if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
-                                    }
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        inputTextField("Company", text: $company)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                            )
-                                        if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
-                                    }
-                                    inputTextField("Car registration", text: $carRegistration)
-                                        .textInputAutocapitalization(.characters)
-                                        .autocorrectionDisabled(true)
-                                        .submitLabel(.next)
-                                        .onSubmit {
-                                            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                                showBlockedCarPrompt = true
-                                            }
-                                        }
-                                }
-                                VStack(spacing: 8) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        inputTextField("Last name", text: $lastName)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                            )
-                                        if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
-                                    }
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        inputTextField("Who are you visiting", text: $visiting)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                            )
-                                        if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
-                                    }
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        inputTextField("Badge Number", text: $badgeNumber)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                            )
-                                        if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 4)
+                            RegularFormFields(firstName: $firstName,
+                                              lastName: $lastName,
+                                              company: $company,
+                                              visiting: $visiting,
+                                              carRegistration: $carRegistration,
+                                              firstNameInvalid: firstNameInvalid,
+                                              lastNameInvalid: lastNameInvalid,
+                                              companyInvalid: companyInvalid,
+                                              visitingInvalid: visitingInvalid,
+                                              badgeInvalid: badgeInvalid,
+                                              badgeNumber: $badgeNumber,
+                                              showBlockedCarPrompt: $showBlockedCarPrompt)
                         } else {
-                            VStack(spacing: 8) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    inputTextField("First name", text: $firstName)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                        )
-                                    if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    inputTextField("Last name", text: $lastName)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                        )
-                                    if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    inputTextField("Company", text: $company)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                        )
-                                    if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    inputTextField("Who are you visiting", text: $visiting)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                        )
-                                    if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    inputTextField("Badge Number", text: $badgeNumber)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                        )
-                                    if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
-                                }
-                                inputTextField("Car registration", text: $carRegistration)
-                                    .textInputAutocapitalization(.characters)
-                                    .autocorrectionDisabled(true)
-                                    .submitLabel(.done)
-                                    .onSubmit {
-                                        if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                            showBlockedCarPrompt = true
-                                        }
-                                    }
-                            }
-                            .padding(.vertical, 4)
+                            CompactFormFields(firstName: $firstName,
+                                              lastName: $lastName,
+                                              company: $company,
+                                              visiting: $visiting,
+                                              carRegistration: $carRegistration,
+                                              firstNameInvalid: firstNameInvalid,
+                                              lastNameInvalid: lastNameInvalid,
+                                              companyInvalid: companyInvalid,
+                                              visitingInvalid: visitingInvalid,
+                                              badgeInvalid: badgeInvalid,
+                                              badgeNumber: $badgeNumber,
+                                              showBlockedCarPrompt: $showBlockedCarPrompt)
                         }
                     } header: {
-                        Text("Please enter your details")
+                        Text("Please enter your details to register your visit:")
                             .font(.headline)
                             .padding(.bottom, 8)
                     }
                     .padding(.horizontal, 0)
                     .padding(.vertical, 0)
                     Section {
-                        Button(action: {
-                            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                pendingSubmit = true
-                                showBlockedCarPrompt = true
-                            } else {
-                                // Defer final submit until after induction screens
-                                pendingSubmit = true
-                                showingInduction = true
-                            }
-                        }) {
-                            Label("Register", systemImage: "person.badge.plus")
-                                .font(.title3)
-                                .imageScale(.large)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        .padding(.horizontal)
-                        .disabled(!isValid)
+                        registerButton
 
-                        Button {
-                            showingLeaving = true
-                        } label: {
-                            Label("I'm leaving", systemImage: "door.right.hand.open")
-                                .font(.title3)
-                                .imageScale(.large)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        .padding(.horizontal)
+                        leavingButton
                         
-                        Button {
-                            showingSignInBook = true
-                        } label: {
-                            Label("View Sign In Book", systemImage: "book.closed")
-                                .font(.title3)
-                                .imageScale(.large)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.bordered)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        .padding(.horizontal)
-
-                        // Removed the CEMEX logo from here as per instructions
+                        signInBookButton
                     }
-                    // Removed the entire info Section including modifiers as per instructions
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
@@ -370,14 +244,25 @@ struct WelcomeView: View {
                             )
                             .padding(.vertical, 4)
                         VStack(alignment: .leading, spacing: 4) {
-                            TextField("Enter pager number", text: $pagerNumber)
-                                .keyboardType(.numberPad)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(pagerInvalid ? Color.red : Color.clear, lineWidth: 1)
-                                )
+                            Picker("", selection: $pagerNumber) {
+                                Text("Select a pager").tag("")
+                                ForEach(1...15, id: \.self) { i in
+                                    let tag = String(i)
+                                    Text("Pager \(i)")
+                                        .tag(tag)
+                                        .disabled(usedPagers.contains(tag))
+                                }
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+
                             if pagerInvalid {
-                                Text("Pager number is required").font(.caption2).foregroundStyle(.red)
+                                Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
+                            }
+                            if !pagerNumber.isEmpty && usedPagers.contains(pagerNumber) {
+                                Text("That pager is currently in use. Please choose another.")
+                                    .font(.caption2)
+                                    .foregroundStyle(.red)
                             }
                         }
                     }
@@ -386,9 +271,10 @@ struct WelcomeView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Cancel") {
-                            // Keep blockedCar = true but no pager; dismiss without submitting
+                            // User cancelled providing a pager; clear blocked state and pager to re-enable Register
+                            blockedCar = false
+                            pagerNumber = ""
                             showPagerPrompt = false
-                            // Do not auto-submit if pager is required and missing
                             pendingSubmit = false
                         }
                     }
@@ -400,7 +286,7 @@ struct WelcomeView: View {
                                 // pendingSubmit will be cleared in the induction completion handler
                             }
                         }
-                        .disabled(pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || usedPagers.contains(pagerNumber))
                     }
                 }
             }
@@ -523,8 +409,7 @@ struct WelcomeView: View {
         }
     }
     
-    @ViewBuilder
-    private func inputTextField(_ title: String, text: Binding<String>) -> some View {
+    fileprivate func inputTextField(_ title: String, text: Binding<String>) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
@@ -645,6 +530,63 @@ struct WelcomeView: View {
             return "\"\(escaped)\""
         }
         return field
+    }
+    
+    private var registerButton: some View {
+        Button(action: {
+            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                pendingSubmit = true
+                showBlockedCarPrompt = true
+            } else {
+                pendingSubmit = true
+                showingInduction = true
+            }
+        }) {
+            Label("Register", systemImage: "person.badge.plus")
+                .font(.title3)
+                .imageScale(.large)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.green)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(.horizontal)
+        .disabled(!isValid)
+    }
+    
+    private var leavingButton: some View {
+        Button {
+            showingLeaving = true
+        } label: {
+            Label("I'm leaving", systemImage: "door.right.hand.open")
+                .font(.title3)
+                .imageScale(.large)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.orange)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(.horizontal)
+    }
+
+    private var signInBookButton: some View {
+        Button {
+            showingSignInBook = true
+        } label: {
+            Label("View Sign In Book", systemImage: "book.closed")
+                .font(.title3)
+                .imageScale(.large)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.bordered)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .padding(.horizontal)
     }
 }
 
@@ -788,6 +730,15 @@ struct SignInBookView: View {
                                 Text(visitor.company)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
+                                Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Pager: " + ((visitor.pagerNumber?.isEmpty == false) ? (visitor.pagerNumber ?? "") : "None"))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Badge: \(visitor.badgeNumber)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
                             }
                             .padding(.vertical, 4)
@@ -806,8 +757,17 @@ struct SignInBookView: View {
                                 Text(visitor.company)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
+                                Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Pager: " + ((visitor.pagerNumber?.isEmpty == false) ? (visitor.pagerNumber ?? "") : "None"))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text("Badge: \(visitor.badgeNumber)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
-                                Text("Checked out: \(visitor.checkOut.map { dateTime($0) } ?? "")")
+                                Text("Checked out: " + (visitor.checkOut.map { dateTime($0) } ?? ""))
                             }
                             .padding(.vertical, 4)
                         }
@@ -1083,6 +1043,150 @@ private struct AutoCheckoutSettingsView: View {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
             }
         }
+    }
+}
+
+private struct RegularFormFields: View {
+    @Binding var firstName: String
+    @Binding var lastName: String
+    @Binding var company: String
+    @Binding var visiting: String
+    @Binding var carRegistration: String
+    let firstNameInvalid: Bool
+    let lastNameInvalid: Bool
+    let companyInvalid: Bool
+    let visitingInvalid: Bool
+    let badgeInvalid: Bool
+    @Binding var badgeNumber: String
+    @Binding var showBlockedCarPrompt: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    WelcomeView().inputTextField("First name", text: $firstName)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    WelcomeView().inputTextField("Company", text: $company)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
+                }
+                WelcomeView().inputTextField("Car registration", text: $carRegistration)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled(true)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            showBlockedCarPrompt = true
+                        }
+                    }
+            }
+            VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    WelcomeView().inputTextField("Last name", text: $lastName)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    WelcomeView().inputTextField("Badge Number", text: $badgeNumber)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                    if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct CompactFormFields: View {
+    @Binding var firstName: String
+    @Binding var lastName: String
+    @Binding var company: String
+    @Binding var visiting: String
+    @Binding var carRegistration: String
+    let firstNameInvalid: Bool
+    let lastNameInvalid: Bool
+    let companyInvalid: Bool
+    let visitingInvalid: Bool
+    let badgeInvalid: Bool
+    @Binding var badgeNumber: String
+    @Binding var showBlockedCarPrompt: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                WelcomeView().inputTextField("First name", text: $firstName)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                WelcomeView().inputTextField("Last name", text: $lastName)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                WelcomeView().inputTextField("Company", text: $company)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                WelcomeView().inputTextField("Badge Number", text: $badgeNumber)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
+            }
+            WelcomeView().inputTextField("Car registration", text: $carRegistration)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled(true)
+                .submitLabel(.done)
+                .onSubmit {
+                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        showBlockedCarPrompt = true
+                    }
+                }
+        }
+        .padding(.vertical, 4)
     }
 }
 
