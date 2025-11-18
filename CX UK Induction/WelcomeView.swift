@@ -1173,12 +1173,21 @@ private struct RegularFormFields: View {
                     if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("Badge Number", text: $badgeNumber)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                        )
-                    if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
+                    WelcomeView().inputTextField("Badge Number", text: Binding(
+                        get: { badgeNumber },
+                        set: { newValue in
+                            let filtered = newValue.filter { $0.isNumber }
+                            badgeNumber = filtered
+                        }
+                    ))
+                    .keyboardType(.numberPad)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                    if badgeInvalid {
+                        Text("Badge number is required").font(.caption2).foregroundStyle(.red)
+                    }
                 }
             }
         }
@@ -1235,12 +1244,21 @@ private struct CompactFormFields: View {
                 if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
             }
             VStack(alignment: .leading, spacing: 4) {
-                WelcomeView().inputTextField("Badge Number", text: $badgeNumber)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                if badgeInvalid { Text("Badge number is required").font(.caption2).foregroundStyle(.red) }
+                WelcomeView().inputTextField("Badge Number", text: Binding(
+                    get: { badgeNumber },
+                    set: { newValue in
+                        let filtered = newValue.filter { $0.isNumber }
+                        badgeNumber = filtered
+                    }
+                ))
+                .keyboardType(.numberPad)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
+                )
+                if badgeInvalid {
+                    Text("Badge number is required").font(.caption2).foregroundStyle(.red)
+                }
             }
             WelcomeView().inputTextField("Car registration", text: $carRegistration)
                 .textInputAutocapitalization(.characters)
@@ -1261,4 +1279,3 @@ private struct CompactFormFields: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
