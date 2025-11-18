@@ -405,7 +405,7 @@ struct WelcomeView: View {
                 store.lastError = nil
             }
         } message: { msg in
-            Text(msg)
+            Text(verbatim: String(describing: msg))
         }
     }
     
@@ -733,7 +733,11 @@ struct SignInBookView: View {
                                 Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Pager: " + ((visitor.pagerNumber?.isEmpty == false) ? (visitor.pagerNumber ?? "") : "None"))
+                                let pagerString: String = {
+                                    if let p = visitor.pagerNumber, !p.isEmpty { return "Pager: " + p }
+                                    return "Pager: None"
+                                }()
+                                Text(pagerString)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Badge: \(visitor.badgeNumber)")
@@ -760,14 +764,22 @@ struct SignInBookView: View {
                                 Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Pager: " + ((visitor.pagerNumber?.isEmpty == false) ? (visitor.pagerNumber ?? "") : "None"))
+                                let pagerStringArchived: String = {
+                                    if let p = visitor.pagerNumber, !p.isEmpty { return "Pager: " + p }
+                                    return "Pager: None"
+                                }()
+                                Text(pagerStringArchived)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Badge: \(visitor.badgeNumber)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
-                                Text("Checked out: " + (visitor.checkOut.map { dateTime($0) } ?? ""))
+                                let checkedOutString: String = {
+                                    if let date = visitor.checkOut { return "Checked out: " + dateTime(date) }
+                                    return "Checked out: "
+                                }()
+                                Text(checkedOutString)
                             }
                             .padding(.vertical, 4)
                         }
