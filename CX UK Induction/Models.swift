@@ -15,8 +15,9 @@ final class Visitor: Identifiable, Hashable {
     var badgeNumber: String?
     var checkIn: Date
     var checkOut: Date?
+    var wasAutoCheckedOut: Bool
 
-    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String? = nil, checkIn: Date = Date(), checkOut: Date? = nil) {
+    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String? = nil, checkIn: Date = Date(), checkOut: Date? = nil, wasAutoCheckedOut: Bool = false) {
         self.id = id
         self.firstName = firstName
         self.lastName = lastName
@@ -28,6 +29,7 @@ final class Visitor: Identifiable, Hashable {
         self.badgeNumber = badgeNumber
         self.checkIn = checkIn
         self.checkOut = checkOut
+        self.wasAutoCheckedOut = wasAutoCheckedOut
     }
 
     var isActive: Bool { checkOut == nil }
@@ -106,6 +108,7 @@ final class VisitorStore {
             let sevenAM = cal.date(from: comps) ?? Date()
             for v in results {
                 v.checkOut = sevenAM
+                v.wasAutoCheckedOut = true
             }
             if !results.isEmpty {
                 try context.save()
@@ -131,7 +134,10 @@ final class VisitorStore {
             comps.minute = 0
             comps.second = 0
             let sevenAM = cal.date(from: comps) ?? Date()
-            for v in results { v.checkOut = sevenAM }
+            for v in results {
+                v.checkOut = sevenAM
+                v.wasAutoCheckedOut = true
+            }
             try context.save()
             return results.count
         } catch {

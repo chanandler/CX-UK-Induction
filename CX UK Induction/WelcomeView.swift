@@ -36,6 +36,10 @@ struct WelcomeView: View {
     @State private var lastCheckedOutName: String = ""
     
     @State private var showingSettings = false
+    @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
+    @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
+    @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
+    @State private var scheduler = AutoCheckoutScheduler()
 
     @State private var showingSignInBook = false
 
@@ -145,7 +149,7 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Share sheet for CSV export
-        .sheet(item: $shareItem, onDismiss: { shareItem = nil }) { item in
+        .sheet(item: $shareItem) { item in
             ActivityView(activityItems: [item.url])
         }
         // About sheet
@@ -153,7 +157,7 @@ struct WelcomeView: View {
             AboutView()
         }
         .sheet(isPresented: $showingSettings) {
-            AutoCheckoutSettingsView(enabled: .constant(false), hour: .constant(7), minute: .constant(0))
+            AutoCheckoutSettingsView(enabled: $autoCheckoutEnabled, hour: $autoCheckoutHour, minute: $autoCheckoutMinute)
                 .presentationDetents([.medium])
         }
         .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
@@ -355,6 +359,24 @@ struct WelcomeView: View {
                 showPersistenceError = true
             }
         }
+        .onAppear {
+            if autoCheckoutEnabled {
+                startScheduler()
+            }
+        }
+        .onChange(of: autoCheckoutEnabled) { _, enabled in
+            if enabled {
+                startScheduler()
+            } else {
+                scheduler.cancel()
+            }
+        }
+        .onChange(of: autoCheckoutHour) { _, _ in
+            if autoCheckoutEnabled { startScheduler() }
+        }
+        .onChange(of: autoCheckoutMinute) { _, _ in
+            if autoCheckoutEnabled { startScheduler() }
+        }
         .alert("Save Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
             Button("OK", role: .cancel) {
                 // clear the error so it won't re-trigger
@@ -371,25 +393,6 @@ struct WelcomeView: View {
             Text(verbatim: messageString)
         }
     }
-    
-    fileprivate func inputTextField(_ title: String, text: Binding<String>) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                        .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
-                )
-            TextField(title, text: text)
-                .font(.title3)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 14)
-                .foregroundColor(.primary)
-        }
-        .frame(height: 52)
-        .padding(.horizontal, 2)
-    }
 
     private var isValid: Bool {
         let hasBasics = !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -403,15 +406,7 @@ struct WelcomeView: View {
     }
 
     private func submit() {
-        // Validate required fields before attempting sign-in
-        let requiredBasicsFilled = !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let pagerRequired = blockedCar
-        let pagerOk = !pagerRequired || !pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        guard requiredBasicsFilled && pagerOk else { return }
+        guard isValid else { return }
         
         let name = firstName + " " + lastName
         
@@ -447,6 +442,12 @@ struct WelcomeView: View {
         showRegisteredAlert = true
     }
     
+    private func startScheduler() {
+        scheduler.scheduleDailyCheckout(atHour: autoCheckoutHour, minute: autoCheckoutMinute) {
+            store.autoCheckoutPreviousDay(context)
+        }
+    }
+
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }
         let generator = UINotificationFeedbackGenerator()
@@ -462,26 +463,33 @@ struct WelcomeView: View {
             "Company",
             "Visiting",
             "Car Registration",
+            "Blocked Car",
+            "Pager Number",
+            "Badge Number",
             "Date Signed In",
-            "Date Signed Out"
+            "Date Signed Out",
+            "Auto Logged Out"
         ]
         let df = DateFormatter()
-        // Format: dd/MM/YY HH:mm (day/month/two-digit year, 24-hour, minute)
-        // Using lowercase dd for day-of-month and yy for two-digit year
         df.locale = Locale(identifier: "en_GB")
-        df.timeZone = TimeZone(secondsFromGMT: 0) // optional: force UTC; remove if you want local time
+        df.timeZone = TimeZone(secondsFromGMT: 0)
         df.dateFormat = "dd/MM/yy HH:mm"
         let rows: [[String]] = visitors.map { v in
             let car = v.carRegistration.trimmingCharacters(in: .whitespacesAndNewlines)
-            let carValue = car.isEmpty ? "None" : car
+            let pager = v.pagerNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let badge = v.badgeNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return [
                 v.firstName,
                 v.lastName,
                 v.company,
                 v.visiting,
-                carValue,
+                car.isEmpty ? "N/A" : car,
+                v.blockedCar ? "Yes" : "No",
+                pager.isEmpty ? "N/A" : pager,
+                badge.isEmpty ? "N/A" : badge,
                 df.string(from: v.checkIn),
-                v.checkOut.map { df.string(from: $0) } ?? ""
+                v.checkOut.map { df.string(from: $0) } ?? "N/A",
+                v.wasAutoCheckedOut ? "Yes" : "No"
             ]
         }
         let csv = ([header] + rows).map { row in
@@ -489,7 +497,7 @@ struct WelcomeView: View {
         }.joined(separator: "\n")
 
         do {
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("archived_visitors_\(Int(Date().timeIntervalSince1970)).csv")
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("visitors_\(Int(Date().timeIntervalSince1970)).csv")
             try csv.data(using: .utf8)?.write(to: url, options: .atomic)
             return url
         } catch {
@@ -565,13 +573,13 @@ struct WelcomeView: View {
     private var settingsMenu: some View {
         Menu {
             Button {
-                if let url = exportCSV(from: archivedVisitors) {
+                if let url = exportCSV(from: allVisitors) {
                     shareItem = ShareItem(url: url)
                 }
             } label: {
                 Label("Export CSV", systemImage: "square.and.arrow.up")
             }
-            .disabled(archivedVisitors.isEmpty)
+            .disabled(allVisitors.isEmpty)
 
             Button {
                 showingRollCall = true
@@ -649,6 +657,25 @@ struct WelcomeView: View {
             }
         }
     }
+}
+
+private func inputTextField(_ title: String, text: Binding<String>) -> some View {
+    ZStack {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
+            )
+        TextField(title, text: text)
+            .font(.title3)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .foregroundColor(.primary)
+    }
+    .frame(height: 52)
+    .padding(.horizontal, 2)
 }
 
 private struct InductionFlowView: View {
@@ -860,11 +887,15 @@ struct SignInBookView: View {
         }
     }
 
-    private func dateTime(_ date: Date) -> String {
+    private static let dateTimeFormatter: DateFormatter = {
         let df = DateFormatter()
         df.dateStyle = .medium
         df.timeStyle = .short
-        return df.string(from: date)
+        return df
+    }()
+
+    private func dateTime(_ date: Date) -> String {
+        Self.dateTimeFormatter.string(from: date)
     }
 }
 
@@ -963,11 +994,15 @@ private struct LeavingSearchSheet: View {
         }
     }
 
-    private func dateTime(_ date: Date) -> String {
+    private static let dateTimeFormatter: DateFormatter = {
         let df = DateFormatter()
         df.dateStyle = .medium
         df.timeStyle = .short
-        return df.string(from: date)
+        return df
+    }()
+
+    private func dateTime(_ date: Date) -> String {
+        Self.dateTimeFormatter.string(from: date)
     }
 }
 
@@ -1138,14 +1173,14 @@ private struct RegularFormFields: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("First name", text: $firstName)
+                    inputTextField("First name", text: $firstName)
                         .focused(focusedField, equals: WelcomeView.Field.firstName)
                         .submitLabel(.next)
                         .onSubmit {
                             focusedField.wrappedValue = WelcomeView.Field.lastName
                         }
                         .textInputAutocapitalization(.words)
-                        .autocapitalization(.words)
+
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1153,14 +1188,14 @@ private struct RegularFormFields: View {
                     if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("Company", text: $company)
+                    inputTextField("Company", text: $company)
                         .focused(focusedField, equals: WelcomeView.Field.company)
                         .submitLabel(.next)
                         .onSubmit {
                             focusedField.wrappedValue = WelcomeView.Field.visiting
                         }
                         .textInputAutocapitalization(.words)
-                        .autocapitalization(.words)
+
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1169,7 +1204,7 @@ private struct RegularFormFields: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     // Moved Badge Number above Car registration
-                    WelcomeView().inputTextField("Badge Number", text: Binding(
+                    inputTextField("Badge Number", text: Binding(
                         get: { badgeNumber },
                         set: { newValue in
                             let filtered = newValue.filter { $0.isNumber }
@@ -1192,14 +1227,14 @@ private struct RegularFormFields: View {
             }
             VStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("Last name", text: $lastName)
+                    inputTextField("Last name", text: $lastName)
                         .focused(focusedField, equals: WelcomeView.Field.lastName)
                         .submitLabel(.next)
                         .onSubmit {
                             focusedField.wrappedValue = WelcomeView.Field.company
                         }
                         .textInputAutocapitalization(.words)
-                        .autocapitalization(.words)
+
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1207,21 +1242,21 @@ private struct RegularFormFields: View {
                     if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                    inputTextField("Who are you visiting", text: $visiting)
                         .focused(focusedField, equals: WelcomeView.Field.visiting)
                         .submitLabel(.next)
                         .onSubmit {
                             focusedField.wrappedValue = WelcomeView.Field.badge
                         }
                         .textInputAutocapitalization(.words)
-                        .autocapitalization(.words)
+
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
                         )
                     if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
                 }
-                WelcomeView().inputTextField("Car registration", text: Binding(
+                inputTextField("Car registration", text: Binding(
                     get: { carRegistration },
                     set: { newValue in
                         let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
@@ -1263,14 +1298,14 @@ private struct CompactFormFields: View {
     var body: some View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
-                WelcomeView().inputTextField("First name", text: $firstName)
+                inputTextField("First name", text: $firstName)
                     .focused(focusedField, equals: WelcomeView.Field.firstName)
                     .submitLabel(.next)
                     .onSubmit {
                         focusedField.wrappedValue = WelcomeView.Field.lastName
                     }
                     .textInputAutocapitalization(.words)
-                    .autocapitalization(.words)
+
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1278,14 +1313,14 @@ private struct CompactFormFields: View {
                 if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
             }
             VStack(alignment: .leading, spacing: 4) {
-                WelcomeView().inputTextField("Last name", text: $lastName)
+                inputTextField("Last name", text: $lastName)
                     .focused(focusedField, equals: WelcomeView.Field.lastName)
                     .submitLabel(.next)
                     .onSubmit {
                         focusedField.wrappedValue = WelcomeView.Field.company
                     }
                     .textInputAutocapitalization(.words)
-                    .autocapitalization(.words)
+
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1293,14 +1328,14 @@ private struct CompactFormFields: View {
                 if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
             }
             VStack(alignment: .leading, spacing: 4) {
-                WelcomeView().inputTextField("Company", text: $company)
+                inputTextField("Company", text: $company)
                     .focused(focusedField, equals: WelcomeView.Field.company)
                     .submitLabel(.next)
                     .onSubmit {
                         focusedField.wrappedValue = WelcomeView.Field.visiting
                     }
                     .textInputAutocapitalization(.words)
-                    .autocapitalization(.words)
+
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1308,14 +1343,14 @@ private struct CompactFormFields: View {
                 if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
             }
             VStack(alignment: .leading, spacing: 4) {
-                WelcomeView().inputTextField("Who are you visiting", text: $visiting)
+                inputTextField("Who are you visiting", text: $visiting)
                     .focused(focusedField, equals: WelcomeView.Field.visiting)
                     .submitLabel(.next)
                     .onSubmit {
                         focusedField.wrappedValue = WelcomeView.Field.badge
                     }
                     .textInputAutocapitalization(.words)
-                    .autocapitalization(.words)
+
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
@@ -1324,7 +1359,7 @@ private struct CompactFormFields: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 // Moved Badge Number above Car registration
-                WelcomeView().inputTextField("Badge Number", text: Binding(
+                inputTextField("Badge Number", text: Binding(
                     get: { badgeNumber },
                     set: { newValue in
                         let filtered = newValue.filter { $0.isNumber }
@@ -1344,7 +1379,7 @@ private struct CompactFormFields: View {
                     Text("Badge number is required").font(.caption2).foregroundStyle(.red)
                 }
             }
-            WelcomeView().inputTextField("Car registration", text: Binding(
+            inputTextField("Car registration", text: Binding(
                 get: { carRegistration },
                 set: { newValue in
                     let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }

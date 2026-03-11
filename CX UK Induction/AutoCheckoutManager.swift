@@ -3,9 +3,9 @@ import Foundation
 final class AutoCheckoutScheduler {
     private var timer: Timer?
 
-    func scheduleDailyCheckout(atHour hour: Int = 7, minute: Int = 0, checkoutAction: @escaping () -> Void) {
+    func scheduleDailyCheckout(atHour hour: Int = 5, minute: Int = 0, checkoutAction: @escaping () -> Void) {
         timer?.invalidate()
-        let fireDate = nextFireDate(hour: hour, minute: minute)
+        let fireDate = nextWeekdayFireDate(hour: hour, minute: minute)
         let interval = fireDate.timeIntervalSinceNow
         timer = Timer.scheduledTimer(withTimeInterval: max(1, interval), repeats: false) { [weak self] _ in
             checkoutAction()
@@ -19,17 +19,28 @@ final class AutoCheckoutScheduler {
         timer = nil
     }
 
-    private func nextFireDate(hour: Int, minute: Int) -> Date {
+    // Returns the next weekday (Mon–Fri) occurrence of the given hour/minute.
+    private func nextWeekdayFireDate(hour: Int, minute: Int) -> Date {
         let calendar = Calendar.current
         let now = Date()
         var components = calendar.dateComponents([.year, .month, .day], from: now)
         components.hour = hour
         components.minute = minute
         components.second = 0
-        let todayAt = calendar.date(from: components) ?? now
-        if todayAt > now {
-            return todayAt
+        guard var candidate = calendar.date(from: components) else { return now }
+
+        // If the time has already passed today, start checking from tomorrow.
+        if candidate <= now {
+            candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
         }
-        return calendar.date(byAdding: .day, value: 1, to: todayAt) ?? now.addingTimeInterval(86400)
+
+        // Advance past any weekend days (Saturday = 7, Sunday = 1 in Gregorian).
+        for _ in 0..<7 {
+            let weekday = calendar.component(.weekday, from: candidate)
+            if weekday != 1 && weekday != 7 { break }
+            candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
+        }
+
+        return candidate
     }
 }
