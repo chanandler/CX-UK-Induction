@@ -241,7 +241,7 @@ struct WelcomeView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Picker("", selection: $pagerNumber) {
                                 Text("Select a pager").tag("")
-                                ForEach(1...15, id: \.self) { i in
+                                ForEach(1...30, id: \.self) { i in
                                     let tag = String(i)
                                     let isTaken = normalizedUsedPagers.contains(tag)
                                     Text("Pager \(i) \(isTaken ? "(Taken 🔴)" : "(Available 🟢)")")
