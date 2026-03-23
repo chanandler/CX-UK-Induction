@@ -242,7 +242,9 @@ struct WelcomeView: View {
                                         if !isTaken { pagerNumber = tag }
                                     } label: {
                                         HStack(spacing: 6) {
-                                            Text(isTaken ? "🔴" : "🟢")
+                                            Circle()
+                                                .fill(isTaken ? Color.red : Color.green)
+                                                .frame(width: 10, height: 10)
                                             Text("Pager \(i)")
                                                 .fontWeight(isSelected ? .bold : .regular)
                                             if isSelected {
