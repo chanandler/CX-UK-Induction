@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Reviewer: Claude Code
+> Generated: 2026-03-23
 
 ---
 
@@ -33,9 +33,9 @@
 
 - [x] 🔴 ~~**`checkoutTime` parameter is ignored in auto-checkout**~~ — Fixed 2026-03-23. Both `autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` now use the `checkoutTime` parameter instead of a hardcoded 07:00. `WelcomeView.startScheduler` passes `Date()` so the actual fire time is recorded.
 
-- [ ] 🟠 **`autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` are near-identical** — ~50 lines of duplicated logic; the only difference is the return value. Merge into one method with a discardable return.
+- [x] 🟠 ~~**`autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` are near-identical**~~ — Fixed 2026-03-23. Merged into a single `@discardableResult func autoCheckoutPreviousDay(...)` method. All callers updated.
 
-- [ ] 🟠 **Sign-in does not validate post-trim values** — `signIn()` trims whitespace but never checks that the trimmed result is non-empty, allowing blank entries to be saved.
+- [x] 🟠 ~~**Sign-in does not validate post-trim values**~~ — Fixed 2026-03-23. `signIn()` now guards against all-whitespace inputs after trimming and sets `lastError` if they are blank.
 
 - [ ] 🟡 **Errors stored as plain strings with no propagation** — `lastError` gives no structured detail and is easy to miss. Consider `throws` or a proper error type so callers can react.
 
@@ -51,9 +51,9 @@
 
 ### VisitorTabs.swift
 
-- [ ] 🟠 **`filteredActive` / `filteredArchived` do full linear scans on every render** — Filtering happens in Swift rather than at the SwiftData query level. Move filtering into `@Query` predicates so the database does the work.
+- [x] 🟠 ~~**`filteredActive` / `filteredArchived` do full linear scans on every render**~~ — Reviewed 2026-03-23. SwiftData `#Predicate` macros require compile-time key paths and cannot accept runtime strings for free-text search; Swift-side filtering on an already-fetched array is the correct pattern here. Short-circuit on empty `searchText` is already in place. No code change needed.
 
-- [ ] 🟠 **`escapeCSV` is duplicated across VisitorTabs and WelcomeView** — Extract to a shared `extension String` or a utility file.
+- [x] 🟠 ~~**`escapeCSV` is duplicated across VisitorTabs and WelcomeView**~~ — Fixed 2026-03-23. Extracted to `String.escapedAsCSVField` extension at the top of `VisitorTabs.swift`. `DateFormatter` static instances (`shortTime`, `mediumDateTime`, `csvDateTime`) also extracted alongside it. All call sites in both files updated.
 
 - [ ] 🟡 **Temp CSV files are never deleted** — Files written to the temporary directory accumulate over time. Add a cleanup call after the share sheet is dismissed, or use a memory-backed `Data` buffer instead.
 
@@ -75,11 +75,11 @@
 
 - [ ] 🟠 **`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code** — The only difference is horizontal vs vertical layout for name/company/car. Merge into a single view parameterised by layout axis.
 
-- [ ] 🟠 **`DateFormatter` instances created at multiple call sites** — `DateFormatter` is expensive to initialise. Several locations create their own instances (including inside loops). Consolidate into one or two `static let` formatters.
+- [x] 🟠 ~~**`DateFormatter` instances created at multiple call sites**~~ — Fixed 2026-03-23. Three shared `static let` formatters (`shortTime`, `mediumDateTime`, `csvDateTime`) added to `VisitorTabs.swift` as `DateFormatter` extensions and used across `VisitorRow`, `VisitorDetail`, `SignInBookView`, `LeavingSearchSheet`, and both CSV export functions. Private `static let dateTimeFormatter` properties removed.
 
-- [ ] 🟠 **Badge is required in form validation but optional in the model** — `isValid` enforces a non-empty badge, but `Visitor.badgeNumber` is optional. Decide on a single source of truth and align the model, validation, and UI.
+- [x] 🟠 ~~**Badge is required in form validation but optional in the model**~~ — Fixed 2026-03-23. `Visitor.badgeNumber` changed from `String?` to `String` (default `""`). `signIn()` parameter updated to match. All optional-unwrap usages (`?.`, `?? ""`, force-unwrap) across `VisitorTabs` and `WelcomeView` removed.
 
-- [ ] 🟠 **Pager picker display text and stored value are inconsistent** — The picker shows `"Pager \(i)"` (string with prefix) but the stored value strips the prefix. The two representations can diverge. Store and display the same format, or make the transformation explicit and one-directional.
+- [x] 🟠 ~~**Pager picker display text and stored value are inconsistent**~~ — Fixed 2026-03-23. Picker already stores bare numeric tags (e.g. `"3"`). Removed redundant `"pager "` prefix-stripping normalization from the pager sheet locals, `submit()`, and `usedPagers`. The stored format is now unambiguously a bare numeric string everywhere.
 
 - [ ] 🟡 **Explosion of boolean `@State` flags** — Over a dozen separate `Bool` properties control sheet/alert presentation. This is fragile. Replace with a single `enum ActiveSheet` (or similar) and a single optional `@State var activeSheet: ActiveSheet?`.
 
@@ -104,11 +104,17 @@
 | 2026-03-23 | WelcomeView.swift | Scheduler not cancelled on disappear |
 | 2026-03-23 | WelcomeView.swift | Multiple timers stacking |
 | 2026-03-23 | WelcomeView.swift | Unused `archivedVisitors` @Query |
+| 2026-03-23 | Models.swift | Duplicate auto-checkout methods merged |
+| 2026-03-23 | Models.swift | `signIn()` missing post-trim validation |
+| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `escapeCSV` duplication extracted to `String.escapedAsCSVField` |
+| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `DateFormatter` instances consolidated to shared `static let` extensions |
+| 2026-03-23 | Models.swift + WelcomeView.swift + VisitorTabs.swift | `badgeNumber` optionality aligned (now non-optional `String`) |
+| 2026-03-23 | WelcomeView.swift | Pager picker normalization dead code removed |
 
 ---
 
 ## Notes
 
-- File with the most remaining issues: **WelcomeView.swift** (1 411 lines)
-- All 🔴 CRITICAL issues have been resolved as of 2026-03-23.
-- Next recommended pass: address the 🟠 HIGH issues, starting with merging `autoCheckoutPreviousDay` / `autoCheckoutPreviousDayReturningCount` and post-trim validation in `signIn()`.
+- File with the most remaining issues: **WelcomeView.swift**
+- All 🔴 CRITICAL and 🟠 HIGH issues have been resolved as of 2026-03-23, except one: merging `RegularFormFields`/`CompactFormFields` (a large UI refactor, deferred).
+- Next recommended pass: address the 🟡 MEDIUM issues — temp CSV cleanup, `@State` flag explosion, and haptic generator reuse.

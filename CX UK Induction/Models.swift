@@ -12,12 +12,12 @@ final class Visitor: Identifiable, Hashable {
     var carRegistration: String
     var blockedCar: Bool
     var pagerNumber: String?
-    var badgeNumber: String?
+    var badgeNumber: String
     var checkIn: Date
     var checkOut: Date?
     var wasAutoCheckedOut: Bool
 
-    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String? = nil, checkIn: Date = Date(), checkOut: Date? = nil, wasAutoCheckedOut: Bool = false) {
+    init(id: UUID = UUID(), firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String = "", checkIn: Date = Date(), checkOut: Date? = nil, wasAutoCheckedOut: Bool = false) {
         self.id = id
         self.firstName = firstName
         self.lastName = lastName
@@ -49,11 +49,23 @@ final class VisitorStore {
     var lastError: String?
 
     // Derived state for sorting/searching; SwiftData is the source of truth.
-    func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String? = nil, at date: Date = Date()) {
-        let v = Visitor(firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
-                        lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
-                        company: company.trimmingCharacters(in: .whitespacesAndNewlines),
-                        visiting: visiting.trimmingCharacters(in: .whitespacesAndNewlines),
+    func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String = "", at date: Date = Date()) {
+        let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCompany = company.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedVisiting = visiting.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Guard against blank-after-trim values slipping through
+        guard !trimmedFirst.isEmpty, !trimmedLast.isEmpty,
+              !trimmedCompany.isEmpty, !trimmedVisiting.isEmpty else {
+            lastError = "Sign-in failed: required fields must not be blank."
+            return
+        }
+
+        let v = Visitor(firstName: trimmedFirst,
+                        lastName: trimmedLast,
+                        company: trimmedCompany,
+                        visiting: trimmedVisiting,
                         carRegistration: carRegistration.trimmingCharacters(in: .whitespacesAndNewlines),
                         blockedCar: blockedCar,
                         pagerNumber: pagerNumber,
@@ -91,31 +103,10 @@ final class VisitorStore {
         }
     }
 
-    func autoCheckoutPreviousDay(_ context: ModelContext, at checkoutTime: Date = Date()) {
-        let cal = Calendar.current
-        let startOfToday = cal.startOfDay(for: Date())
-        // Fetch active visitors (checkOut == nil) whose checkIn is before today
-        let descriptor = FetchDescriptor<Visitor>(
-            predicate: #Predicate { $0.checkOut == nil && $0.checkIn < startOfToday }
-        )
-        do {
-            let results = try context.fetch(descriptor)
-            // Use the provided checkoutTime rather than a hardcoded 07:00
-            for v in results {
-                v.checkOut = checkoutTime
-                v.wasAutoCheckedOut = true
-            }
-            if !results.isEmpty {
-                try context.save()
-            }
-        } catch {
-            lastError = "Auto-checkout failed: \(error.localizedDescription)"
-            print("SwiftData fetch/save error (autoCheckout):", error)
-        }
-    }
-
+    /// Checks out all visitors who signed in before today and have not yet signed out.
+    /// Returns the number of visitors that were checked out.
     @discardableResult
-    func autoCheckoutPreviousDayReturningCount(_ context: ModelContext, at checkoutTime: Date = Date()) -> Int {
+    func autoCheckoutPreviousDay(_ context: ModelContext, at checkoutTime: Date = Date()) -> Int {
         let cal = Calendar.current
         let startOfToday = cal.startOfDay(for: Date())
         let descriptor = FetchDescriptor<Visitor>(
@@ -124,7 +115,6 @@ final class VisitorStore {
         do {
             let results = try context.fetch(descriptor)
             if results.isEmpty { return 0 }
-            // Use the provided checkoutTime rather than a hardcoded 07:00
             for v in results {
                 v.checkOut = checkoutTime
                 v.wasAutoCheckedOut = true

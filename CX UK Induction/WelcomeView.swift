@@ -195,23 +195,10 @@ struct WelcomeView: View {
         // Pager sheet to capture contact number when a car is blocked
         .sheet(isPresented: $showPagerPrompt) {
             NavigationStack {
-                // Normalize current selection to just the numeric pager string
-                let trimmedCurrent = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-                let currentNumeric: String = {
-                    let lower = trimmedCurrent.lowercased()
-                    if lower.hasPrefix("pager ") {
-                        return String(trimmedCurrent.dropFirst("pager ".count))
-                    }
-                    return trimmedCurrent
-                }()
-                // Build a normalized set of used pagers based on active visitors, stripping any "Pager " prefixes
-                let normalizedUsedPagers: Set<String> = Set(usedPagers.map { value in
-                    let lower = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                    if lower.hasPrefix("pager ") {
-                        return String(value.dropFirst("pager ".count))
-                    }
-                    return value.trimmingCharacters(in: .whitespacesAndNewlines)
-                })
+                // pagerNumber is always stored as a bare numeric string (e.g. "3") from the picker tags below.
+                let currentNumeric = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                // usedPagers is already normalised to bare numeric strings via the computed property above.
+                let normalizedUsedPagers: Set<String> = usedPagers
                 // Do not include the currently selected pager in the disabled set so the user can keep it selected
                 let effectiveUsedPagers: Set<String> = normalizedUsedPagers.subtracting(currentNumeric.isEmpty ? [] : [currentNumeric])
                 
@@ -411,14 +398,9 @@ struct WelcomeView: View {
         
         let name = firstName + " " + lastName
         
-        let normalizedPager: String = {
-            let trimmed = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.lowercased().hasPrefix("pager ") {
-                return String(trimmed.dropFirst("pager ".count))
-            }
-            return trimmed
-        }()
-        
+        // pagerNumber is always a bare numeric string from the picker; just trim whitespace.
+        let normalizedPager = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+
         store.signIn(context,
                      firstName: firstName,
                      lastName: lastName,
@@ -459,7 +441,6 @@ struct WelcomeView: View {
         generator.notificationOccurred(.success)
     }
     
-    // CSV export (duplicated here so WelcomeView can export independently)
     private func exportCSV(from visitors: [Visitor]) -> URL? {
         let header = [
             "First Name",
@@ -474,14 +455,10 @@ struct WelcomeView: View {
             "Date Signed Out",
             "Auto Logged Out"
         ]
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "en_GB")
-        df.timeZone = TimeZone(secondsFromGMT: 0)
-        df.dateFormat = "dd/MM/yy HH:mm"
         let rows: [[String]] = visitors.map { v in
             let car = v.carRegistration.trimmingCharacters(in: .whitespacesAndNewlines)
             let pager = v.pagerNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let badge = v.badgeNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let badge = v.badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             return [
                 v.firstName,
                 v.lastName,
@@ -491,13 +468,13 @@ struct WelcomeView: View {
                 v.blockedCar ? "Yes" : "No",
                 pager.isEmpty ? "N/A" : pager,
                 badge.isEmpty ? "N/A" : badge,
-                df.string(from: v.checkIn),
-                v.checkOut.map { df.string(from: $0) } ?? "N/A",
+                DateFormatter.csvDateTime.string(from: v.checkIn),
+                v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? "N/A",
                 v.wasAutoCheckedOut ? "Yes" : "No"
             ]
         }
         let csv = ([header] + rows).map { row in
-            row.map { escapeCSV($0) }.joined(separator: ",")
+            row.map { $0.escapedAsCSVField }.joined(separator: ",")
         }.joined(separator: "\n")
 
         do {
@@ -507,14 +484,6 @@ struct WelcomeView: View {
         } catch {
             return nil
         }
-    }
-
-    private func escapeCSV(_ field: String) -> String {
-        if field.contains(",") || field.contains("\n") || field.contains("\"") {
-            let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
-            return "\"\(escaped)\""
-        }
-        return field
     }
     
     private var registerButton: some View {
@@ -832,7 +801,7 @@ struct SignInBookView: View {
                                 Text(pagerString)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Badge: \(visitor.badgeNumber ?? "")")
+                                Text("Badge: \(visitor.badgeNumber)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
@@ -863,7 +832,7 @@ struct SignInBookView: View {
                                 Text(pagerStringArchived)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text("Badge: \(visitor.badgeNumber ?? "")")
+                                Text("Badge: \(visitor.badgeNumber)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Text("Checked in: \(dateTime(visitor.checkIn))")
@@ -891,15 +860,8 @@ struct SignInBookView: View {
         }
     }
 
-    private static let dateTimeFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateStyle = .medium
-        df.timeStyle = .short
-        return df
-    }()
-
     private func dateTime(_ date: Date) -> String {
-        Self.dateTimeFormatter.string(from: date)
+        DateFormatter.mediumDateTime.string(from: date)
     }
 }
 
@@ -998,15 +960,8 @@ private struct LeavingSearchSheet: View {
         }
     }
 
-    private static let dateTimeFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateStyle = .medium
-        df.timeStyle = .short
-        return df
-    }()
-
     private func dateTime(_ date: Date) -> String {
-        Self.dateTimeFormatter.string(from: date)
+        DateFormatter.mediumDateTime.string(from: date)
     }
 }
 

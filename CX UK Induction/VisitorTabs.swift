@@ -1,6 +1,46 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Shared CSV / formatting utilities
+
+extension String {
+    /// Wraps a field in double-quotes and escapes internal quotes if the value
+    /// contains commas, newlines, or double-quote characters.
+    var escapedAsCSVField: String {
+        if contains(",") || contains("\n") || contains("\"") {
+            return "\"\(replacingOccurrences(of: "\"", with: "\"\""))\""
+        }
+        return self
+    }
+}
+
+extension DateFormatter {
+    /// Short time-only formatter used in visitor row cards.
+    static let shortTime: DateFormatter = {
+        let df = DateFormatter()
+        df.dateStyle = .none
+        df.timeStyle = .short
+        return df
+    }()
+
+    /// Medium date + short time formatter used in visitor detail and sign-in book.
+    static let mediumDateTime: DateFormatter = {
+        let df = DateFormatter()
+        df.dateStyle = .medium
+        df.timeStyle = .short
+        return df
+    }()
+
+    /// UK locale dd/MM/yy HH:mm formatter used for CSV exports.
+    static let csvDateTime: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_GB")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "dd/MM/yy HH:mm"
+        return df
+    }()
+}
+
 struct VisitorTabs: View {
     // CEMEX Blue: HEX #023185 (RGB 2,49,133)
     private let cemexBlue = Color(red: 2/255, green: 49/255, blue: 133/255)
@@ -150,19 +190,17 @@ struct ArchivedVisitorsView: View {
 
     private func exportCSV() -> URL? {
         let header = ["First Name","Last Name","Company","Visiting","Car Registration","Check In","Check Out"]
-        let df = ISO8601DateFormatter()
-        df.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let rows: [[String]] = filteredArchived.map { v in
             [v.firstName,
              v.lastName,
              v.company,
              v.visiting,
              v.carRegistration,
-             df.string(from: v.checkIn),
-             v.checkOut.map { df.string(from: $0) } ?? ""]
+             DateFormatter.csvDateTime.string(from: v.checkIn),
+             v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? ""]
         }
         let csv = ([header] + rows).map { row in
-            row.map { escapeCSV($0) }.joined(separator: ",")
+            row.map { $0.escapedAsCSVField }.joined(separator: ",")
         }.joined(separator: "\n")
 
         do {
@@ -172,14 +210,6 @@ struct ArchivedVisitorsView: View {
         } catch {
             return nil
         }
-    }
-
-    private func escapeCSV(_ field: String) -> String {
-        if field.contains(",") || field.contains("\n") || field.contains("\"") {
-            let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
-            return "\"\(escaped)\""
-        }
-        return field
     }
 }
 
@@ -229,10 +259,7 @@ struct VisitorRow: View {
     }
 
     private func format(date: Date) -> String {
-        let df = DateFormatter()
-        df.dateStyle = .none
-        df.timeStyle = .short
-        return df.string(from: date)
+        DateFormatter.shortTime.string(from: date)
     }
 }
 
@@ -249,7 +276,7 @@ struct VisitorDetail: View {
                 LabeledContent("Company", value: visitor.company)
                 LabeledContent("Visiting", value: visitor.visiting)
                 LabeledContent("Car", value: visitor.carRegistration)
-                LabeledContent("Badge Number", value: (visitor.badgeNumber?.isEmpty == false ? visitor.badgeNumber! : "—"))
+                LabeledContent("Badge Number", value: visitor.badgeNumber.isEmpty ? "—" : visitor.badgeNumber)
                 LabeledContent("Checked in", value: dateTime(visitor.checkIn))
                 if let out = visitor.checkOut {
                     LabeledContent("Checked out", value: dateTime(out))
@@ -276,10 +303,7 @@ struct VisitorDetail: View {
     }
 
     private func dateTime(_ date: Date) -> String {
-        let df = DateFormatter()
-        df.dateStyle = .medium
-        df.timeStyle = .short
-        return df.string(from: date)
+        DateFormatter.mediumDateTime.string(from: date)
     }
 }
 
