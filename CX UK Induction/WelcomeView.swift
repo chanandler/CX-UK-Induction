@@ -230,23 +230,47 @@ struct WelcomeView: View {
                             )
                             .padding(.vertical, 4)
                         VStack(alignment: .leading, spacing: 4) {
-                            Picker("", selection: $pagerNumber) {
-                                Text("Select a pager").tag("")
+                            // Show all pagers as a scrollable segmented list so the
+                            // 🔴/🟢 availability icons are always visible, not hidden
+                            // inside a collapsed menu.
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
                                 ForEach(1...30, id: \.self) { i in
                                     let tag = String(i)
-                                    let isTaken = normalizedUsedPagers.contains(tag)
-                                    Text("Pager \(i) \(isTaken ? "(Taken 🔴)" : "(Available 🟢)")")
-                                        .tag(tag)
-                                        .disabled(effectiveUsedPagers.contains(tag))
+                                    let isTaken = effectiveUsedPagers.contains(tag)
+                                    let isSelected = pagerNumber == tag
+                                    Button {
+                                        if !isTaken { pagerNumber = tag }
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Text(isTaken ? "🔴" : "🟢")
+                                            Text("Pager \(i)")
+                                                .fontWeight(isSelected ? .bold : .regular)
+                                            if isSelected {
+                                                Image(systemName: "checkmark")
+                                                    .imageScale(.small)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(isSelected ? Color.blue.opacity(0.2) : Color(.systemGray6))
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1.5)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(isTaken)
+                                    .opacity(isTaken ? 0.45 : 1)
                                 }
                             }
-                            .labelsHidden()
-                            .pickerStyle(.menu)
+                            .padding(.top, 4)
 
                             if pagerInvalid {
                                 Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
                             }
-                            // Show error if the currently selected pager is already in use
                             if pagerInUseError {
                                 Text(pagerInUseMessage)
                                     .font(.caption2)
