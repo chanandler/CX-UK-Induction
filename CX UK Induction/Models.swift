@@ -70,6 +70,22 @@ enum StoreError: LocalizedError {
     }
 }
 
+extension StoreError: Equatable {
+    static func == (lhs: StoreError, rhs: StoreError) -> Bool {
+        switch (lhs, rhs) {
+        case (.validationFailed(let a), .validationFailed(let b)): return a == b
+        case (.saveFailed(let a), .saveFailed(let b)): return a.localizedDescription == b.localizedDescription
+        case (.fetchFailed(let a), .fetchFailed(let b)): return a.localizedDescription == b.localizedDescription
+        case (.importAccessDenied, .importAccessDenied): return true
+        case (.importUnreadable, .importUnreadable): return true
+        case (.importEmpty, .importEmpty): return true
+        case (.importMissingColumns, .importMissingColumns): return true
+        case (.importMessage(let a), .importMessage(let b)): return a == b
+        default: return false
+        }
+    }
+}
+
 // MARK: - VisitorStore
 
 @Observable

@@ -97,6 +97,12 @@ struct WelcomeView: View {
     private var pagerInvalid: Bool { blockedCar && pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
+        decoratedContent
+    }
+
+    // MARK: - Main layout content
+
+    private var mainContent: some View {
         ZStack(alignment: .bottomLeading) {
             VStack {
                 Text("Welcome to Cemex UK HQ")
@@ -166,309 +172,315 @@ struct WelcomeView: View {
             settingsMenu
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Share sheet for CSV export — temp file is cleaned up on dismiss.
-        .sheet(item: $shareItem, onDismiss: cleanUpShareItem) { item in
-            ActivityView(activityItems: [item.url])
-        }
-        // About sheet
-        .sheet(isPresented: $showingAbout) {
-            AboutView()
-        }
-        .sheet(isPresented: $showingSettings) {
-            AutoCheckoutSettingsView(
-                enabled: $autoCheckoutEnabled,
-                hour: $autoCheckoutHour,
-                minute: $autoCheckoutMinute,
-                autoBackupEnabled: $autoBackupEnabled,
-                onManualBackup: runManualBackup,
-                onImportCSV: { showingImportPicker = true },
-                existingBackups: BackupScheduler.existingBackups()
-            )
-            .presentationDetents([.large])
-        }
-        .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            let registeredMessage: String = "\(lastRegisteredName): Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk"
-            Text(registeredMessage)
-                .multilineTextAlignment(.center)
-        }
-        .sheet(isPresented: $showingLeaving) {
-            LeavingSearchSheet(activeVisitors: activeVisitors) { name in
-                lastCheckedOutName = name
-                showSignedOutBannerTemporarily()
-                showingLeaving = false
-            }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        // Ask if they've blocked a car when a car reg is provided
-        .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
-            Button("No", role: .cancel) {
-                blockedCar = false
-                pagerNumber = ""
-                if pendingSubmit {
-                    showingInduction = true
-                    // pendingSubmit will be cleared in the induction completion handler
-                }
-            }
-            Button("Yes") {
-                blockedCar = true
-                showPagerPrompt = true
-            }
-        } message: {
-            Text("Please let us know if your parking is blocking another vehicle.")
-        }
-        
-        // Pager sheet to capture contact number when a car is blocked
-        .sheet(isPresented: $showPagerPrompt) {
-            NavigationStack {
-                // pagerNumber is always stored as a bare numeric string (e.g. "3") from the picker tags below.
-                let currentNumeric = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-                // usedPagers is already normalised to bare numeric strings via the computed property above.
-                let normalizedUsedPagers: Set<String> = usedPagers
-                // Do not include the currently selected pager in the disabled set so the user can keep it selected
-                let effectiveUsedPagers: Set<String> = normalizedUsedPagers.subtracting(currentNumeric.isEmpty ? [] : [currentNumeric])
-                
-                // Local computed error detection and message for pager in use validation
-                let pagerInUseError: Bool = !currentNumeric.isEmpty && normalizedUsedPagers.contains(currentNumeric)
-                let pagerInUseMessage: String = "That pager is currently in use. Please choose another."
+    }
 
-                Form {
-                    Section {
-                        Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Please select an available pager from the list.")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Color.orange.opacity(0.15))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .stroke(Color.orange.opacity(0.35), lineWidth: 1)
-                                    )
-                            )
-                            .padding(.vertical, 4)
-                        VStack(alignment: .leading, spacing: 4) {
-                            // Show all pagers as a scrollable segmented list so the
-                            // 🔴/🟢 availability icons are always visible, not hidden
-                            // inside a collapsed menu.
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
-                                ForEach(1...30, id: \.self) { i in
-                                    let tag = String(i)
-                                    let isTaken = effectiveUsedPagers.contains(tag)
-                                    let isSelected = pagerNumber == tag
-                                    Button {
-                                        if !isTaken { pagerNumber = tag }
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            Circle()
-                                                .fill(isTaken ? Color.red : Color.green)
-                                                .frame(width: 10, height: 10)
-                                            Text("Pager \(i)")
-                                                .fontWeight(isSelected ? .bold : .regular)
-                                            if isSelected {
-                                                Image(systemName: "checkmark")
-                                                    .imageScale(.small)
-                                            }
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(isSelected ? Color.blue.opacity(0.2) : Color(.systemGray6))
-                                        )
+    // MARK: - Sheets and alerts (first half of decorator chain)
+
+    @ViewBuilder
+    private var decoratedContentPart1: some View {
+        mainContent
+            // Share sheet for CSV export — temp file is cleaned up on dismiss.
+            .sheet(item: $shareItem, onDismiss: cleanUpShareItem) { item in
+                ActivityView(activityItems: [item.url])
+            }
+            // About sheet
+            .sheet(isPresented: $showingAbout) {
+                AboutView()
+            }
+            .sheet(isPresented: $showingSettings) {
+                AutoCheckoutSettingsView(
+                    enabled: $autoCheckoutEnabled,
+                    hour: $autoCheckoutHour,
+                    minute: $autoCheckoutMinute,
+                    autoBackupEnabled: $autoBackupEnabled,
+                    onManualBackup: runManualBackup,
+                    onImportCSV: { showingImportPicker = true },
+                    existingBackups: BackupScheduler.existingBackups()
+                )
+                .presentationDetents([.large])
+            }
+            .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                let registeredMessage: String = "\(lastRegisteredName): Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk"
+                Text(registeredMessage)
+                    .multilineTextAlignment(.center)
+            }
+            .sheet(isPresented: $showingLeaving) {
+                LeavingSearchSheet(activeVisitors: activeVisitors) { name in
+                    lastCheckedOutName = name
+                    showSignedOutBannerTemporarily()
+                    showingLeaving = false
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            // Ask if they've blocked a car when a car reg is provided
+            .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
+                Button("No", role: .cancel) {
+                    blockedCar = false
+                    pagerNumber = ""
+                    if pendingSubmit {
+                        showingInduction = true
+                        // pendingSubmit will be cleared in the induction completion handler
+                    }
+                }
+                Button("Yes") {
+                    blockedCar = true
+                    showPagerPrompt = true
+                }
+            } message: {
+                Text("Please let us know if your parking is blocking another vehicle.")
+            }
+            // Pager sheet to capture contact number when a car is blocked
+            .sheet(isPresented: $showPagerPrompt) {
+                NavigationStack {
+                    let currentNumeric = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let normalizedUsedPagers: Set<String> = usedPagers
+                    let effectiveUsedPagers: Set<String> = normalizedUsedPagers.subtracting(currentNumeric.isEmpty ? [] : [currentNumeric])
+                    let pagerInUseError: Bool = !currentNumeric.isEmpty && normalizedUsedPagers.contains(currentNumeric)
+                    let pagerInUseMessage: String = "That pager is currently in use. Please choose another."
+
+                    Form {
+                        Section {
+                            Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Please select an available pager from the list.")
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.primary)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(Color.orange.opacity(0.15))
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1.5)
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
                                         )
+                                )
+                                .padding(.vertical, 4)
+                            VStack(alignment: .leading, spacing: 4) {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
+                                    ForEach(1...30, id: \.self) { i in
+                                        let tag = String(i)
+                                        let isTaken = effectiveUsedPagers.contains(tag)
+                                        let isSelected = pagerNumber == tag
+                                        Button {
+                                            if !isTaken { pagerNumber = tag }
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                Circle()
+                                                    .fill(isTaken ? Color.red : Color.green)
+                                                    .frame(width: 10, height: 10)
+                                                Text("Pager \(i)")
+                                                    .fontWeight(isSelected ? .bold : .regular)
+                                                if isSelected {
+                                                    Image(systemName: "checkmark")
+                                                        .imageScale(.small)
+                                                }
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(isSelected ? Color.blue.opacity(0.2) : Color(.systemGray6))
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1.5)
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(isTaken)
+                                        .opacity(isTaken ? 0.45 : 1)
                                     }
-                                    .buttonStyle(.plain)
-                                    .disabled(isTaken)
-                                    .opacity(isTaken ? 0.45 : 1)
+                                }
+                                .padding(.top, 4)
+
+                                if pagerInvalid {
+                                    Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
+                                }
+                                if pagerInUseError {
+                                    Text(pagerInUseMessage)
+                                        .font(.caption2)
+                                        .foregroundStyle(.red)
                                 }
                             }
-                            .padding(.top, 4)
-
-                            if pagerInvalid {
-                                Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
-                            }
-                            if pagerInUseError {
-                                Text(pagerInUseMessage)
-                                    .font(.caption2)
-                                    .foregroundStyle(.red)
-                            }
                         }
                     }
-                }
-                .navigationTitle("Contact Pager")
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Cancel") {
-                            // User cancelled providing a pager; clear blocked state and pager to re-enable Register
-                            blockedCar = false
-                            pagerNumber = ""
-                            showPagerPrompt = false
-                            pendingSubmit = false
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Save") {
-                            // Final guard: prevent saving a pager that's already in use
-                            if normalizedUsedPagers.contains(currentNumeric) || currentNumeric.isEmpty {
-                                // Reset selection and keep the sheet open for correction
+                    .navigationTitle("Contact Pager")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Cancel") {
+                                blockedCar = false
                                 pagerNumber = ""
-                                return
-                            }
-                            showPagerPrompt = false
-                            if pendingSubmit {
-                                showingInduction = true
-                                // pendingSubmit will be cleared in the induction completion handler
+                                showPagerPrompt = false
+                                pendingSubmit = false
                             }
                         }
-                        .disabled(currentNumeric.isEmpty || normalizedUsedPagers.contains(currentNumeric))
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Save") {
+                                if normalizedUsedPagers.contains(currentNumeric) || currentNumeric.isEmpty {
+                                    pagerNumber = ""
+                                    return
+                                }
+                                showPagerPrompt = false
+                                if pendingSubmit {
+                                    showingInduction = true
+                                    // pendingSubmit will be cleared in the induction completion handler
+                                }
+                            }
+                            .disabled(currentNumeric.isEmpty || normalizedUsedPagers.contains(currentNumeric))
+                        }
                     }
                 }
+                .interactiveDismissDisabled(true)
             }
-            .interactiveDismissDisabled(true)
-        }
-        // Induction flow full-screen
-        .fullScreenCover(isPresented: $showingInduction) {
-            InductionFlowView(imageNames: inductionImages) { confirmed in
-                showingInduction = false
-                if confirmed {
-                    submit()
+    }
+
+    // MARK: - Cover, sign-in-book, overlays (second piece of decorator chain)
+
+    @ViewBuilder
+    private var decoratedContentPart2: some View {
+        decoratedContentPart1
+            // Induction flow full-screen
+            .fullScreenCover(isPresented: $showingInduction) {
+                InductionFlowView(imageNames: inductionImages) { confirmed in
+                    showingInduction = false
+                    if confirmed {
+                        submit()
+                    }
+                    pendingSubmit = false
                 }
-                pendingSubmit = false
+                .ignoresSafeArea()
             }
-            .ignoresSafeArea()
-        }
-        // Sign In Book sheet
-        .sheet(isPresented: $showingSignInBook) {
-            SignInBookView {
-                showingSignInBook = false
-            } onCheckedOut: { name in
-                lastCheckedOutName = name
-                showSignedOutBannerTemporarily()
-                showingSignInBook = false
-            }
-            .interactiveDismissDisabled()
-        }
-        .sheet(isPresented: $showingRollCall) {
-            FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
-        }
-        .overlay(alignment: .top) {
-            checkoutBanner
-        }
-        // Added CEMEX logo overlay pinned to bottom center
-        .overlay(alignment: .bottom) {
-            Image("cemex_logo") // use asset name without extension
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: 325)
-                .padding(.bottom, vSizeClass == .compact ? 40 : 16)
-                .frame(maxWidth: .infinity)
-                .accessibilityHidden(true)
-                .allowsHitTesting(false)
-        }
-        .ignoresSafeArea(.keyboard) // keep bottom overlay from moving with keyboard
-        .onChange(of: showPagerPrompt) { oldValue, newValue in
-            // If the pager sheet is dismissed by any means and a submit is pending, present induction now
-            if oldValue == true && newValue == false {
-                if pendingSubmit {
-                    showingInduction = true
+            // Sign In Book sheet
+            .sheet(isPresented: $showingSignInBook) {
+                SignInBookView {
+                    showingSignInBook = false
+                } onCheckedOut: { name in
+                    lastCheckedOutName = name
+                    showSignedOutBannerTemporarily()
+                    showingSignInBook = false
                 }
-                pendingSubmit = false
+                .interactiveDismissDisabled()
             }
-        }
-        .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
-            // If the blocked car alert disappears without moving to pager and a submit is pending, present induction now
-            if oldValue == true && newValue == false {
-                if pendingSubmit && !showPagerPrompt && !blockedCar {
-                    showingInduction = true
+            .sheet(isPresented: $showingRollCall) {
+                FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
+            }
+            .overlay(alignment: .top) {
+                checkoutBanner
+            }
+            // CEMEX logo overlay pinned to bottom center
+            .overlay(alignment: .bottom) {
+                Image("cemex_logo")
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 325)
+                    .padding(.bottom, vSizeClass == .compact ? 40 : 16)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
+            }
+            .ignoresSafeArea(.keyboard)
+    }
+
+    // MARK: - Lifecycle onChange handlers (third piece)
+
+    @ViewBuilder
+    private var decoratedContentPart3: some View {
+        decoratedContentPart2
+            .onChange(of: showPagerPrompt) { oldValue, newValue in
+                if oldValue == true && newValue == false {
+                    if pendingSubmit {
+                        showingInduction = true
+                    }
                     pendingSubmit = false
                 }
             }
-        }
-        .onChange(of: store.lastError) { _, newValue in
-            if newValue != nil {
-                showPersistenceError = true
-            }
-        }
-        .onAppear {
-            if autoCheckoutEnabled {
-                startScheduler()
-            }
-            if autoBackupEnabled {
-                startBackupScheduler()
-            }
-        }
-        .onDisappear {
-            scheduler.cancel()
-            backupScheduler.cancel()
-        }
-        .onChange(of: autoCheckoutEnabled) { _, enabled in
-            if enabled {
-                startScheduler()
-            } else {
-                scheduler.cancel()
-            }
-        }
-        .onChange(of: autoCheckoutHour) { _, _ in
-            if autoCheckoutEnabled { startScheduler() }
-        }
-        .onChange(of: autoCheckoutMinute) { _, _ in
-            if autoCheckoutEnabled { startScheduler() }
-        }
-        .onChange(of: autoBackupEnabled) { _, enabled in
-            if enabled { startBackupScheduler() } else { backupScheduler.cancel() }
-        }
-        .fileImporter(
-            isPresented: $showingImportPicker,
-            allowedContentTypes: [.commaSeparatedText],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                guard let url = urls.first else { return }
-                let (summary, pending) = store.previewImport(from: url, context: context)
-                importSummary = summary
-                importPending = pending
-                showingImportConfirmation = true
-            case .failure(let error):
-                store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
-                showPersistenceError = true
-            }
-        }
-        .sheet(isPresented: $showingImportConfirmation) {
-            if let summary = importSummary {
-                ImportConfirmationView(
-                    summary: summary,
-                    onConfirm: {
-                        store.commitImport(context, pending: importPending)
-                        importPending = []
-                        importSummary = nil
-                        showingImportConfirmation = false
-                    },
-                    onCancel: {
-                        importPending = []
-                        importSummary = nil
-                        showingImportConfirmation = false
+            .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
+                if oldValue == true && newValue == false {
+                    if pendingSubmit && !showPagerPrompt && !blockedCar {
+                        showingInduction = true
+                        pendingSubmit = false
                     }
-                )
-                .presentationDetents([.medium])
+                }
             }
-        }
-        .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
-            Button("OK", role: .cancel) {
-                store.lastError = nil
+            .onChange(of: store.lastError) { _, newValue in
+                if newValue != nil {
+                    showPersistenceError = true
+                }
             }
-        } message: { error in
-            Text(error.localizedDescription)
-        }
+            .onAppear {
+                if autoCheckoutEnabled { startScheduler() }
+                if autoBackupEnabled { startBackupScheduler() }
+            }
+            .onDisappear {
+                scheduler.cancel()
+                backupScheduler.cancel()
+            }
+            .onChange(of: autoCheckoutEnabled) { _, enabled in
+                if enabled { startScheduler() } else { scheduler.cancel() }
+            }
+            .onChange(of: autoCheckoutHour) { _, _ in
+                if autoCheckoutEnabled { startScheduler() }
+            }
+            .onChange(of: autoCheckoutMinute) { _, _ in
+                if autoCheckoutEnabled { startScheduler() }
+            }
+            .onChange(of: autoBackupEnabled) { _, enabled in
+                if enabled { startBackupScheduler() } else { backupScheduler.cancel() }
+            }
+    }
+
+    // MARK: - File importer, import confirmation sheet and error alert (fourth piece)
+
+    @ViewBuilder
+    private var decoratedContent: some View {
+        decoratedContentPart3
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.commaSeparatedText],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    let (summary, pending) = store.previewImport(from: url, context: context)
+                    importSummary = summary
+                    importPending = pending
+                    showingImportConfirmation = true
+                case .failure(let error):
+                    store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
+                    showPersistenceError = true
+                }
+            }
+            .sheet(isPresented: $showingImportConfirmation) {
+                if let summary = importSummary {
+                    ImportConfirmationView(
+                        summary: summary,
+                        onConfirm: {
+                            store.commitImport(context, pending: importPending)
+                            importPending = []
+                            importSummary = nil
+                            showingImportConfirmation = false
+                        },
+                        onCancel: {
+                            importPending = []
+                            importSummary = nil
+                            showingImportConfirmation = false
+                        }
+                    )
+                    .presentationDetents([.medium])
+                }
+            }
+            .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
+                Button("OK", role: .cancel) {
+                    store.lastError = nil
+                }
+            } message: { error in
+                Text(error.localizedDescription)
+            }
     }
 
     private var isValid: Bool {
@@ -1168,7 +1180,7 @@ struct FireAlarmRollCallView: View {
                     } else {
                         Button("Confirm Out") {
                             store.checkOut(context, visitor)
-                            withAnimation {
+                            _ = withAnimation {
                                 confirmedOut.insert(visitor.id)
                             }
                         }
