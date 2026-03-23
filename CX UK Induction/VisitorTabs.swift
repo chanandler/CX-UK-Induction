@@ -1,6 +1,13 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Shared brand colours
+
+extension Color {
+    /// CEMEX corporate blue: HEX #023185 (RGB 2, 49, 133).
+    static let cemexBlue = Color(red: 2/255, green: 49/255, blue: 133/255)
+}
+
 // MARK: - Shared CSV / formatting utilities
 
 extension String {
@@ -52,9 +59,6 @@ extension DateFormatter {
 }
 
 struct VisitorTabs: View {
-    // CEMEX Blue: HEX #023185 (RGB 2,49,133)
-    private let cemexBlue = Color(red: 2/255, green: 49/255, blue: 133/255)
-
     var body: some View {
         TabView {
             ActiveVisitorsView()
@@ -62,7 +66,7 @@ struct VisitorTabs: View {
             ArchivedVisitorsView()
                 .tabItem { Label("Archived", systemImage: "archivebox.fill") }
         }
-        .background(cemexBlue)
+        .background(Color.cemexBlue)
     }
 }
 
@@ -73,8 +77,7 @@ struct ActiveVisitorsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Ensures any transparency shows the brand blue
-                Color(red: 2/255, green: 49/255, blue: 133/255).ignoresSafeArea()
+                Color.cemexBlue.ignoresSafeArea()
 
                 List {
                     ForEach(filteredActive) { visitor in
@@ -127,12 +130,12 @@ struct ArchivedVisitorsView: View {
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archived: [Visitor]
     @State private var searchText = ""
     @State private var shareItem: ShareItem?
+    @State private var showExportError = false
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Ensures any transparency shows the brand blue
-                Color(red: 2/255, green: 49/255, blue: 133/255).ignoresSafeArea()
+                Color.cemexBlue.ignoresSafeArea()
 
                 List {
                     ForEach(filteredArchived) { visitor in
@@ -160,6 +163,8 @@ struct ArchivedVisitorsView: View {
                         Button {
                             if let url = exportCSV() {
                                 shareItem = ShareItem(url: url)
+                            } else {
+                                showExportError = true
                             }
                         } label: {
                             Label("Export CSV", systemImage: "square.and.arrow.up")
@@ -176,8 +181,19 @@ struct ArchivedVisitorsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarBackground(.hidden, for: .tabBar)
         }
-        .sheet(item: $shareItem) { item in
+        .sheet(item: $shareItem, onDismiss: {
+            // Delete the temp file once the share sheet is dismissed.
+            if let url = shareItem?.url {
+                try? FileManager.default.removeItem(at: url)
+            }
+            shareItem = nil
+        }) { item in
             ShareView(url: item.url)
+        }
+        .alert("Export Failed", isPresented: $showExportError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("The CSV file could not be created. Please try again.")
         }
         .onChange(of: searchText) { _, _ in
             shareItem = nil

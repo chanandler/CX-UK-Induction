@@ -52,6 +52,9 @@ struct WelcomeView: View {
     @State private var importSummary: VisitorStore.ImportSummary? = nil
     @State private var showingImportConfirmation = false
 
+    // Reuse a single generator instance rather than creating one per haptic call.
+    private let hapticGenerator = UINotificationFeedbackGenerator()
+
     @State private var showingSignInBook = false
 
     @State private var showPersistenceError = false
@@ -163,8 +166,8 @@ struct WelcomeView: View {
             settingsMenu
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Share sheet for CSV export
-        .sheet(item: $shareItem) { item in
+        // Share sheet for CSV export — temp file is cleaned up on dismiss.
+        .sheet(item: $shareItem, onDismiss: cleanUpShareItem) { item in
             ActivityView(activityItems: [item.url])
         }
         // About sheet
@@ -436,7 +439,7 @@ struct WelcomeView: View {
                 importPending = pending
                 showingImportConfirmation = true
             case .failure(let error):
-                store.lastError = "Could not open file: \(error.localizedDescription)"
+                store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
                 showPersistenceError = true
             }
         }
@@ -459,20 +462,12 @@ struct WelcomeView: View {
                 .presentationDetents([.medium])
             }
         }
-        .alert("Save Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
+        .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
             Button("OK", role: .cancel) {
-                // clear the error so it won't re-trigger
                 store.lastError = nil
             }
-        } message: { msg in
-            let messageString: String = {
-                if let error = msg as? any Error {
-                    return error.localizedDescription
-                } else {
-                    return String(describing: msg)
-                }
-            }()
-            Text(verbatim: messageString)
+        } message: { error in
+            Text(error.localizedDescription)
         }
     }
 
@@ -541,16 +536,22 @@ struct WelcomeView: View {
         if let url = BackupScheduler.writeBackup(csvString: csv) {
             shareItem = ShareItem(url: url)
         } else {
-            store.lastError = "Backup failed: could not write file."
+            store.lastError = .importMessage("Backup failed: could not write file.")
             showPersistenceError = true
         }
     }
 
+    private func cleanUpShareItem() {
+        if let url = shareItem?.url {
+            try? FileManager.default.removeItem(at: url)
+        }
+        shareItem = nil
+    }
+
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.success)
+        hapticGenerator.prepare()
+        hapticGenerator.notificationOccurred(.success)
     }
     
     private func exportCSV(from visitors: [Visitor]) -> URL? {
@@ -660,6 +661,9 @@ struct WelcomeView: View {
             Button {
                 if let url = exportCSV(from: allVisitors) {
                     shareItem = ShareItem(url: url)
+                } else {
+                    store.lastError = .importMessage("Export failed: could not create CSV file.")
+                    showPersistenceError = true
                 }
             } label: {
                 Label("Export CSV", systemImage: "square.and.arrow.up")
@@ -1164,7 +1168,7 @@ struct FireAlarmRollCallView: View {
                     } else {
                         Button("Confirm Out") {
                             store.checkOut(context, visitor)
-                            _ = withAnimation {
+                            withAnimation {
                                 confirmedOut.insert(visitor.id)
                             }
                         }

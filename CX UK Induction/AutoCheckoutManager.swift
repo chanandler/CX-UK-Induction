@@ -35,10 +35,14 @@ final class AutoCheckoutScheduler {
             candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
         }
 
-        // Advance past any weekend days (Saturday = 7, Sunday = 1 in Gregorian).
-        for _ in 0..<7 {
-            let weekday = calendar.component(.weekday, from: candidate)
-            if weekday != 1 && weekday != 7 { break }
+        // Skip directly over weekends using a calendar calculation rather than
+        // incrementing one day at a time.
+        let weekday = calendar.component(.weekday, from: candidate)
+        if weekday == 7 {
+            // Saturday → advance 2 days to Monday
+            candidate = calendar.date(byAdding: .day, value: 2, to: candidate) ?? candidate
+        } else if weekday == 1 {
+            // Sunday → advance 1 day to Monday
             candidate = calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
         }
 

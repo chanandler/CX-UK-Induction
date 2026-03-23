@@ -44,9 +44,37 @@ final class Visitor: Identifiable, Hashable {
     }
 }
 
+// MARK: - Structured error type
+
+enum StoreError: LocalizedError {
+    case validationFailed(String)
+    case saveFailed(underlying: Error)
+    case fetchFailed(underlying: Error)
+    case importAccessDenied
+    case importUnreadable
+    case importEmpty
+    case importMissingColumns
+    case importMessage(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .validationFailed(let msg):   return msg
+        case .saveFailed(let e):           return "Save failed: \(e.localizedDescription)"
+        case .fetchFailed(let e):          return "Fetch failed: \(e.localizedDescription)"
+        case .importAccessDenied:          return "Import failed: could not access the selected file."
+        case .importUnreadable:            return "Import failed: could not read file."
+        case .importEmpty:                 return "Import failed: file appears empty."
+        case .importMissingColumns:        return "Import failed: required columns (First Name, Last Name, Date Signed In) not found."
+        case .importMessage(let msg):      return msg
+        }
+    }
+}
+
+// MARK: - VisitorStore
+
 @Observable
 final class VisitorStore {
-    var lastError: String?
+    var lastError: StoreError?
 
     // Derived state for sorting/searching; SwiftData is the source of truth.
     func signIn(_ context: ModelContext, firstName: String, lastName: String, company: String, visiting: String, carRegistration: String, blockedCar: Bool = false, pagerNumber: String? = nil, badgeNumber: String = "", at date: Date = Date()) {
@@ -58,7 +86,7 @@ final class VisitorStore {
         // Guard against blank-after-trim values slipping through
         guard !trimmedFirst.isEmpty, !trimmedLast.isEmpty,
               !trimmedCompany.isEmpty, !trimmedVisiting.isEmpty else {
-            lastError = "Sign-in failed: required fields must not be blank."
+            lastError = .validationFailed("Sign-in failed: required fields must not be blank.")
             return
         }
 
@@ -76,7 +104,7 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
-            lastError = "Sign-in save failed: \(error.localizedDescription)"
+            lastError = .saveFailed(underlying: error)
             print("SwiftData save error (signIn):", error)
         }
     }
@@ -86,7 +114,7 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
-            lastError = "Check-out save failed: \(error.localizedDescription)"
+            lastError = .saveFailed(underlying: error)
             print("SwiftData save error (checkOut):", error)
         }
     }
@@ -98,7 +126,7 @@ final class VisitorStore {
         do {
             try context.save()
         } catch {
-            lastError = "Delete archived failed: \(error.localizedDescription)"
+            lastError = .saveFailed(underlying: error)
             print("SwiftData save error (deleteArchived):", error)
         }
     }
@@ -147,19 +175,19 @@ final class VisitorStore {
     /// Returns an `ImportSummary` — call `context.save()` to commit if desired.
     func previewImport(from url: URL, context: ModelContext) -> (summary: ImportSummary, pending: [Visitor]) {
         guard url.startAccessingSecurityScopedResource() else {
-            lastError = "Import failed: could not access the selected file."
+            lastError = .importAccessDenied
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
         defer { url.stopAccessingSecurityScopedResource() }
 
         guard let raw = try? String(contentsOf: url, encoding: .utf8) else {
-            lastError = "Import failed: could not read file."
+            lastError = .importUnreadable
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
         let lines = raw.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         guard lines.count >= 2 else {
-            lastError = "Import failed: file appears empty."
+            lastError = .importEmpty
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
@@ -170,7 +198,7 @@ final class VisitorStore {
         // Require at minimum the four identity columns.
         guard let iFirst = col("First Name"), let iLast = col("Last Name"),
               let iCheckIn = col("Date Signed In") ?? col("Check In") else {
-            lastError = "Import failed: required columns (First Name, Last Name, Date Signed In) not found."
+            lastError = .importMissingColumns
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
@@ -180,7 +208,7 @@ final class VisitorStore {
             let all = try context.fetch(FetchDescriptor<Visitor>())
             existingKey = Set(all.map { dupKey($0.firstName, $0.lastName, $0.checkIn) })
         } catch {
-            lastError = "Import failed: could not read existing records."
+            lastError = .importMessage("Import failed: could not read existing records.")
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
@@ -259,7 +287,7 @@ final class VisitorStore {
             try context.save()
             return true
         } catch {
-            lastError = "Import save failed: \(error.localizedDescription)"
+            lastError = .saveFailed(underlying: error)
             print("SwiftData save error (commitImport):", error)
             return false
         }
@@ -332,7 +360,7 @@ final class VisitorStore {
             try context.save()
             return results.count
         } catch {
-            lastError = "Auto-checkout failed: \(error.localizedDescription)"
+            lastError = .fetchFailed(underlying: error)
             print("SwiftData fetch/save error (autoCheckout):", error)
             return 0
         }
