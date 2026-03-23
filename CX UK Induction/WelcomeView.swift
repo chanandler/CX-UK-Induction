@@ -50,11 +50,17 @@ struct WelcomeView: View {
         case firstName, lastName, company, visiting, carReg, badge
     }
 
-    // Track pagers already in use by active visitors
+    // Track pagers already in use by active visitors.
+    // Strip any legacy "Pager " prefix so older stored values ("Pager 3") compare
+    // correctly against the bare numeric picker tags ("3").
     private var usedPagers: Set<String> {
-        Set(activeVisitors
-            .compactMap { $0.pagerNumber?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty })
+        Set(activeVisitors.compactMap { visitor -> String? in
+            guard let raw = visitor.pagerNumber else { return nil }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { return nil }
+            let lower = trimmed.lowercased()
+            return lower.hasPrefix("pager ") ? String(trimmed.dropFirst("pager ".count)) : trimmed
+        })
     }
 
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
