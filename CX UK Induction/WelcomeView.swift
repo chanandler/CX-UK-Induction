@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UniformTypeIdentifiers
 
 struct WelcomeView: View {
     @Environment(VisitorStore.self) private var store
@@ -40,6 +41,16 @@ struct WelcomeView: View {
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
     @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
     @State private var scheduler = AutoCheckoutScheduler()
+
+    // Backup scheduler
+    @AppStorage("autoBackupEnabled") private var autoBackupEnabled: Bool = false
+    @State private var backupScheduler = BackupScheduler()
+
+    // CSV import state
+    @State private var showingImportPicker = false
+    @State private var importPending: [Visitor] = []
+    @State private var importSummary: VisitorStore.ImportSummary? = nil
+    @State private var showingImportConfirmation = false
 
     @State private var showingSignInBook = false
 
@@ -161,8 +172,16 @@ struct WelcomeView: View {
             AboutView()
         }
         .sheet(isPresented: $showingSettings) {
-            AutoCheckoutSettingsView(enabled: $autoCheckoutEnabled, hour: $autoCheckoutHour, minute: $autoCheckoutMinute)
-                .presentationDetents([.medium])
+            AutoCheckoutSettingsView(
+                enabled: $autoCheckoutEnabled,
+                hour: $autoCheckoutHour,
+                minute: $autoCheckoutMinute,
+                autoBackupEnabled: $autoBackupEnabled,
+                onManualBackup: runManualBackup,
+                onImportCSV: { showingImportPicker = true },
+                existingBackups: BackupScheduler.existingBackups()
+            )
+            .presentationDetents([.large])
         }
         .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
             Button("OK", role: .cancel) { }
@@ -380,9 +399,13 @@ struct WelcomeView: View {
             if autoCheckoutEnabled {
                 startScheduler()
             }
+            if autoBackupEnabled {
+                startBackupScheduler()
+            }
         }
         .onDisappear {
             scheduler.cancel()
+            backupScheduler.cancel()
         }
         .onChange(of: autoCheckoutEnabled) { _, enabled in
             if enabled {
@@ -396,6 +419,45 @@ struct WelcomeView: View {
         }
         .onChange(of: autoCheckoutMinute) { _, _ in
             if autoCheckoutEnabled { startScheduler() }
+        }
+        .onChange(of: autoBackupEnabled) { _, enabled in
+            if enabled { startBackupScheduler() } else { backupScheduler.cancel() }
+        }
+        .fileImporter(
+            isPresented: $showingImportPicker,
+            allowedContentTypes: [.commaSeparatedText],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                let (summary, pending) = store.previewImport(from: url, context: context)
+                importSummary = summary
+                importPending = pending
+                showingImportConfirmation = true
+            case .failure(let error):
+                store.lastError = "Could not open file: \(error.localizedDescription)"
+                showPersistenceError = true
+            }
+        }
+        .sheet(isPresented: $showingImportConfirmation) {
+            if let summary = importSummary {
+                ImportConfirmationView(
+                    summary: summary,
+                    onConfirm: {
+                        store.commitImport(context, pending: importPending)
+                        importPending = []
+                        importSummary = nil
+                        showingImportConfirmation = false
+                    },
+                    onCancel: {
+                        importPending = []
+                        importSummary = nil
+                        showingImportConfirmation = false
+                    }
+                )
+                .presentationDetents([.medium])
+            }
         }
         .alert("Save Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
             Button("OK", role: .cancel) {
@@ -463,6 +525,24 @@ struct WelcomeView: View {
         scheduler.scheduleDailyCheckout(atHour: autoCheckoutHour, minute: autoCheckoutMinute) {
             // Pass the actual fire time so checkout records the real time rather than a hardcoded value.
             store.autoCheckoutPreviousDay(context, at: Date())
+        }
+    }
+
+    private func startBackupScheduler() {
+        backupScheduler.cancel()
+        backupScheduler.scheduleDailyBackup(atHour: 6, minute: 0) {
+            let csv = store.backupCSVString(from: allVisitors)
+            BackupScheduler.writeBackup(csvString: csv)
+        }
+    }
+
+    private func runManualBackup() {
+        let csv = store.backupCSVString(from: allVisitors)
+        if let url = BackupScheduler.writeBackup(csvString: csv) {
+            shareItem = ShareItem(url: url)
+        } else {
+            store.lastError = "Backup failed: could not write file."
+            showPersistenceError = true
         }
     }
 
@@ -1119,6 +1199,10 @@ private struct AutoCheckoutSettingsView: View {
     @Binding var enabled: Bool
     @Binding var hour: Int
     @Binding var minute: Int
+    @Binding var autoBackupEnabled: Bool
+    var onManualBackup: () -> Void
+    var onImportCSV: () -> Void
+    var existingBackups: [URL]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1136,10 +1220,82 @@ private struct AutoCheckoutSettingsView: View {
                     }
                     .labelsHidden()
                 }
+
+                Section("Backup") {
+                    Toggle("Automatic daily backup (06:00)", isOn: $autoBackupEnabled)
+
+                    Button {
+                        onManualBackup()
+                        dismiss()
+                    } label: {
+                        Label("Export Backup Now", systemImage: "arrow.up.doc")
+                    }
+
+                    if let latest = existingBackups.first {
+                        LabeledContent("Latest backup") {
+                            Text(latest.deletingPathExtension().lastPathComponent
+                                    .replacingOccurrences(of: "visitor_backup_", with: ""))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    LabeledContent("Saved backups") {
+                        Text("\(existingBackups.count) file\(existingBackups.count == 1 ? "" : "s") in Documents")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Restore") {
+                    Button {
+                        onImportCSV()
+                        dismiss()
+                    } label: {
+                        Label("Import CSV…", systemImage: "arrow.down.doc")
+                    }
+                    Text("Imports visitor records from a CSV backup. Duplicate entries are skipped. Missing columns (older files) receive safe default values.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+}
+
+/// Shown after parsing a CSV import so the user can review counts before committing.
+private struct ImportConfirmationView: View {
+    let summary: VisitorStore.ImportSummary
+    var onConfirm: () -> Void
+    var onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Import Preview") {
+                    LabeledContent("New records to import", value: "\(summary.imported)")
+                    LabeledContent("Duplicates (will be skipped)", value: "\(summary.skipped)")
+                    LabeledContent("Rows failed to parse", value: "\(summary.failed)")
+                }
+                if summary.imported == 0 {
+                    Section {
+                        Text("Nothing to import. All records in the file already exist in the app, or no valid rows were found.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Import CSV")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel", role: .cancel) { onCancel() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Import \(summary.imported) Records") { onConfirm() }
+                        .disabled(summary.imported == 0)
+                        .bold()
+                }
             }
         }
     }

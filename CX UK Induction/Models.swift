@@ -103,6 +103,216 @@ final class VisitorStore {
         }
     }
 
+    // MARK: - Backup export
+
+    /// Builds the canonical 11-column backup CSV string for all visitors.
+    func backupCSVString(from visitors: [Visitor]) -> String {
+        var rows: [String] = [
+            ["First Name","Last Name","Company","Visiting","Car Registration",
+             "Blocked Car","Pager Number","Badge Number",
+             "Date Signed In","Date Signed Out","Auto Logged Out"]
+                .map(\.escapedAsCSVField)
+                .joined(separator: ",")
+        ]
+        for v in visitors {
+            let row: [String] = [
+                v.firstName,
+                v.lastName,
+                v.company,
+                v.visiting,
+                v.carRegistration,
+                v.blockedCar ? "Yes" : "No",
+                v.pagerNumber ?? "",
+                v.badgeNumber,
+                DateFormatter.csvDateTime.string(from: v.checkIn),
+                v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? "",
+                v.wasAutoCheckedOut ? "Yes" : "No"
+            ]
+            rows.append(row.map(\.escapedAsCSVField).joined(separator: ","))
+        }
+        return rows.joined(separator: "\n")
+    }
+
+    // MARK: - CSV import
+
+    /// Summarises the result of a CSV import operation.
+    struct ImportSummary {
+        let imported: Int
+        let skipped: Int   // duplicates
+        let failed: Int    // rows that couldn't be parsed
+    }
+
+    /// Parses a CSV file at `url` and inserts missing visitor records into `context`.
+    /// Matches on firstName + lastName + checkIn to detect duplicates.
+    /// Returns an `ImportSummary` — call `context.save()` to commit if desired.
+    func previewImport(from url: URL, context: ModelContext) -> (summary: ImportSummary, pending: [Visitor]) {
+        guard url.startAccessingSecurityScopedResource() else {
+            lastError = "Import failed: could not access the selected file."
+            return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else {
+            lastError = "Import failed: could not read file."
+            return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
+        }
+
+        let lines = raw.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard lines.count >= 2 else {
+            lastError = "Import failed: file appears empty."
+            return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
+        }
+
+        // Parse header row to build column-name → index map.
+        let headers = parseCSVLine(lines[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        func col(_ name: String) -> Int? { headers.firstIndex(of: name) }
+
+        // Require at minimum the four identity columns.
+        guard let iFirst = col("First Name"), let iLast = col("Last Name"),
+              let iCheckIn = col("Date Signed In") ?? col("Check In") else {
+            lastError = "Import failed: required columns (First Name, Last Name, Date Signed In) not found."
+            return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
+        }
+
+        // Build a set of existing records for duplicate detection.
+        let existingKey: Set<String>
+        do {
+            let all = try context.fetch(FetchDescriptor<Visitor>())
+            existingKey = Set(all.map { dupKey($0.firstName, $0.lastName, $0.checkIn) })
+        } catch {
+            lastError = "Import failed: could not read existing records."
+            return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
+        }
+
+        var pending: [Visitor] = []
+        var skipped = 0
+        var failed = 0
+
+        for line in lines.dropFirst() {
+            let fields = parseCSVLine(line)
+            func field(_ idx: Int?) -> String {
+                guard let i = idx, i < fields.count else { return "" }
+                return fields[i].trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+
+            let firstName = field(iFirst)
+            let lastName = field(iLast)
+            let checkInStr = field(iCheckIn)
+
+            guard !firstName.isEmpty, !lastName.isEmpty, !checkInStr.isEmpty else {
+                failed += 1
+                continue
+            }
+
+            guard let checkIn = DateFormatter.csvDateTime.date(from: checkInStr)
+                              ?? DateFormatter.csvDateTimeAlt.date(from: checkInStr) else {
+                failed += 1
+                continue
+            }
+
+            // Duplicate check.
+            if existingKey.contains(dupKey(firstName, lastName, checkIn)) {
+                skipped += 1
+                continue
+            }
+
+            // Optional / potentially missing columns get safe defaults.
+            let company         = field(col("Company"))
+            let visiting        = field(col("Visiting"))
+            let carReg          = field(col("Car Registration"))
+            let blockedCarStr   = field(col("Blocked Car")).lowercased()
+            let blockedCar      = blockedCarStr == "yes" || blockedCarStr == "true" || blockedCarStr == "1"
+            let pagerRaw        = field(col("Pager Number"))
+            let pagerNumber: String? = pagerRaw.isEmpty ? nil : pagerRaw
+            let badgeNumber     = field(col("Badge Number"))
+            let checkOutStr     = field(col("Date Signed Out") ?? col("Check Out"))
+            let checkOut: Date? = checkOutStr.isEmpty ? nil
+                : DateFormatter.csvDateTime.date(from: checkOutStr)
+                  ?? DateFormatter.csvDateTimeAlt.date(from: checkOutStr)
+            let autoStr         = field(col("Auto Logged Out")).lowercased()
+            let wasAuto         = autoStr == "yes" || autoStr == "true" || autoStr == "1"
+
+            let visitor = Visitor(
+                firstName: firstName,
+                lastName: lastName,
+                company: company,
+                visiting: visiting,
+                carRegistration: carReg,
+                blockedCar: blockedCar,
+                pagerNumber: pagerNumber,
+                badgeNumber: badgeNumber,
+                checkIn: checkIn,
+                checkOut: checkOut,
+                wasAutoCheckedOut: wasAuto
+            )
+            pending.append(visitor)
+        }
+
+        return (ImportSummary(imported: pending.count, skipped: skipped, failed: failed), pending)
+    }
+
+    /// Commits the pending visitors from `previewImport` into `context` and saves.
+    @discardableResult
+    func commitImport(_ context: ModelContext, pending: [Visitor]) -> Bool {
+        for v in pending { context.insert(v) }
+        do {
+            try context.save()
+            return true
+        } catch {
+            lastError = "Import save failed: \(error.localizedDescription)"
+            print("SwiftData save error (commitImport):", error)
+            return false
+        }
+    }
+
+    // MARK: - Private CSV helpers
+
+    private func dupKey(_ first: String, _ last: String, _ date: Date) -> String {
+        "\(first.lowercased())|\(last.lowercased())|\(date.timeIntervalSinceReferenceDate)"
+    }
+
+    /// A minimal quote-aware CSV line parser that handles double-quoted fields
+    /// (including escaped internal quotes "" and embedded newlines).
+    private func parseCSVLine(_ line: String) -> [String] {
+        var fields: [String] = []
+        var current = ""
+        var inQuotes = false
+        var idx = line.startIndex
+
+        while idx < line.endIndex {
+            let ch = line[idx]
+            if inQuotes {
+                if ch == "\"" {
+                    let next = line.index(after: idx)
+                    if next < line.endIndex && line[next] == "\"" {
+                        // Escaped quote ""
+                        current.append("\"")
+                        idx = line.index(after: next)
+                        continue
+                    } else {
+                        inQuotes = false
+                    }
+                } else {
+                    current.append(ch)
+                }
+            } else {
+                if ch == "\"" {
+                    inQuotes = true
+                } else if ch == "," {
+                    fields.append(current)
+                    current = ""
+                } else {
+                    current.append(ch)
+                }
+            }
+            idx = line.index(after: idx)
+        }
+        fields.append(current)
+        return fields
+    }
+
+    // MARK: - Auto-checkout
+
     /// Checks out all visitors who signed in before today and have not yet signed out.
     /// Returns the number of visitors that were checked out.
     @discardableResult

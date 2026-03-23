@@ -39,6 +39,16 @@ extension DateFormatter {
         df.dateFormat = "dd/MM/yy HH:mm"
         return df
     }()
+
+    /// Alternative ISO-style formatter for parsing legacy CSV files that may use
+    /// a different date format (yyyy-MM-dd HH:mm or similar).
+    static let csvDateTimeAlt: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_GB")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "yyyy-MM-dd HH:mm"
+        return df
+    }()
 }
 
 struct VisitorTabs: View {
