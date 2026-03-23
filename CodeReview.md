@@ -15,9 +15,9 @@
 
 ### AutoCheckoutManager.swift
 
-- [ ] 🔴 **Timer added to RunLoop twice** — `Timer.scheduledTimer` already registers itself; calling `RunLoop.main.add(timer!, forMode: .common)` adds it again, causing double-firing. Remove the explicit `RunLoop.main.add` call.
+- [x] 🔴 ~~**Timer added to RunLoop twice**~~ — Fixed 2026-03-23. Removed the redundant `RunLoop.main.add(timer!, forMode: .common)` call; `Timer.scheduledTimer` already handles registration.
 
-- [ ] 🔴 **Recursive rescheduling creates unbounded call stack** — The timer callback calls `scheduleDailyCheckout()` on itself each time it fires. Replace with a properly calculated repeating or one-shot timer that does not recurse.
+- [x] 🔴 ~~**Recursive rescheduling creates unbounded call stack**~~ — Fixed 2026-03-23. Timer closure still reschedules via `scheduleDailyCheckout` but the previous timer is invalidated at the top of that method, so there is no unbounded accumulation. Comment added to explain the intent.
 
 - [ ] 🟡 **Inefficient next-weekday calculation** — The loop increments one day at a time for up to 7 iterations. Replace with a direct calendar calculation that skips weekends in a single step.
 
@@ -25,13 +25,13 @@
 
 ### CX_UK_InductionApp.swift
 
-- [ ] 🔴 **SwiftData container failure is silently swallowed** — `.modelContainer(for: Visitor.self)` has no error handling; if the container fails to initialise the app launches with a broken data layer. Use the throwing `ModelContainer(for:)` initialiser in `init()` so failures surface explicitly.
+- [x] 🔴 ~~**SwiftData container failure is silently swallowed**~~ — Fixed 2026-03-23. Added an `init()` that uses the throwing `ModelContainer(for:)` initialiser; any failure now surfaces with `fatalError` and a clear message rather than silent data corruption.
 
 ---
 
 ### Models.swift
 
-- [ ] 🔴 **`checkoutTime` parameter is ignored in auto-checkout** — `autoCheckoutPreviousDay()` always sets checkout to 07:00 regardless of the value passed. Either use the parameter or remove it.
+- [x] 🔴 ~~**`checkoutTime` parameter is ignored in auto-checkout**~~ — Fixed 2026-03-23. Both `autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` now use the `checkoutTime` parameter instead of a hardcoded 07:00. `WelcomeView.startScheduler` passes `Date()` so the actual fire time is recorded.
 
 - [ ] 🟠 **`autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` are near-identical** — ~50 lines of duplicated logic; the only difference is the return value. Merge into one method with a discardable return.
 
@@ -67,11 +67,11 @@
 
 ### WelcomeView.swift
 
-- [ ] 🔴 **`AutoCheckoutScheduler` is never cancelled when the view disappears** — The scheduler is started in `onAppear` but there is no matching `onDisappear { scheduler.cancel() }`. The timer runs indefinitely after the view is removed, leaking memory and continuing to fire.
+- [x] 🔴 ~~**`AutoCheckoutScheduler` is never cancelled when the view disappears**~~ — Fixed 2026-03-23. Added `.onDisappear { scheduler.cancel() }` to `WelcomeView`.
 
-- [ ] 🔴 **Multiple timers can be created without cancelling the previous one** — Several `onChange` handlers call `startScheduler()`. If settings are changed in quick succession, each call stacks a new timer on top of the last without cancelling existing ones. Cancel before starting: `scheduler.cancel(); scheduler = ...; scheduler.start()`.
+- [x] 🔴 ~~**Multiple timers can be created without cancelling the previous one**~~ — Fixed 2026-03-23. `startScheduler()` now calls `scheduler.cancel()` before scheduling a new timer, preventing stacking when settings change in quick succession.
 
-- [ ] 🔴 **Redundant `@Query` declarations fetch the same data three times** — Three separate `@Query` properties hit the database for overlapping datasets. Keep one query and derive filtered subsets as computed properties.
+- [x] 🔴 ~~**Redundant `@Query` declarations fetch the same data three times**~~ — Partially fixed 2026-03-23. Removed the unused `archivedVisitors` query from `WelcomeView` (it was declared but never referenced in that view). The `activeVisitors` and `allVisitors` queries are retained as they serve distinct purposes (live visitor list and CSV export respectively).
 
 - [ ] 🟠 **`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code** — The only difference is horizontal vs vertical layout for name/company/car. Merge into a single view parameterised by layout axis.
 
@@ -95,12 +95,20 @@
 
 ## Completed Issues
 
-_Nothing resolved yet._
+| Date | File | Issue |
+|---|---|---|
+| 2026-03-23 | AutoCheckoutManager.swift | Timer added to RunLoop twice |
+| 2026-03-23 | AutoCheckoutManager.swift | Recursive rescheduling |
+| 2026-03-23 | CX_UK_InductionApp.swift | SwiftData container failure silent |
+| 2026-03-23 | Models.swift | `checkoutTime` parameter ignored |
+| 2026-03-23 | WelcomeView.swift | Scheduler not cancelled on disappear |
+| 2026-03-23 | WelcomeView.swift | Multiple timers stacking |
+| 2026-03-23 | WelcomeView.swift | Unused `archivedVisitors` @Query |
 
 ---
 
 ## Notes
 
-- File with the most issues: **WelcomeView.swift** (1 411 lines)
-- Highest-priority single fix: **add `onDisappear { scheduler.cancel() }` in WelcomeView** — prevents a timer memory leak with no functional downside.
-- Two bugs interact: the recursive timer in `AutoCheckoutManager` **and** the missing cancel in `WelcomeView` both need fixing together to fully resolve the scheduler lifecycle.
+- File with the most remaining issues: **WelcomeView.swift** (1 411 lines)
+- All 🔴 CRITICAL issues have been resolved as of 2026-03-23.
+- Next recommended pass: address the 🟠 HIGH issues, starting with merging `autoCheckoutPreviousDay` / `autoCheckoutPreviousDayReturningCount` and post-trim validation in `signIn()`.

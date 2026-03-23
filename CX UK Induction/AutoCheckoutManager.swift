@@ -7,11 +7,12 @@ final class AutoCheckoutScheduler {
         timer?.invalidate()
         let fireDate = nextWeekdayFireDate(hour: hour, minute: minute)
         let interval = fireDate.timeIntervalSinceNow
+        // scheduledTimer already registers itself on the current run loop — no RunLoop.add() needed.
+        // On firing, reschedule for the next weekday without unbounded recursion.
         timer = Timer.scheduledTimer(withTimeInterval: max(1, interval), repeats: false) { [weak self] _ in
             checkoutAction()
             self?.scheduleDailyCheckout(atHour: hour, minute: minute, checkoutAction: checkoutAction)
         }
-        RunLoop.main.add(timer!, forMode: .common)
     }
 
     func cancel() {

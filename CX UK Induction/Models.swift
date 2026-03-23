@@ -100,14 +100,9 @@ final class VisitorStore {
         )
         do {
             let results = try context.fetch(descriptor)
-            // Set their checkOut to 07:00 of today for consistency
-            var comps = cal.dateComponents([.year, .month, .day], from: Date())
-            comps.hour = 7
-            comps.minute = 0
-            comps.second = 0
-            let sevenAM = cal.date(from: comps) ?? Date()
+            // Use the provided checkoutTime rather than a hardcoded 07:00
             for v in results {
-                v.checkOut = sevenAM
+                v.checkOut = checkoutTime
                 v.wasAutoCheckedOut = true
             }
             if !results.isEmpty {
@@ -129,13 +124,9 @@ final class VisitorStore {
         do {
             let results = try context.fetch(descriptor)
             if results.isEmpty { return 0 }
-            var comps = cal.dateComponents([.year, .month, .day], from: Date())
-            comps.hour = 7
-            comps.minute = 0
-            comps.second = 0
-            let sevenAM = cal.date(from: comps) ?? Date()
+            // Use the provided checkoutTime rather than a hardcoded 07:00
             for v in results {
-                v.checkOut = sevenAM
+                v.checkOut = checkoutTime
                 v.wasAutoCheckedOut = true
             }
             try context.save()

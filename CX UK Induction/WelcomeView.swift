@@ -57,9 +57,7 @@ struct WelcomeView: View {
             .filter { !$0.isEmpty })
     }
 
-    // Add back activeVisitors query
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
-    @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\Visitor.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
     @Query(sort: [SortDescriptor(\Visitor.checkIn, order: .reverse)]) private var allVisitors: [Visitor]
     
     // Share support for exported CSV (ActivityView presenter)
@@ -364,6 +362,9 @@ struct WelcomeView: View {
                 startScheduler()
             }
         }
+        .onDisappear {
+            scheduler.cancel()
+        }
         .onChange(of: autoCheckoutEnabled) { _, enabled in
             if enabled {
                 startScheduler()
@@ -443,8 +444,11 @@ struct WelcomeView: View {
     }
     
     private func startScheduler() {
+        // Cancel any existing timer before scheduling a new one to prevent stacking.
+        scheduler.cancel()
         scheduler.scheduleDailyCheckout(atHour: autoCheckoutHour, minute: autoCheckoutMinute) {
-            store.autoCheckoutPreviousDay(context)
+            // Pass the actual fire time so checkout records the real time rather than a hardcoded value.
+            store.autoCheckoutPreviousDay(context, at: Date())
         }
     }
 
