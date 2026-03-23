@@ -180,8 +180,13 @@ struct WelcomeView: View {
     private var decoratedContentPart1: some View {
         mainContent
             // Share sheet for CSV export — temp file is cleaned up on dismiss.
-            .sheet(item: $shareItem, onDismiss: cleanUpShareItem) { item in
+            .sheet(item: $shareItem) { item in
+                // Capture URL from item — shareItem is nil by the time onDismiss fires.
                 ActivityView(activityItems: [item.url])
+                    .onDisappear {
+                        try? FileManager.default.removeItem(at: item.url)
+                        shareItem = nil
+                    }
             }
             // About sheet
             .sheet(isPresented: $showingAbout) {
@@ -553,12 +558,6 @@ struct WelcomeView: View {
         }
     }
 
-    private func cleanUpShareItem() {
-        if let url = shareItem?.url {
-            try? FileManager.default.removeItem(at: url)
-        }
-        shareItem = nil
-    }
 
     private func showSignedOutBannerTemporarily() {
         withAnimation { showCheckoutBanner = true }

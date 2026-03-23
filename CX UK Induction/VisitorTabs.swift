@@ -181,14 +181,13 @@ struct ArchivedVisitorsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarBackground(.hidden, for: .tabBar)
         }
-        .sheet(item: $shareItem, onDismiss: {
-            // Delete the temp file once the share sheet is dismissed.
-            if let url = shareItem?.url {
-                try? FileManager.default.removeItem(at: url)
-            }
-            shareItem = nil
-        }) { item in
-            ShareView(url: item.url)
+        .sheet(item: $shareItem) { item in
+            // Capture the URL from the item parameter — by the time onDismiss fires
+            // SwiftUI has already cleared shareItem, so reading shareItem?.url returns nil.
+            ShareView(url: item.url, onDismiss: {
+                try? FileManager.default.removeItem(at: item.url)
+                shareItem = nil
+            })
         }
         .alert("Export Failed", isPresented: $showExportError) {
             Button("OK", role: .cancel) { }
@@ -333,10 +332,12 @@ struct VisitorDetail: View {
     }
 }
 
-// Restored ShareView so .sheet(item:) compiles
 struct ShareView: View, Identifiable {
     let url: URL
     var id: URL { url }
+    var onDismiss: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -349,6 +350,14 @@ struct ShareView: View, Identifiable {
             .padding()
             .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        onDismiss?()
+                        dismiss()
+                    }
+                }
+            }
         }
         .background(Color.clear)
     }
