@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23
+> Generated: 2026-03-23 | Last updated: 2026-03-24
 
 ---
 
@@ -43,9 +43,9 @@
 
 ### RootView.swift
 
-- [ ] 🟢 **ZStack contains only one child** — The `ZStack` wraps a single `WelcomeView`. Either remove it or replace with `VStack`/plain `Group`.
+- [x] 🟢 ~~**ZStack contains only one child**~~ — Fixed 2026-03-24 (UI update). `RootView` `ZStack` now has two children: `Color.cemexBlue.ignoresSafeArea()` as the background fill and `WelcomeView()` on top. Valid use of `ZStack`.
 
-- [ ] 🟢 **Preview lacks required environment** — The `#Preview` block has no `.modelContainer` or `.environment(VisitorStore())`, so it will fail to render. Add the necessary environment setup.
+- [ ] 🟢 **Preview lacks required environment** — The `#Preview` block in `RootView.swift` has no `.modelContainer` or `.environment(VisitorStore())`, so it will fail to render in Xcode canvas. Note: `WelcomeView.swift`'s `#Preview` correctly wraps `RootView()` with the required environment. Fix: apply the same setup to `RootView.swift`'s own preview.
 
 ---
 
@@ -73,7 +73,7 @@
 
 - [x] 🔴 ~~**Redundant `@Query` declarations fetch the same data three times**~~ — Partially fixed 2026-03-23. Removed the unused `archivedVisitors` query from `WelcomeView` (it was declared but never referenced in that view). The `activeVisitors` and `allVisitors` queries are retained as they serve distinct purposes (live visitor list and CSV export respectively).
 
-- [ ] 🟠 **`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code** — The only difference is horizontal vs vertical layout for name/company/car. Merge into a single view parameterised by layout axis.
+- [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Fixed 2026-03-24. Merged into a single `VisitorFormFields` view with a `useColumns: Bool` parameter. The new `FormField` component replaces the `inputTextField` free function. Both responsive layouts now share one implementation.
 
 - [x] 🟠 ~~**`DateFormatter` instances created at multiple call sites**~~ — Fixed 2026-03-23. Three shared `static let` formatters (`shortTime`, `mediumDateTime`, `csvDateTime`) added to `VisitorTabs.swift` as `DateFormatter` extensions and used across `VisitorRow`, `VisitorDetail`, `SignInBookView`, `LeavingSearchSheet`, and both CSV export functions. Private `static let dateTimeFormatter` properties removed.
 
@@ -92,61 +92,6 @@
 - [ ] 🟢 **Pager count hardcoded to 30** — The picker range `1...30` is a magic number. Extract to a named constant so it can be changed in one place.
 
 - [ ] 🟢 **All user-facing strings are hardcoded English** — No `Localizable.strings` or `String(localized:)` usage. Low priority for an internal tool, but worth noting.
-
----
-
-## Completed Issues
-
-| Date | File | Issue |
-|---|---|---|
-| 2026-03-23 | AutoCheckoutManager.swift | Timer added to RunLoop twice |
-| 2026-03-23 | AutoCheckoutManager.swift | Recursive rescheduling |
-| 2026-03-23 | CX_UK_InductionApp.swift | SwiftData container failure silent |
-| 2026-03-23 | Models.swift | `checkoutTime` parameter ignored |
-| 2026-03-23 | WelcomeView.swift | Scheduler not cancelled on disappear |
-| 2026-03-23 | WelcomeView.swift | Multiple timers stacking |
-| 2026-03-23 | WelcomeView.swift | Unused `archivedVisitors` @Query |
-| 2026-03-23 | Models.swift | Duplicate auto-checkout methods merged |
-| 2026-03-23 | Models.swift | `signIn()` missing post-trim validation |
-| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `escapeCSV` duplication extracted to `String.escapedAsCSVField` |
-| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `DateFormatter` instances consolidated to shared `static let` extensions |
-| 2026-03-23 | Models.swift + WelcomeView.swift + VisitorTabs.swift | `badgeNumber` optionality aligned (now non-optional `String`) |
-| 2026-03-23 | WelcomeView.swift | Pager picker normalization dead code removed |
-| 2026-03-23 | WelcomeView.swift | Pager availability icons (🔴/🟢) not visible — replaced hidden `.menu` picker with always-visible `LazyVGrid` of buttons |
-| 2026-03-23 | WelcomeView.swift + Models.swift | `WelcomeView.body` type-checker complexity — split into four `@ViewBuilder` properties; `StoreError` made `Equatable` |
-| 2026-03-23 | WelcomeView.swift | `withAnimation` unused result warning — suppressed with `_ =` |
-| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | Temp CSV files not deleted — fixed `onDismiss` URL capture bug in both views |
-| 2026-03-23 | AutoCheckoutManager.swift | Weekday calculation already efficient — verified, no change needed |
-| 2026-03-23 | Models.swift | Structured error type already in place — verified `StoreError` enum, no change needed |
-| 2026-03-23 | VisitorTabs.swift | CSV export error alert already implemented — verified, no change needed |
-| 2026-03-23 | VisitorTabs.swift | CEMEX Blue already extracted to `Color.cemexBlue` — verified, no change needed |
-| 2026-03-23 | WelcomeView.swift | Haptic generator already a stored property — verified, no change needed |
-
----
-
----
-
-## Feature Requests
-
-### CSV Backup & Restore
-
-- [x] 🔵 ~~**Automatic daily backup**~~ — Implemented 2026-03-23. `BackupScheduler` class fires daily at 06:00. Toggle in Settings. Files saved to app Documents as `visitor_backup_YYYY-MM-DD.csv`. Rolling 30-day retention with automatic pruning of older files.
-
-- [x] 🔵 ~~**Manual backup**~~ — Implemented 2026-03-23. "Export Backup Now" button in Settings writes the CSV immediately and opens the share sheet so it can be saved or sent.
-
-- [x] 🔵 ~~**CSV import / restore**~~ — Implemented 2026-03-23. "Import CSV…" button in Settings opens the system file picker. After parsing, an `ImportConfirmationView` sheet shows counts (imported / skipped duplicates / failed rows) before committing to SwiftData.
-
-- [x] 🔵 ~~**Import column mapping**~~ — Implemented 2026-03-23. `VisitorStore.previewImport` maps columns by header name (not position). Accepts both the 11-column WelcomeView format and the 7-column VisitorTabs format.
-
-- [x] 🔵 ~~**Backwards-compatible import for legacy CSV files**~~ — Implemented 2026-03-23. Header-name mapping means missing columns don't shift values. Safe defaults applied: `badgeNumber = ""`, `blockedCar = false`, `pagerNumber = nil`, `wasAutoCheckedOut = false`, `checkOut = nil`. Quote-aware CSV parser handles embedded commas/quotes/newlines. Malformed rows are counted as "failed" and never crash the import.
-
-- [x] 🔵 ~~**Backup storage location**~~ — Implemented 2026-03-23. Backups stored in app Documents directory (visible in Files app). Settings sheet shows file count and most recent backup date. iCloud sync is handled automatically if the user has iCloud Drive enabled for the app.
-
-**Implementation notes:**
-- File import: use SwiftUI's `.fileImporter(isPresented:allowedContentTypes:onCompletion:)` — no UIKit needed.
-- Backup scheduling: add a second `AutoCheckoutScheduler`-style class (`BackupScheduler`) triggered at 06:00 daily, or extend `AutoCheckoutScheduler` to support multiple actions.
-- CSV parsing: use `String.components(separatedBy:)` with quote-aware splitting to handle fields that contain commas (reverse of `escapedAsCSVField`).
-- SwiftData insert: fetch existing records first and build a `Set` of `(firstName+lastName+checkIn)` keys for O(1) duplicate detection.
 
 ---
 
@@ -180,12 +125,92 @@
 
 ---
 
+### WelcomeView.swift (Round 3 — 2026-03-24)
+
+- [ ] 🟡 **`badgeField` uses `.keyboardType(.numberPad)` which voids the keyboard focus chain** — The badge number field has `.submitLabel(.next)` and `.onSubmit { focusedField.wrappedValue = .carReg }` applied, but the number pad keyboard on iOS shows no return key. `onSubmit` is therefore dead code for this field; users cannot advance keyboard focus from the badge field to the car registration field and must tap it manually. Fix: either use `.keyboardType(.numberPad)` alone and provide a toolbar "Next" button via `ToolbarItemGroup(placement: .keyboard)`, or switch to `.decimalPad` + a keyboard toolbar button.
+
+- [ ] 🟡 **`InductionSignatureSheet` relies on `BradleyHandITCTT-Bold` which is not guaranteed to be available** — `Text("\(firstName) \(lastName)").font(.custom("BradleyHandITCTT-Bold", size: 58))` silently falls back to the default system font if the named font is absent on the device. The result looks nothing like a handwritten signature. `BradleyHandITCTT-Bold` is not in Apple's system font list since iOS 13; it was removed from the default set. Fix: either bundle the font in the app target and register it in `Info.plist`, or use the always-available `SF Pro` with `.italic()` / a SwiftUI `Canvas`-drawn signature using `PKCanvasView`.
+
+- [ ] 🟢 **`InductionFlowView` does not guard against an empty `imageNames` array** — `if index < imageNames.count - 1` evaluates to `0 < -1` (false) when `imageNames` is empty, immediately showing the "Tap here to sign" button with zero induction pages displayed. The visitor would be able to complete the induction flow without seeing any induction content. Fix: add a guard at the top of the view body: `if imageNames.isEmpty { onComplete(false); return }`.
+
+---
+
+## Completed Issues
+
+| Date | File | Issue |
+|---|---|---|
+| 2026-03-23 | AutoCheckoutManager.swift | Timer added to RunLoop twice |
+| 2026-03-23 | AutoCheckoutManager.swift | Recursive rescheduling |
+| 2026-03-23 | CX_UK_InductionApp.swift | SwiftData container failure silent |
+| 2026-03-23 | Models.swift | `checkoutTime` parameter ignored |
+| 2026-03-23 | WelcomeView.swift | Scheduler not cancelled on disappear |
+| 2026-03-23 | WelcomeView.swift | Multiple timers stacking |
+| 2026-03-23 | WelcomeView.swift | Unused `archivedVisitors` @Query |
+| 2026-03-23 | Models.swift | Duplicate auto-checkout methods merged |
+| 2026-03-23 | Models.swift | `signIn()` missing post-trim validation |
+| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `escapeCSV` duplication extracted to `String.escapedAsCSVField` |
+| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | `DateFormatter` instances consolidated to shared `static let` extensions |
+| 2026-03-23 | Models.swift + WelcomeView.swift + VisitorTabs.swift | `badgeNumber` optionality aligned (now non-optional `String`) |
+| 2026-03-23 | WelcomeView.swift | Pager picker normalization dead code removed |
+| 2026-03-23 | WelcomeView.swift | Pager availability icons (🔴/🟢) not visible — replaced hidden `.menu` picker with always-visible `LazyVGrid` of buttons |
+| 2026-03-23 | WelcomeView.swift + Models.swift | `WelcomeView.body` type-checker complexity — split into four `@ViewBuilder` properties; `StoreError` made `Equatable` |
+| 2026-03-23 | WelcomeView.swift | `withAnimation` unused result warning — suppressed with `_ =` |
+| 2026-03-23 | VisitorTabs.swift + WelcomeView.swift | Temp CSV files not deleted — fixed `onDismiss` URL capture bug in both views |
+| 2026-03-23 | AutoCheckoutManager.swift | Weekday calculation already efficient — verified, no change needed |
+| 2026-03-23 | Models.swift | Structured error type already in place — verified `StoreError` enum, no change needed |
+| 2026-03-23 | VisitorTabs.swift | CSV export error alert already implemented — verified, no change needed |
+| 2026-03-23 | VisitorTabs.swift | CEMEX Blue already extracted to `Color.cemexBlue` — verified, no change needed |
+| 2026-03-23 | WelcomeView.swift | Haptic generator already a stored property — verified, no change needed |
+| 2026-03-24 | RootView.swift | ZStack single-child — now has two children (`Color.cemexBlue` bg + `WelcomeView`) |
+| 2026-03-24 | WelcomeView.swift | `RegularFormFields` / `CompactFormFields` duplication — merged into `VisitorFormFields` with `useColumns` param |
+
+---
+
+## UI Improvements (2026-03-24)
+
+| Date | Area | Change |
+|---|---|---|
+| 2026-03-24 | `WelcomeView` — `BrandHeader` | Logo now displayed on a white rounded-rect backing with shadow so it is clearly visible against the dark CEMEX blue gradient |
+| 2026-03-24 | `WelcomeView` — `BrandHeader` | Added a light blue-grey accent strip (`#DCE6F8` → system grouped background) below the blue band to provide visual contrast and a smoother transition into the form card |
+| 2026-03-24 | `WelcomeView` — `InductionFlowView` | Replaced the tick-box acknowledgement with a **"Tap here to sign"** button that opens a full-height signature sheet |
+| 2026-03-24 | `WelcomeView` — `InductionSignatureSheet` (new) | New sheet presents a clear "Confirm Understanding" heading, body text, and the visitor's first + last name rendered in `BradleyHandITCTT-Bold` (closest built-in iOS equivalent to Kalam) at 58pt with a spring-in animation |
+| 2026-03-24 | `WelcomeView` — `InductionSignatureSheet` | "I Agree" button triggers `onComplete(true)` directly — the registration confirmation alert fires immediately without any intermediate screen |
+| 2026-03-24 | `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
+
+---
+
+## Feature Requests
+
+### CSV Backup & Restore
+
+- [x] 🔵 ~~**Automatic daily backup**~~ — Implemented 2026-03-23. `BackupScheduler` class fires daily at 06:00. Toggle in Settings. Files saved to app Documents as `visitor_backup_YYYY-MM-DD.csv`. Rolling 30-day retention with automatic pruning of older files.
+
+- [x] 🔵 ~~**Manual backup**~~ — Implemented 2026-03-23. "Export Backup Now" button in Settings writes the CSV immediately and opens the share sheet so it can be saved or sent.
+
+- [x] 🔵 ~~**CSV import / restore**~~ — Implemented 2026-03-23. "Import CSV…" button in Settings opens the system file picker. After parsing, an `ImportConfirmationView` sheet shows counts (imported / skipped duplicates / failed rows) before committing to SwiftData.
+
+- [x] 🔵 ~~**Import column mapping**~~ — Implemented 2026-03-23. `VisitorStore.previewImport` maps columns by header name (not position). Accepts both the 11-column WelcomeView format and the 7-column VisitorTabs format.
+
+- [x] 🔵 ~~**Backwards-compatible import for legacy CSV files**~~ — Implemented 2026-03-23. Header-name mapping means missing columns don't shift values. Safe defaults applied: `badgeNumber = ""`, `blockedCar = false`, `pagerNumber = nil`, `wasAutoCheckedOut = false`, `checkOut = nil`. Quote-aware CSV parser handles embedded commas/quotes/newlines. Malformed rows are counted as "failed" and never crash the import.
+
+- [x] 🔵 ~~**Backup storage location**~~ — Implemented 2026-03-23. Backups stored in app Documents directory (visible in Files app). Settings sheet shows file count and most recent backup date. iCloud sync is handled automatically if the user has iCloud Drive enabled for the app.
+
+**Implementation notes:**
+- File import: use SwiftUI's `.fileImporter(isPresented:allowedContentTypes:onCompletion:)` — no UIKit needed.
+- Backup scheduling: add a second `AutoCheckoutScheduler`-style class (`BackupScheduler`) triggered at 06:00 daily, or extend `AutoCheckoutScheduler` to support multiple actions.
+- CSV parsing: use `String.components(separatedBy:)` with quote-aware splitting to handle fields that contain commas (reverse of `escapedAsCSVField`).
+- SwiftData insert: fetch existing records first and build a `Set` of `(firstName+lastName+checkIn)` keys for O(1) duplicate detection.
+
+---
+
 ## Notes
 
 - All 🔴 CRITICAL issues resolved as of 2026-03-23.
-- Round 2 (2026-03-24) deep-dive found: 3 🟠 HIGH issues in `Models.swift`, 1 🟠 HIGH in `VisitorTabs.swift`, 2 🟠 HIGH + 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift`.
-- Remaining open items from Round 1: one deferred 🟠 HIGH (merge `RegularFormFields`/`CompactFormFields`), two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation), two 🟢 LOW issues in `RootView.swift` (ZStack single child, preview environment).
-- Next recommended pass: fix the three Round-2 🟠 HIGH issues (within-file CSV duplicate detection, `\r\n` line endings, and cold-launch auto-checkout) as they can silently corrupt data.
+- Round 2 (2026-03-24, first pass) deep-dive found: 3 🟠 HIGH in `Models.swift`, 1 🟠 HIGH in `VisitorTabs.swift`, 2 🟠 HIGH + 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift`.
+- Round 3 (2026-03-24, after UI update) deep-dive found: 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift` (`badgeField` focus chain, `BradleyHandITCTT-Bold` font risk, empty induction image guard).
+- Items fixed since Round 2: `RegularFormFields`/`CompactFormFields` merged into `VisitorFormFields`; `RootView` `ZStack` now has two children.
+- Remaining open HIGH priority items: 3 in `Models.swift` (within-file CSV duplicates, `\r\n` line endings, cold-launch auto-checkout), 1 in `VisitorTabs.swift` (optional-chain CSV write), 1 in `WelcomeView.swift` (`pagerNumber` empty string vs nil).
+- Next recommended pass: fix the three 🟠 HIGH data-integrity issues in `Models.swift` (CSV duplicates, `\r\n`, cold-launch checkout) as they can silently corrupt or lose data.
 - CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
 
 ---
@@ -203,8 +228,8 @@ When a visitor signs in and specifies who they are visiting, automatically send 
 ### 3. 🌟 Visitor Photo Capture
 After the induction flow, open the front camera and capture a visitor photo, stored with the `Visitor` record. Displayed on the visitor's detail card and in the Sign In Book for identity verification. Stored locally; never uploaded externally.
 
-### 4. 🌟 Digital Signature / NDA Acceptance
-Replace the checkbox acknowledgement in the induction flow with a finger-drawn signature captured via `PKCanvasView`. The signed image is saved as a PNG alongside the visitor record and included in CSV exports as a base64-encoded field.
+### 4. 🌟 Genuine Handwritten Digital Signature
+Upgrade `InductionSignatureSheet` to use `PKCanvasView` from PencilKit so the visitor draws their actual signature with a finger or Apple Pencil. The resulting image is saved as a PNG alongside the visitor record and included in CSV exports as a base64-encoded field.
 
 ### 5. 🌟 Visitor Badge Printing
 Integrate with a Bluetooth label printer (e.g. Brother QL-820NWBc via SDK) to print a badge on check-in containing visitor name, company, date, badge number, and a QR code linking to their record. Configurable badge template in Settings.
@@ -255,7 +280,7 @@ When iCloud Drive is unavailable, queue new sign-ins in a local `pending` store.
 Record visit count per unique (firstName + lastName + company) combination and surface a "Frequent Visitors" section in the Sign In Book. Flag visitors who have signed in more than N times in the last 30 days as a configurable security review threshold.
 
 ### 21. 🌟 Custom Induction Quiz Questions
-Allow admins to add multiple-choice questions to the induction flow via a JSON file in the app bundle or Documents folder. The visitor must answer all questions correctly (configurable attempts) before the "Confirm and Continue" button is enabled.
+Allow admins to add multiple-choice questions to the induction flow via a JSON file in the app bundle or Documents folder. The visitor must answer all questions correctly (configurable attempts) before the "Tap here to sign" button is enabled.
 
 ### 22. 🌟 Audit Log / Change History
 Persist an append-only `AuditEvent` model in SwiftData recording every create, update, and delete with a timestamp and actor (self-service / staff). Viewable in Settings as a scrollable timeline. Included in CSV backup.

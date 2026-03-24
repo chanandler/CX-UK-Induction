@@ -104,74 +104,66 @@ struct WelcomeView: View {
 
     private var mainContent: some View {
         ZStack(alignment: .bottomLeading) {
-            VStack {
-                Text("Welcome to Cemex UK HQ")
-                    .font(.system(size: 54, weight: .bold))
-                    .minimumScaleFactor(0.3)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 12)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 24)
-                    .padding(.bottom, 8)
-                
-                Spacer(minLength: 24)
-                
-                Form {
-                    Section {
-                        if hSizeClass == .regular {
-                            RegularFormFields(firstName: $firstName,
-                                              lastName: $lastName,
-                                              company: $company,
-                                              visiting: $visiting,
-                                              carRegistration: $carRegistration,
-                                              firstNameInvalid: firstNameInvalid,
-                                              lastNameInvalid: lastNameInvalid,
-                                              companyInvalid: companyInvalid,
-                                              visitingInvalid: visitingInvalid,
-                                              badgeInvalid: badgeInvalid,
-                                              badgeNumber: $badgeNumber,
-                                              showBlockedCarPrompt: $showBlockedCarPrompt,
-                                              focusedField: $focusedField)
-                        } else {
-                            CompactFormFields(firstName: $firstName,
-                                              lastName: $lastName,
-                                              company: $company,
-                                              visiting: $visiting,
-                                              carRegistration: $carRegistration,
-                                              firstNameInvalid: firstNameInvalid,
-                                              lastNameInvalid: lastNameInvalid,
-                                              companyInvalid: companyInvalid,
-                                              visitingInvalid: visitingInvalid,
-                                              badgeInvalid: badgeInvalid,
-                                              badgeNumber: $badgeNumber,
-                                              showBlockedCarPrompt: $showBlockedCarPrompt,
-                                              focusedField: $focusedField)
-                        }
-                    } header: {
-                        Text("Please enter your details to register your visit:")
-                            .font(.headline)
-                            .padding(.bottom, 8)
-                    }
-                    .padding(.horizontal, 0)
-                    .padding(.vertical, 0)
-                    Section {
-                        registerButton
-
-                        leavingButton
-                        
-                        signInBookButton
-                    }
+            ScrollView {
+                VStack(spacing: 0) {
+                    BrandHeader()
+                    formCard
+                        .offset(y: -32)
+                        .padding(.bottom, 48)
                 }
-                .scrollContentBackground(.hidden)
-                .background(Color(.systemBackground))
-                .autocorrectionDisabled()
-                .scrollDismissesKeyboard(.interactively)
             }
-            
+            .scrollDismissesKeyboard(.interactively)
+            .background(Color(.systemGroupedBackground))
+            .autocorrectionDisabled()
+
             settingsMenu
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Form card
+
+    private var formCard: some View {
+        VStack(spacing: 20) {
+            VisitorFormFields(
+                useColumns: hSizeClass == .regular,
+                firstName: $firstName,
+                lastName: $lastName,
+                company: $company,
+                visiting: $visiting,
+                carRegistration: $carRegistration,
+                badgeNumber: $badgeNumber,
+                showBlockedCarPrompt: $showBlockedCarPrompt,
+                firstNameInvalid: firstNameInvalid,
+                lastNameInvalid: lastNameInvalid,
+                companyInvalid: companyInvalid,
+                visitingInvalid: visitingInvalid,
+                badgeInvalid: badgeInvalid,
+                focusedField: $focusedField
+            )
+
+            Divider()
+
+            formCardButtons
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
+        )
+        .padding(.horizontal, hSizeClass == .regular ? 48 : 16)
+    }
+
+    private var formCardButtons: some View {
+        VStack(spacing: 12) {
+            registerButton
+
+            HStack(spacing: 12) {
+                leavingButton
+                signInBookButton
+            }
+        }
     }
 
     // MARK: - Sheets and alerts (first half of decorator chain)
@@ -349,7 +341,11 @@ struct WelcomeView: View {
         decoratedContentPart1
             // Induction flow full-screen
             .fullScreenCover(isPresented: $showingInduction) {
-                InductionFlowView(imageNames: inductionImages) { confirmed in
+                InductionFlowView(
+                    imageNames: inductionImages,
+                    visitorFirstName: firstName,
+                    visitorLastName: lastName
+                ) { confirmed in
                     showingInduction = false
                     if confirmed {
                         submit()
@@ -374,18 +370,6 @@ struct WelcomeView: View {
             }
             .overlay(alignment: .top) {
                 checkoutBanner
-            }
-            // CEMEX logo overlay pinned to bottom center
-            .overlay(alignment: .bottom) {
-                Image("cemex_logo")
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 325)
-                    .padding(.bottom, vSizeClass == .compact ? 40 : 16)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityHidden(true)
-                    .allowsHitTesting(false)
             }
             .ignoresSafeArea(.keyboard)
     }
@@ -476,7 +460,7 @@ struct WelcomeView: View {
                             showingImportConfirmation = false
                         }
                     )
-                    .presentationDetents([.medium])
+                    .presentationDetents([.large])
                 }
             }
             .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
@@ -622,49 +606,46 @@ struct WelcomeView: View {
         }) {
             Label("Register", systemImage: "person.badge.plus")
                 .font(.title3)
+                .fontWeight(.semibold)
                 .imageScale(.large)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, 14)
         }
         .buttonStyle(.borderedProminent)
-        .tint(.green)
+        .tint(.cemexBlue)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        .padding(.horizontal)
+        .shadow(color: Color.cemexBlue.opacity(0.35), radius: 6, x: 0, y: 3)
         .disabled(!isValid)
     }
-    
+
     private var leavingButton: some View {
         Button {
             showingLeaving = true
         } label: {
-            Label("I'm leaving", systemImage: "door.right.hand.open")
-                .font(.title3)
-                .imageScale(.large)
+            Label("I'm Leaving", systemImage: "door.right.hand.open")
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, 13)
         }
         .buttonStyle(.borderedProminent)
         .tint(.orange)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        .padding(.horizontal)
     }
 
     private var signInBookButton: some View {
         Button {
             showingSignInBook = true
         } label: {
-            Label("View Sign In Book", systemImage: "book.closed")
-                .font(.title3)
-                .imageScale(.large)
+            Label("Sign In Book", systemImage: "book.closed")
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, 13)
         }
         .buttonStyle(.bordered)
+        .tint(.cemexBlue)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .padding(.horizontal)
     }
     
     private var settingsMenu: some View {
@@ -759,31 +740,15 @@ struct WelcomeView: View {
     }
 }
 
-private func inputTextField(_ title: String, text: Binding<String>) -> some View {
-    ZStack {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
-            )
-        TextField(title, text: text)
-            .font(.title3)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 14)
-            .foregroundColor(.primary)
-    }
-    .frame(height: 52)
-    .padding(.horizontal, 2)
-}
 
 private struct InductionFlowView: View {
     let imageNames: [String]
+    let visitorFirstName: String
+    let visitorLastName: String
     let onComplete: (Bool) -> Void
-    @Environment(\.dismiss) private var dismiss
+
     @State private var index: Int = 0
-    @State private var acknowledged: Bool = false
+    @State private var showingSignatureSheet: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -812,34 +777,22 @@ private struct InductionFlowView: View {
                     .tint(.blue)
                     .padding(.horizontal)
                 } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Button(action: { acknowledged.toggle() }) {
-                            HStack(alignment: .center, spacing: 12) {
-                                Image(systemName: acknowledged ? "checkmark.square.fill" : "square")
-                                    .foregroundStyle(acknowledged ? .green : .secondary)
-                                    .imageScale(.large)
-                                Text("I have read and understood the induction information")
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            onComplete(true)
-                        } label: {
-                            Label("Confirm and Continue", systemImage: "checkmark.circle.fill")
+                    Button {
+                        showingSignatureSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "signature")
+                                .font(.title3)
+                            Text("Tap here to sign")
                                 .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .disabled(!acknowledged)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.cemexBlue)
                     .padding(.horizontal)
+                    .padding(.bottom, 4)
                 }
             }
             .navigationTitle("Visitor Induction")
@@ -851,6 +804,107 @@ private struct InductionFlowView: View {
             }
         }
         .ignoresSafeArea(edges: [.bottom])
+        .sheet(isPresented: $showingSignatureSheet) {
+            InductionSignatureSheet(
+                firstName: visitorFirstName,
+                lastName: visitorLastName
+            ) { confirmed in
+                showingSignatureSheet = false
+                if confirmed {
+                    onComplete(true)
+                }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+// MARK: - Signature confirmation sheet
+
+private struct InductionSignatureSheet: View {
+    let firstName: String
+    let lastName: String
+    let onDismiss: (Bool) -> Void
+
+    @State private var signatureVisible = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Icon + heading
+            VStack(spacing: 10) {
+                Image(systemName: "pencil.and.list.clipboard")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.cemexBlue)
+                    .padding(.top, 32)
+
+                Text("Confirm Understanding")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+
+                Text("By signing below, you confirm that you have read and fully understood the Cemex site induction information.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 2)
+            }
+
+            Divider()
+                .padding(.vertical, 28)
+
+            // Signature box
+            Text("\(firstName) \(lastName)")
+                .font(.custom("BradleyHandITCTT-Bold", size: 58))
+                .foregroundStyle(Color(red: 0/255, green: 30/255, blue: 100/255))
+                .minimumScaleFactor(0.4)
+                .lineLimit(1)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 40)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(Color(red: 0/255, green: 30/255, blue: 100/255).opacity(0.25), lineWidth: 1.5)
+                        )
+                )
+                .padding(.horizontal, 24)
+                .scaleEffect(signatureVisible ? 1 : 0.75)
+                .opacity(signatureVisible ? 1 : 0)
+
+            Spacer()
+
+            // Buttons
+            VStack(spacing: 10) {
+                Button {
+                    onDismiss(true)
+                } label: {
+                    Text("I Agree")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.cemexBlue)
+                .padding(.horizontal, 24)
+
+                Button(role: .cancel) {
+                    onDismiss(false)
+                } label: {
+                    Text("Go Back")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 16)
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.65).delay(0.15)) {
+                signatureVisible = true
+            }
+        }
     }
 }
 
@@ -1316,239 +1370,210 @@ private struct ImportConfirmationView: View {
     }
 }
 
-private struct RegularFormFields: View {
-    @Binding var firstName: String
-    @Binding var lastName: String
-    @Binding var company: String
-    @Binding var visiting: String
-    @Binding var carRegistration: String
-    let firstNameInvalid: Bool
-    let lastNameInvalid: Bool
-    let companyInvalid: Bool
-    let visitingInvalid: Bool
-    let badgeInvalid: Bool
-    @Binding var badgeNumber: String
-    @Binding var showBlockedCarPrompt: Bool
-    let focusedField: FocusState<WelcomeView.Field?>.Binding
+// MARK: - Brand Header
 
+private struct BrandHeader: View {
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 4) {
-                    inputTextField("First name", text: $firstName)
-                        .focused(focusedField, equals: WelcomeView.Field.firstName)
-                        .submitLabel(.next)
-                        .onSubmit {
-                            focusedField.wrappedValue = WelcomeView.Field.lastName
-                        }
-                        .textInputAutocapitalization(.words)
+        ZStack(alignment: .bottom) {
+            // Blue band
+            LinearGradient(
+                colors: [
+                    Color.cemexBlue,
+                    Color(red: 1/255, green: 35/255, blue: 100/255)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
+            VStack(spacing: 0) {
+                // Logo and text sit inside the blue band
+                VStack(spacing: 14) {
+                    // White pill backing so the logo is clearly visible on dark blue
+                    Image("cemex_logo")
+                        .renderingMode(.original)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(maxWidth: 200)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.white)
+                                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
                         )
-                    if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    inputTextField("Company", text: $company)
-                        .focused(focusedField, equals: WelcomeView.Field.company)
-                        .submitLabel(.next)
-                        .onSubmit {
-                            focusedField.wrappedValue = WelcomeView.Field.visiting
-                        }
-                        .textInputAutocapitalization(.words)
+                        .accessibilityHidden(true)
 
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
-                        )
-                    if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    // Moved Badge Number above Car registration
-                    inputTextField("Badge Number", text: Binding(
-                        get: { badgeNumber },
-                        set: { newValue in
-                            let filtered = newValue.filter { $0.isNumber }
-                            badgeNumber = filtered
-                        }
-                    ))
-                    .focused(focusedField, equals: WelcomeView.Field.badge)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField.wrappedValue = WelcomeView.Field.carReg
-                    }
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                    if badgeInvalid {
-                        Text("Badge number is required").font(.caption2).foregroundStyle(.red)
-                    }
-                }
-            }
-            VStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 4) {
-                    inputTextField("Last name", text: $lastName)
-                        .focused(focusedField, equals: WelcomeView.Field.lastName)
-                        .submitLabel(.next)
-                        .onSubmit {
-                            focusedField.wrappedValue = WelcomeView.Field.company
-                        }
-                        .textInputAutocapitalization(.words)
+                    Text("Welcome to Cemex UK HQ")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(.white)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
 
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                        )
-                    if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
+                    Text("Please sign in below")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    inputTextField("Who are you visiting", text: $visiting)
-                        .focused(focusedField, equals: WelcomeView.Field.visiting)
-                        .submitLabel(.next)
-                        .onSubmit {
-                            focusedField.wrappedValue = WelcomeView.Field.badge
-                        }
-                        .textInputAutocapitalization(.words)
+                .padding(.top, 32)
+                .padding(.bottom, 28)
 
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
-                        )
-                    if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
-                }
-                inputTextField("Car registration", text: Binding(
-                    get: { carRegistration },
-                    set: { newValue in
-                        let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
-                        carRegistration = String(allowed)
-                    }
-                ))
-                .focused(focusedField, equals: WelcomeView.Field.carReg)
-                .textInputAutocapitalization(.characters)
-                .keyboardType(.asciiCapable)
-                .autocorrectionDisabled(true)
-                .submitLabel(.done)
-                .onSubmit {
-                    if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        showBlockedCarPrompt = true
-                    }
-                    focusedField.wrappedValue = nil
-                }
+                // Light accent strip below the blue band for contrast and polish
+                LinearGradient(
+                    colors: [
+                        Color(red: 220/255, green: 230/255, blue: 248/255),
+                        Color(.systemGroupedBackground)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 56)
             }
         }
-        .padding(.vertical, 4)
     }
 }
 
-private struct CompactFormFields: View {
+// MARK: - FormField (replaces inputTextField free function)
+
+private struct FormField: View {
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+    var isInvalid: Bool = false
+    var errorMessage: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            TextField(placeholder, text: $text)
+                .font(.body)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 13)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(isInvalid ? Color.red : Color.secondary.opacity(0.2),
+                                lineWidth: isInvalid ? 1.5 : 1)
+                )
+
+            if isInvalid, let errorMessage {
+                Text(errorMessage)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+// MARK: - VisitorFormFields (replaces RegularFormFields + CompactFormFields)
+
+private struct VisitorFormFields: View {
+    let useColumns: Bool
+
     @Binding var firstName: String
     @Binding var lastName: String
     @Binding var company: String
     @Binding var visiting: String
     @Binding var carRegistration: String
+    @Binding var badgeNumber: String
+    @Binding var showBlockedCarPrompt: Bool
+
     let firstNameInvalid: Bool
     let lastNameInvalid: Bool
     let companyInvalid: Bool
     let visitingInvalid: Bool
     let badgeInvalid: Bool
-    @Binding var badgeNumber: String
-    @Binding var showBlockedCarPrompt: Bool
+
     let focusedField: FocusState<WelcomeView.Field?>.Binding
 
     var body: some View {
-        VStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                inputTextField("First name", text: $firstName)
-                    .focused(focusedField, equals: WelcomeView.Field.firstName)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField.wrappedValue = WelcomeView.Field.lastName
-                    }
-                    .textInputAutocapitalization(.words)
+        VStack(spacing: 14) {
+            fieldRow { firstNameField } right: { lastNameField }
+            fieldRow { companyField } right: { visitingField }
+            fieldRow { badgeField } right: { carRegField }
+        }
+    }
 
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(firstNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                if firstNameInvalid { Text("First name is required").font(.caption2).foregroundStyle(.red) }
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                inputTextField("Last name", text: $lastName)
-                    .focused(focusedField, equals: WelcomeView.Field.lastName)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField.wrappedValue = WelcomeView.Field.company
-                    }
-                    .textInputAutocapitalization(.words)
+    @ViewBuilder
+    private func fieldRow<L: View, R: View>(
+        @ViewBuilder _ left: () -> L,
+        @ViewBuilder right: () -> R
+    ) -> some View {
+        if useColumns {
+            HStack(alignment: .top, spacing: 16) { left(); right() }
+        } else {
+            VStack(spacing: 14) { left(); right() }
+        }
+    }
 
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(lastNameInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                if lastNameInvalid { Text("Last name is required").font(.caption2).foregroundStyle(.red) }
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                inputTextField("Company", text: $company)
-                    .focused(focusedField, equals: WelcomeView.Field.company)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField.wrappedValue = WelcomeView.Field.visiting
-                    }
-                    .textInputAutocapitalization(.words)
+    private var firstNameField: some View {
+        FormField(label: "First Name", placeholder: "First name",
+                  text: $firstName, isInvalid: firstNameInvalid,
+                  errorMessage: "First name is required")
+            .focused(focusedField, equals: .firstName)
+            .submitLabel(.next)
+            .onSubmit { focusedField.wrappedValue = .lastName }
+            .textInputAutocapitalization(.words)
+    }
 
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(companyInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                if companyInvalid { Text("Company is required").font(.caption2).foregroundStyle(.red) }
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                inputTextField("Who are you visiting", text: $visiting)
-                    .focused(focusedField, equals: WelcomeView.Field.visiting)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField.wrappedValue = WelcomeView.Field.badge
-                    }
-                    .textInputAutocapitalization(.words)
+    private var lastNameField: some View {
+        FormField(label: "Last Name", placeholder: "Last name",
+                  text: $lastName, isInvalid: lastNameInvalid,
+                  errorMessage: "Last name is required")
+            .focused(focusedField, equals: .lastName)
+            .submitLabel(.next)
+            .onSubmit { focusedField.wrappedValue = .company }
+            .textInputAutocapitalization(.words)
+    }
 
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(visitingInvalid ? Color.red : Color.clear, lineWidth: 1)
-                    )
-                if visitingInvalid { Text("Who you are visiting is required").font(.caption2).foregroundStyle(.red) }
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                // Moved Badge Number above Car registration
-                inputTextField("Badge Number", text: Binding(
-                    get: { badgeNumber },
-                    set: { newValue in
-                        let filtered = newValue.filter { $0.isNumber }
-                        badgeNumber = filtered
-                    }
-                ))
-                .focused(focusedField, equals: WelcomeView.Field.badge)
-                .submitLabel(.next)
-                .onSubmit {
-                    focusedField.wrappedValue = WelcomeView.Field.carReg
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(badgeInvalid ? Color.red : Color.clear, lineWidth: 1)
-                )
-                if badgeInvalid {
-                    Text("Badge number is required").font(.caption2).foregroundStyle(.red)
-                }
-            }
-            inputTextField("Car registration", text: Binding(
-                get: { carRegistration },
-                set: { newValue in
-                    let allowed = newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }
-                    carRegistration = String(allowed)
-                }
-            ))
-            .focused(focusedField, equals: WelcomeView.Field.carReg)
+    private var companyField: some View {
+        FormField(label: "Company", placeholder: "Company",
+                  text: $company, isInvalid: companyInvalid,
+                  errorMessage: "Company is required")
+            .focused(focusedField, equals: .company)
+            .submitLabel(.next)
+            .onSubmit { focusedField.wrappedValue = .visiting }
+            .textInputAutocapitalization(.words)
+    }
+
+    private var visitingField: some View {
+        FormField(label: "Visiting", placeholder: "Who are you visiting",
+                  text: $visiting, isInvalid: visitingInvalid,
+                  errorMessage: "Who you are visiting is required")
+            .focused(focusedField, equals: .visiting)
+            .submitLabel(.next)
+            .onSubmit { focusedField.wrappedValue = .badge }
+            .textInputAutocapitalization(.words)
+    }
+
+    private var badgeField: some View {
+        FormField(label: "Badge Number", placeholder: "Badge number",
+                  text: Binding(get: { badgeNumber },
+                                set: { badgeNumber = $0.filter { $0.isNumber } }),
+                  isInvalid: badgeInvalid,
+                  errorMessage: "Badge number is required")
+            .focused(focusedField, equals: .badge)
+            .submitLabel(.next)
+            .onSubmit { focusedField.wrappedValue = .carReg }
+            .keyboardType(.numberPad)
+    }
+
+    private var carRegField: some View {
+        FormField(label: "Car Registration", placeholder: "Optional",
+                  text: Binding(
+                    get: { carRegistration },
+                    set: { carRegistration = String($0.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }) }
+                  ))
+            .focused(focusedField, equals: .carReg)
             .textInputAutocapitalization(.characters)
             .keyboardType(.asciiCapable)
             .autocorrectionDisabled(true)
@@ -1559,13 +1584,11 @@ private struct CompactFormFields: View {
                 }
                 focusedField.wrappedValue = nil
             }
-        }
-        .padding(.vertical, 4)
     }
 }
 
 #Preview {
-    WelcomeView()
+    RootView()
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
