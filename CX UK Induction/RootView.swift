@@ -4,7 +4,7 @@ import SwiftData
 struct RootView: View {
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color.cemexBlue
                 .ignoresSafeArea()
 
             WelcomeView()
