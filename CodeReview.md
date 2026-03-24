@@ -73,7 +73,7 @@
 
 - [x] 🔴 ~~**Redundant `@Query` declarations fetch the same data three times**~~ — Partially fixed 2026-03-23. Removed the unused `archivedVisitors` query from `WelcomeView` (it was declared but never referenced in that view). The `activeVisitors` and `allVisitors` queries are retained as they serve distinct purposes (live visitor list and CSV export respectively).
 
-- [ ] 🟠 **`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code** — The only difference is horizontal vs vertical layout for name/company/car. Merge into a single view parameterised by layout axis.
+- [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Fixed (pre-existing). Merged into a single `VisitorFormFields` view parameterised by a `useColumns: Bool` flag. Call site in `WelcomeView.formCard` passes `hSizeClass == .regular`.
 
 - [x] 🟠 ~~**`DateFormatter` instances created at multiple call sites**~~ — Fixed 2026-03-23. Three shared `static let` formatters (`shortTime`, `mediumDateTime`, `csvDateTime`) added to `VisitorTabs.swift` as `DateFormatter` extensions and used across `VisitorRow`, `VisitorDetail`, `SignInBookView`, `LeavingSearchSheet`, and both CSV export functions. Private `static let dateTimeFormatter` properties removed.
 
@@ -166,7 +166,7 @@
 ## Notes
 
 - All 🔴 CRITICAL, 🟠 HIGH, and 🟡 MEDIUM issues resolved as of 2026-03-23.
-- Remaining open items: one deferred 🟠 HIGH (merge `RegularFormFields`/`CompactFormFields`), and two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation).
+- Remaining open items: two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation), and one 🟡 MEDIUM (boolean `@State` flag explosion).
 - `WelcomeView.swift` and `VisitorTabs.swift` both have zero compiler errors or warnings as of 2026-03-24.
-- Next recommended pass: the deferred `RegularFormFields`/`CompactFormFields` merge (significant UI refactor), or the remaining 🟢 LOW issues.
+- Next recommended pass: the remaining 🟢 LOW issues or the `@State` flag consolidation.
 - CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
