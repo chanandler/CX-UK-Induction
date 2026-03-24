@@ -74,6 +74,7 @@
 - [x] 🔴 ~~**Redundant `@Query` declarations fetch the same data three times**~~ — Partially fixed 2026-03-23. Removed the unused `archivedVisitors` query from `WelcomeView` (it was declared but never referenced in that view). The `activeVisitors` and `allVisitors` queries are retained as they serve distinct purposes (live visitor list and CSV export respectively).
 
 - [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Fixed 2026-03-24. Merged into a single `VisitorFormFields` view with a `useColumns: Bool` parameter. The new `FormField` component replaces the `inputTextField` free function. Both responsive layouts now share one implementation.
+- [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Fixed (pre-existing). Merged into a single `VisitorFormFields` view parameterised by a `useColumns: Bool` flag. Call site in `WelcomeView.formCard` passes `hSizeClass == .regular`.
 
 - [x] 🟠 ~~**`DateFormatter` instances created at multiple call sites**~~ — Fixed 2026-03-23. Three shared `static let` formatters (`shortTime`, `mediumDateTime`, `csvDateTime`) added to `VisitorTabs.swift` as `DateFormatter` extensions and used across `VisitorRow`, `VisitorDetail`, `SignInBookView`, `LeavingSearchSheet`, and both CSV export functions. Private `static let dateTimeFormatter` properties removed.
 
@@ -293,3 +294,8 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 
 ### 25. 🌟 Duplicate Sign-In Prevention
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
+- All 🔴 CRITICAL, 🟠 HIGH, and 🟡 MEDIUM issues resolved as of 2026-03-23.
+- Remaining open items: two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation), and one 🟡 MEDIUM (boolean `@State` flag explosion).
+- `WelcomeView.swift` and `VisitorTabs.swift` both have zero compiler errors or warnings as of 2026-03-24.
+- Next recommended pass: the remaining 🟢 LOW issues or the `@State` flag consolidation.
+- CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
