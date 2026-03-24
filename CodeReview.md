@@ -150,10 +150,23 @@
 
 ---
 
+## UI Improvements (2026-03-24)
+
+| Date | Area | Change |
+|---|---|---|
+| 2026-03-24 | `WelcomeView` — `BrandHeader` | Logo now displayed on a white rounded-rect backing with shadow so it is clearly visible against the dark CEMEX blue gradient |
+| 2026-03-24 | `WelcomeView` — `BrandHeader` | Added a light blue-grey accent strip (`#DCE6F8` → system grouped background) below the blue band to provide visual contrast and a smoother transition into the form card |
+| 2026-03-24 | `WelcomeView` — `InductionFlowView` | Replaced the tick-box acknowledgement with a **"Tap here to sign"** button that opens a full-height signature sheet |
+| 2026-03-24 | `WelcomeView` — `InductionSignatureSheet` (new) | New sheet presents a clear "Confirm Understanding" heading, body text, and the visitor's first + last name rendered in `BradleyHandITCTT-Bold` (closest built-in iOS equivalent to Kalam) at 58pt with a spring-in animation |
+| 2026-03-24 | `WelcomeView` — `InductionSignatureSheet` | "I Agree" button triggers `onComplete(true)` directly — the registration confirmation alert fires immediately without any intermediate screen |
+| 2026-03-24 | `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
+
+---
+
 ## Notes
 
 - All 🔴 CRITICAL, 🟠 HIGH, and 🟡 MEDIUM issues resolved as of 2026-03-23.
 - Remaining open items: one deferred 🟠 HIGH (merge `RegularFormFields`/`CompactFormFields`), and two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation).
-- `WelcomeView.swift` and `VisitorTabs.swift` both have zero compiler errors or warnings as of 2026-03-23.
+- `WelcomeView.swift` and `VisitorTabs.swift` both have zero compiler errors or warnings as of 2026-03-24.
 - Next recommended pass: the deferred `RegularFormFields`/`CompactFormFields` merge (significant UI refactor), or the remaining 🟢 LOW issues.
 - CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).

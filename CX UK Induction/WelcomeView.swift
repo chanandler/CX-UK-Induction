@@ -341,7 +341,11 @@ struct WelcomeView: View {
         decoratedContentPart1
             // Induction flow full-screen
             .fullScreenCover(isPresented: $showingInduction) {
-                InductionFlowView(imageNames: inductionImages) { confirmed in
+                InductionFlowView(
+                    imageNames: inductionImages,
+                    visitorFirstName: firstName,
+                    visitorLastName: lastName
+                ) { confirmed in
                     showingInduction = false
                     if confirmed {
                         submit()
@@ -456,7 +460,7 @@ struct WelcomeView: View {
                             showingImportConfirmation = false
                         }
                     )
-                    .presentationDetents([.medium])
+                    .presentationDetents([.large])
                 }
             }
             .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
@@ -739,10 +743,12 @@ struct WelcomeView: View {
 
 private struct InductionFlowView: View {
     let imageNames: [String]
+    let visitorFirstName: String
+    let visitorLastName: String
     let onComplete: (Bool) -> Void
-    @Environment(\.dismiss) private var dismiss
+
     @State private var index: Int = 0
-    @State private var acknowledged: Bool = false
+    @State private var showingSignatureSheet: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -771,34 +777,22 @@ private struct InductionFlowView: View {
                     .tint(.blue)
                     .padding(.horizontal)
                 } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Button(action: { acknowledged.toggle() }) {
-                            HStack(alignment: .center, spacing: 12) {
-                                Image(systemName: acknowledged ? "checkmark.square.fill" : "square")
-                                    .foregroundStyle(acknowledged ? .green : .secondary)
-                                    .imageScale(.large)
-                                Text("I have read and understood the induction information")
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            onComplete(true)
-                        } label: {
-                            Label("Confirm and Continue", systemImage: "checkmark.circle.fill")
+                    Button {
+                        showingSignatureSheet = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "signature")
+                                .font(.title3)
+                            Text("Tap here to sign")
                                 .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .disabled(!acknowledged)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.cemexBlue)
                     .padding(.horizontal)
+                    .padding(.bottom, 4)
                 }
             }
             .navigationTitle("Visitor Induction")
@@ -810,6 +804,107 @@ private struct InductionFlowView: View {
             }
         }
         .ignoresSafeArea(edges: [.bottom])
+        .sheet(isPresented: $showingSignatureSheet) {
+            InductionSignatureSheet(
+                firstName: visitorFirstName,
+                lastName: visitorLastName
+            ) { confirmed in
+                showingSignatureSheet = false
+                if confirmed {
+                    onComplete(true)
+                }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+// MARK: - Signature confirmation sheet
+
+private struct InductionSignatureSheet: View {
+    let firstName: String
+    let lastName: String
+    let onDismiss: (Bool) -> Void
+
+    @State private var signatureVisible = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Icon + heading
+            VStack(spacing: 10) {
+                Image(systemName: "pencil.and.list.clipboard")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.cemexBlue)
+                    .padding(.top, 32)
+
+                Text("Confirm Understanding")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+
+                Text("By signing below, you confirm that you have read and fully understood the Cemex site induction information.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 2)
+            }
+
+            Divider()
+                .padding(.vertical, 28)
+
+            // Signature box
+            Text("\(firstName) \(lastName)")
+                .font(.custom("BradleyHandITCTT-Bold", size: 58))
+                .foregroundStyle(Color(red: 0/255, green: 30/255, blue: 100/255))
+                .minimumScaleFactor(0.4)
+                .lineLimit(1)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 40)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(Color(red: 0/255, green: 30/255, blue: 100/255).opacity(0.25), lineWidth: 1.5)
+                        )
+                )
+                .padding(.horizontal, 24)
+                .scaleEffect(signatureVisible ? 1 : 0.75)
+                .opacity(signatureVisible ? 1 : 0)
+
+            Spacer()
+
+            // Buttons
+            VStack(spacing: 10) {
+                Button {
+                    onDismiss(true)
+                } label: {
+                    Text("I Agree")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.cemexBlue)
+                .padding(.horizontal, 24)
+
+                Button(role: .cancel) {
+                    onDismiss(false)
+                } label: {
+                    Text("Go Back")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 16)
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.65).delay(0.15)) {
+                signatureVisible = true
+            }
+        }
     }
 }
 
