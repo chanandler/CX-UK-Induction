@@ -1279,7 +1279,8 @@ private struct ImportConfirmationView: View {
 
 private struct BrandHeader: View {
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
+            // Blue band
             LinearGradient(
                 colors: [
                     Color.cemexBlue,
@@ -1289,29 +1290,51 @@ private struct BrandHeader: View {
                 endPoint: .bottom
             )
 
-            VStack(spacing: 14) {
-                Image("cemex_logo")
-                    .renderingMode(.original)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(maxWidth: 200)
-                    .accessibilityHidden(true)
+            VStack(spacing: 0) {
+                // Logo and text sit inside the blue band
+                VStack(spacing: 14) {
+                    // White pill backing so the logo is clearly visible on dark blue
+                    Image("cemex_logo")
+                        .renderingMode(.original)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(maxWidth: 200)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.white)
+                                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                        )
+                        .accessibilityHidden(true)
 
-                Text("Welcome to Cemex UK HQ")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
+                    Text("Welcome to Cemex UK HQ")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(.white)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
 
-                Text("Please sign in below")
-                    .font(.title3)
-                    .foregroundStyle(.white.opacity(0.8))
+                    Text("Please sign in below")
+                        .font(.title3)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding(.top, 32)
+                .padding(.bottom, 28)
+
+                // Light accent strip below the blue band for contrast and polish
+                LinearGradient(
+                    colors: [
+                        Color(red: 220/255, green: 230/255, blue: 248/255),
+                        Color(.systemGroupedBackground)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 56)
             }
-            .padding(.top, 32)
-            .padding(.bottom, 56)
         }
     }
 }
