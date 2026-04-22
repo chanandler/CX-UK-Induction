@@ -56,12 +56,21 @@ struct WelcomeView: View {
     private let hapticGenerator = UINotificationFeedbackGenerator()
 
     @State private var showingSignInBook = false
+    @State private var showingPinGate = false
+    @State private var pendingProtectedAction: ProtectedAction?
 
     @State private var showPersistenceError = false
 
     @FocusState private var focusedField: Field?
     enum Field: Hashable {
         case firstName, lastName, company, visiting, carReg, badge
+    }
+
+    private enum ProtectedAction {
+        case settings
+        case exportCSV
+        case signInBook
+        case fireRollCall
     }
 
     // Track pagers already in use by active visitors.
@@ -195,6 +204,23 @@ struct WelcomeView: View {
                     existingBackups: BackupScheduler.existingBackups()
                 )
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showingPinGate, onDismiss: {
+                pendingProtectedAction = nil
+            }) {
+                if let action = pendingProtectedAction {
+                    PinGateSheet(
+                        actionName: protectedActionName(for: action),
+                        onSuccess: {
+                            showingPinGate = false
+                            runProtectedAction(action)
+                        },
+                        onCancel: {
+                            showingPinGate = false
+                            pendingProtectedAction = nil
+                        }
+                    )
+                }
             }
             .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
                 Button("OK", role: .cancel) { }
@@ -635,7 +661,7 @@ struct WelcomeView: View {
 
     private var signInBookButton: some View {
         Button {
-            showingSignInBook = true
+            requestProtectedAccess(for: .signInBook)
         } label: {
             Label("Sign In Book", systemImage: "book.closed")
                 .font(.subheadline)
@@ -651,19 +677,14 @@ struct WelcomeView: View {
     private var settingsMenu: some View {
         Menu {
             Button {
-                if let url = exportCSV(from: allVisitors) {
-                    shareItem = ShareItem(url: url)
-                } else {
-                    store.lastError = .importMessage("Export failed: could not create CSV file.")
-                    showPersistenceError = true
-                }
+                requestProtectedAccess(for: .exportCSV)
             } label: {
                 Label("Export CSV", systemImage: "square.and.arrow.up")
             }
             .disabled(allVisitors.isEmpty)
 
             Button {
-                showingRollCall = true
+                requestProtectedAccess(for: .fireRollCall)
             } label: {
                 Label("Fire Alarm Roll Call", systemImage: "alarm")
             }
@@ -675,7 +696,7 @@ struct WelcomeView: View {
             }
             
             Button {
-                showingSettings = true
+                requestProtectedAccess(for: .settings)
             } label: {
                 Label("Settings", systemImage: "slider.horizontal.3")
             }
@@ -736,6 +757,38 @@ struct WelcomeView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.easeInOut(duration: 0.3), value: showCheckoutBanner)
             }
+        }
+    }
+
+    private func requestProtectedAccess(for action: ProtectedAction) {
+        pendingProtectedAction = action
+        showingPinGate = true
+    }
+
+    private func protectedActionName(for action: ProtectedAction) -> String {
+        switch action {
+        case .settings: return "Settings"
+        case .exportCSV: return "Export CSV"
+        case .signInBook: return "Sign In Book"
+        case .fireRollCall: return "Fire Alarm Roll Call"
+        }
+    }
+
+    private func runProtectedAction(_ action: ProtectedAction) {
+        switch action {
+        case .settings:
+            showingSettings = true
+        case .exportCSV:
+            if let url = exportCSV(from: allVisitors) {
+                shareItem = ShareItem(url: url)
+            } else {
+                store.lastError = .importMessage("Export failed: could not create CSV file.")
+                showPersistenceError = true
+            }
+        case .signInBook:
+            showingSignInBook = true
+        case .fireRollCall:
+            showingRollCall = true
         }
     }
 }
@@ -1273,6 +1326,7 @@ private struct AutoCheckoutSettingsView: View {
     var onImportCSV: () -> Void
     var existingBackups: [URL]
     @Environment(\.dismiss) private var dismiss
+    @State private var showingPinChange = false
 
     var body: some View {
         NavigationStack {
@@ -1325,10 +1379,25 @@ private struct AutoCheckoutSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Section("Security") {
+                    Button {
+                        showingPinChange = true
+                    } label: {
+                        Label("Change PIN", systemImage: "key")
+                    }
+                    Text("The PIN is stored securely in the iOS Keychain.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
+            }
+            .sheet(isPresented: $showingPinChange) {
+                PinChangeSheet()
+                    .presentationDetents([.medium, .large])
             }
         }
     }
@@ -1592,4 +1661,3 @@ private struct VisitorFormFields: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
