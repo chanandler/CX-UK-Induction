@@ -21,7 +21,7 @@ struct WelcomeView: View {
     @State private var blockedCar: Bool = false
     @State private var pagerNumber: String = ""
 
-    @State private var showingLeaving = false
+    @State private var activeSheet: ActiveSheet?
     @State private var showBlockedCarPrompt = false
     @State private var showPagerPrompt = false
     @State private var pendingSubmit = false
@@ -29,15 +29,12 @@ struct WelcomeView: View {
     @State private var showingInduction = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
     
-    @State private var showingRollCall = false
-
     @State private var showRegisteredAlert = false
     @State private var lastRegisteredName: String = ""
     
     @State private var showCheckoutBanner = false
     @State private var lastCheckedOutName: String = ""
     
-    @State private var showingSettings = false
     @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
     @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
@@ -51,15 +48,11 @@ struct WelcomeView: View {
     @State private var showingImportPicker = false
     @State private var importPending: [Visitor] = []
     @State private var importSummary: VisitorStore.ImportSummary? = nil
-    @State private var showingImportConfirmation = false
 
     // Reuse a single generator instance rather than creating one per haptic call.
     private let hapticGenerator = UINotificationFeedbackGenerator()
     private let pinSessionTimeout: TimeInterval = 5 * 60
 
-    @State private var showingSignInBook = false
-    @State private var showingAnalytics = false
-    @State private var showingPinGate = false
     @State private var pendingProtectedAction: ProtectedAction?
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
@@ -76,6 +69,19 @@ struct WelcomeView: View {
         case signInBook
         case fireRollCall
         case analytics
+    }
+
+    private enum ActiveSheet: String, Identifiable {
+        case about
+        case settings
+        case leaving
+        case signInBook
+        case rollCall
+        case pinGate
+        case analytics
+        case importConfirmation
+
+        var id: String { rawValue }
     }
 
     // Track pagers already in use by active visitors.
@@ -97,9 +103,6 @@ struct WelcomeView: View {
     // Share support for exported CSV (ActivityView presenter)
     struct ShareItem: Identifiable { let url: URL; var id: URL { url } }
     @State private var shareItem: ShareItem?
-    
-    // About sheet
-    @State private var showingAbout = false
     
     init() {}
     
@@ -194,46 +197,82 @@ struct WelcomeView: View {
                         shareItem = nil
                     }
             }
-            // About sheet
-            .sheet(isPresented: $showingAbout) {
-                AboutView()
-            }
-            .sheet(isPresented: $showingSettings) {
-                AutoCheckoutSettingsView(
-                    enabled: $autoCheckoutEnabled,
-                    hour: $autoCheckoutHour,
-                    minute: $autoCheckoutMinute,
-                    autoBackupEnabled: $autoBackupEnabled,
-                    onManualBackup: runManualBackup,
-                    onImportCSV: { showingImportPicker = true },
-                    onOpenAnalytics: {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            requestProtectedAccess(for: .analytics)
-                        }
-                    },
-                    existingBackups: BackupScheduler.existingBackups()
-                )
-                .presentationDetents([.large])
-            }
-            .sheet(isPresented: $showingAnalytics) {
-                AnalyticsDashboardView(visitors: allVisitors)
-            }
-            .sheet(isPresented: $showingPinGate, onDismiss: {
+            .sheet(item: $activeSheet, onDismiss: {
                 pendingProtectedAction = nil
-            }) {
-                if let action = pendingProtectedAction {
-                    PinGateSheet(
-                        actionName: protectedActionName(for: action),
-                        onSuccess: {
-                            markPinSessionUnlocked()
-                            showingPinGate = false
-                            runProtectedAction(action)
+            }) { sheet in
+                switch sheet {
+                case .about:
+                    AboutView()
+                case .settings:
+                    AutoCheckoutSettingsView(
+                        enabled: $autoCheckoutEnabled,
+                        hour: $autoCheckoutHour,
+                        minute: $autoCheckoutMinute,
+                        autoBackupEnabled: $autoBackupEnabled,
+                        onManualBackup: runManualBackup,
+                        onImportCSV: { showingImportPicker = true },
+                        onOpenAnalytics: {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                requestProtectedAccess(for: .analytics)
+                            }
                         },
-                        onCancel: {
-                            showingPinGate = false
-                            pendingProtectedAction = nil
-                        }
+                        existingBackups: BackupScheduler.existingBackups()
                     )
+                    .presentationDetents([.large])
+                case .leaving:
+                    LeavingSearchSheet(activeVisitors: activeVisitors) { name in
+                        lastCheckedOutName = name
+                        showSignedOutBannerTemporarily()
+                        activeSheet = nil
+                    }
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                case .signInBook:
+                    SignInBookView {
+                        activeSheet = nil
+                    } onCheckedOut: { name in
+                        lastCheckedOutName = name
+                        showSignedOutBannerTemporarily()
+                        activeSheet = nil
+                    }
+                    .interactiveDismissDisabled()
+                case .rollCall:
+                    FireAlarmRollCallView(visitors: activeVisitors) { activeSheet = nil }
+                case .pinGate:
+                    if let action = pendingProtectedAction {
+                        PinGateSheet(
+                            actionName: protectedActionName(for: action),
+                            onSuccess: {
+                                markPinSessionUnlocked()
+                                activeSheet = nil
+                                runProtectedAction(action)
+                            },
+                            onCancel: {
+                                activeSheet = nil
+                                pendingProtectedAction = nil
+                            }
+                        )
+                    }
+                case .analytics:
+                    AnalyticsDashboardView(visitors: allVisitors)
+                case .importConfirmation:
+                    if let summary = importSummary {
+                        ImportConfirmationView(
+                            summary: summary,
+                            onConfirm: {
+                                store.commitImport(context, pending: importPending)
+                                importPending = []
+                                importSummary = nil
+                                activeSheet = nil
+                            },
+                            onCancel: {
+                                importPending = []
+                                importSummary = nil
+                                activeSheet = nil
+                            }
+                        )
+                        .presentationDetents([.large])
+                    }
                 }
             }
             .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
@@ -242,15 +281,6 @@ struct WelcomeView: View {
                 let registeredMessage: String = "\(lastRegisteredName): Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk"
                 Text(registeredMessage)
                     .multilineTextAlignment(.center)
-            }
-            .sheet(isPresented: $showingLeaving) {
-                LeavingSearchSheet(activeVisitors: activeVisitors) { name in
-                    lastCheckedOutName = name
-                    showSignedOutBannerTemporarily()
-                    showingLeaving = false
-                }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
             }
             // Ask if they've blocked a car when a car reg is provided
             .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
@@ -394,20 +424,6 @@ struct WelcomeView: View {
                 }
                 .ignoresSafeArea()
             }
-            // Sign In Book sheet
-            .sheet(isPresented: $showingSignInBook) {
-                SignInBookView {
-                    showingSignInBook = false
-                } onCheckedOut: { name in
-                    lastCheckedOutName = name
-                    showSignedOutBannerTemporarily()
-                    showingSignInBook = false
-                }
-                .interactiveDismissDisabled()
-            }
-            .sheet(isPresented: $showingRollCall) {
-                FireAlarmRollCallView(visitors: activeVisitors) { showingRollCall = false }
-            }
             .overlay(alignment: .top) {
                 checkoutBanner
             }
@@ -481,29 +497,10 @@ struct WelcomeView: View {
                     let (summary, pending) = store.previewImport(from: url, context: context)
                     importSummary = summary
                     importPending = pending
-                    showingImportConfirmation = true
+                    activeSheet = .importConfirmation
                 case .failure(let error):
                     store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
                     showPersistenceError = true
-                }
-            }
-            .sheet(isPresented: $showingImportConfirmation) {
-                if let summary = importSummary {
-                    ImportConfirmationView(
-                        summary: summary,
-                        onConfirm: {
-                            store.commitImport(context, pending: importPending)
-                            importPending = []
-                            importSummary = nil
-                            showingImportConfirmation = false
-                        },
-                        onCancel: {
-                            importPending = []
-                            importSummary = nil
-                            showingImportConfirmation = false
-                        }
-                    )
-                    .presentationDetents([.large])
                 }
             }
             .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
@@ -663,7 +660,7 @@ struct WelcomeView: View {
 
     private var leavingButton: some View {
         Button {
-            showingLeaving = true
+            activeSheet = .leaving
         } label: {
             Label("I'm Leaving", systemImage: "door.right.hand.open")
                 .font(.subheadline)
@@ -707,7 +704,7 @@ struct WelcomeView: View {
             }
 
             Button {
-                showingAbout = true
+                activeSheet = .about
             } label: {
                 Label("About", systemImage: "info.circle")
             }
@@ -783,7 +780,7 @@ struct WelcomeView: View {
             return
         }
         pendingProtectedAction = action
-        showingPinGate = true
+        activeSheet = .pinGate
     }
 
     private func protectedActionName(for action: ProtectedAction) -> String {
@@ -799,7 +796,7 @@ struct WelcomeView: View {
     private func runProtectedAction(_ action: ProtectedAction) {
         switch action {
         case .settings:
-            showingSettings = true
+            activeSheet = .settings
         case .exportCSV:
             if let url = exportCSV(from: allVisitors) {
                 shareItem = ShareItem(url: url)
@@ -808,11 +805,11 @@ struct WelcomeView: View {
                 showPersistenceError = true
             }
         case .signInBook:
-            showingSignInBook = true
+            activeSheet = .signInBook
         case .fireRollCall:
-            showingRollCall = true
+            activeSheet = .rollCall
         case .analytics:
-            showingAnalytics = true
+            activeSheet = .analytics
         }
     }
 

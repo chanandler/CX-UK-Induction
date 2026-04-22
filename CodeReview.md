@@ -82,7 +82,7 @@
 
 - [x] 🟠 ~~**Pager picker display text and stored value are inconsistent**~~ — Fixed 2026-03-23. Picker already stores bare numeric tags (e.g. `"3"`). Removed redundant `"pager "` prefix-stripping normalization from the pager sheet locals, `submit()`, and `usedPagers`. The stored format is now unambiguously a bare numeric string everywhere.
 
-- [ ] 🟡 **Explosion of boolean `@State` flags** — Over a dozen separate `Bool` properties control sheet/alert presentation. This is fragile. Replace with a single `enum ActiveSheet` (or similar) and a single optional `@State var activeSheet: ActiveSheet?`.
+- [x] 🟡 ~~**Explosion of boolean `@State` flags**~~ — Fixed 2026-04-22. `WelcomeView` now uses an `ActiveSheet` enum with `@State var activeSheet: ActiveSheet?` to drive management sheet presentation (Settings, About, Leaving, Sign In Book, Roll Call, PIN gate, Analytics, Import confirmation), reducing sheet-state booleans and centralising modal flow.
 
 - [x] 🟡 ~~**`UINotificationFeedbackGenerator` created fresh on every haptic call**~~ — Already fixed (pre-existing). `private let hapticGenerator = UINotificationFeedbackGenerator()` is a stored property on `WelcomeView`; reused across all haptic calls.
 
@@ -164,6 +164,10 @@
 | 2026-03-23 | WelcomeView.swift | Haptic generator already a stored property — verified, no change needed |
 | 2026-03-24 | RootView.swift | ZStack single-child — now has two children (`Color.cemexBlue` bg + `WelcomeView`) |
 | 2026-03-24 | WelcomeView.swift | `RegularFormFields` / `CompactFormFields` duplication — merged into `VisitorFormFields` with `useColumns` param |
+| 2026-04-22 | Models.swift | CSV import duplicate detection within imported file — now skipped via in-pass `seenKeys` |
+| 2026-04-22 | Models.swift | Windows `\r\n` CSV line endings — import splitting now uses `CharacterSet.newlines` |
+| 2026-04-22 | WelcomeView.swift | Cold-launch auto-checkout catch-up added on `onAppear` |
+| 2026-04-22 | WelcomeView.swift | Sheet-state boolean explosion reduced via enum-driven `activeSheet` modal routing |
 
 ---
 
@@ -209,9 +213,9 @@
 - All 🔴 CRITICAL issues resolved as of 2026-03-23.
 - Round 2 (2026-03-24, first pass) deep-dive found: 3 🟠 HIGH in `Models.swift`, 1 🟠 HIGH in `VisitorTabs.swift`, 2 🟠 HIGH + 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift`.
 - Round 3 (2026-03-24, after UI update) deep-dive found: 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift` (`badgeField` focus chain, `BradleyHandITCTT-Bold` font risk, empty induction image guard).
-- Items fixed since Round 2: `RegularFormFields`/`CompactFormFields` merged into `VisitorFormFields`; `RootView` `ZStack` now has two children.
-- Remaining open HIGH priority items: 3 in `Models.swift` (within-file CSV duplicates, `\r\n` line endings, cold-launch auto-checkout), 1 in `VisitorTabs.swift` (optional-chain CSV write), 1 in `WelcomeView.swift` (`pagerNumber` empty string vs nil).
-- Next recommended pass: fix the three 🟠 HIGH data-integrity issues in `Models.swift` (CSV duplicates, `\r\n`, cold-launch checkout) as they can silently corrupt or lose data.
+- Items fixed since Round 2: `RegularFormFields`/`CompactFormFields` merged into `VisitorFormFields`; `RootView` `ZStack` now has two children; CSV in-file duplicate detection; Windows `\r\n` CSV handling; cold-launch auto-checkout catch-up; enum-driven sheet state in `WelcomeView`.
+- Remaining open HIGH priority items: 1 in `VisitorTabs.swift` (optional-chain CSV write), 1 in `WelcomeView.swift` (`pagerNumber` empty string vs nil).
+- Next recommended pass: fix the remaining two 🟠 HIGH data-integrity issues (CSV optional-chain write path and `pagerNumber` nil semantics).
 - CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
 
 ---
@@ -294,8 +298,8 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 
 ### 25. 🌟 Duplicate Sign-In Prevention
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
-- Tracker audit updated on 2026-04-22 after fixes to three previously-open HIGH-priority issues.
-- Issues closed in this pass: duplicate detection within imported CSV, Windows `\\r\\n` CSV parsing, and cold-launch auto-checkout catch-up.
-- Current open issue counts: 2 🟠 HIGH, 6 🟡 MEDIUM, 6 🟢 LOW.
+- Tracker audit updated on 2026-04-22 after fixes to previously-open HIGH and MEDIUM issues.
+- Issues closed in this pass: duplicate detection within imported CSV, Windows `\r\n` CSV parsing, cold-launch auto-checkout catch-up, and enum-driven sheet state consolidation in `WelcomeView`.
+- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 6 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
