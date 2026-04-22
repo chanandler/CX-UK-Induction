@@ -530,6 +530,7 @@ struct WelcomeView: View {
         
         // pagerNumber is always a bare numeric string from the picker; just trim whitespace.
         let normalizedPager = pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pagerForStorage: String? = normalizedPager.isEmpty ? nil : normalizedPager
 
         store.signIn(context,
                      firstName: firstName,
@@ -538,7 +539,7 @@ struct WelcomeView: View {
                      visiting: visiting,
                      carRegistration: carRegistration,
                      blockedCar: blockedCar,
-                     pagerNumber: normalizedPager,
+                     pagerNumber: pagerForStorage,
                      badgeNumber: badgeNumber)
         if store.lastError != nil {
             return
@@ -627,7 +628,7 @@ struct WelcomeView: View {
 
         do {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("visitors_\(Int(Date().timeIntervalSince1970)).csv")
-            try csv.data(using: .utf8)?.write(to: url, options: .atomic)
+            try csv.write(to: url, atomically: true, encoding: .utf8)
             return url
         } catch {
             return nil

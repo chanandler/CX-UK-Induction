@@ -37,13 +37,13 @@
 
 ### VisitorTabs.swift (Round 2 — 2026-03-24)
 
-- [ ] 🟠 **`exportCSV()` silently produces an empty/missing file via optional-chain write** — `csv.data(using: .utf8)?.write(to: url, options: .atomic)` uses an optional chain. If `data(using: .utf8)` returns nil (theoretically possible under extreme memory pressure), the optional chain short-circuits, the file is never written, no error is thrown, and the function returns `url` pointing to a non-existent file. The share sheet then opens on a broken URL. The same pattern appears in `WelcomeView.exportCSV(from:)`. Fix both sites: `try csv.write(to: url, atomically: true, encoding: .utf8)`.
+- [x] 🟠 ~~**`exportCSV()` silently produces an empty/missing file via optional-chain write**~~ — Fixed 2026-04-22.
 
 ---
 
 ### WelcomeView.swift (Round 2 — 2026-03-24)
 
-- [ ] 🟠 **`submit()` stores empty string `""` as `pagerNumber` instead of `nil`** — `normalizedPager` is always passed to `store.signIn()` even when it is an empty string (i.e. the visitor did not block a car). The `Visitor` model stores `pagerNumber: String?`; passing `""` instead of `nil` is semantically incorrect and inconsistent with how the CSV import handles the same case (`pagerRaw.isEmpty ? nil : pagerRaw`). It also means `usedPagers` needs extra empty-string filtering to stay correct. Fix: `pagerNumber: normalizedPager.isEmpty ? nil : normalizedPager`.
+- [x] 🟠 ~~**`submit()` stores empty string `""` as `pagerNumber` instead of `nil`**~~ — Fixed 2026-04-22.
 
 - [ ] 🟡 **Form shows validation errors on initial empty state** — Every `*Invalid` computed property (`firstNameInvalid`, `lastNameInvalid`, etc.) returns `true` when its field is empty. As a result, all required fields display red borders and "... is required" captions the moment the form first loads, before the user has typed a single character. The standard UX pattern is to only show errors after the first submission attempt or after the user has interacted with a field (`@State private var hasAttemptedSubmit`). Fix: gate error display on a `hasAttemptedSubmit` flag that is set to `true` when the Register button is tapped.
 
@@ -97,6 +97,8 @@
 | 2026-04-22 | Models.swift | Windows `\r\n` CSV line endings — import splitting now uses `CharacterSet.newlines` |
 | 2026-04-22 | WelcomeView.swift | Cold-launch auto-checkout catch-up added on `onAppear` |
 | 2026-04-22 | WelcomeView.swift | Sheet-state boolean explosion reduced via enum-driven `activeSheet` modal routing |
+| 2026-04-22 | VisitorTabs.swift + WelcomeView.swift | CSV export write path switched to `String.write` (removed optional-chain write risk) |
+| 2026-04-22 | WelcomeView.swift | `submit()` now stores `pagerNumber` as `nil` when blank |
 
 ---
 
@@ -143,8 +145,8 @@
 - Round 2 (2026-03-24, first pass) deep-dive found: 3 🟠 HIGH in `Models.swift`, 1 🟠 HIGH in `VisitorTabs.swift`, 2 🟠 HIGH + 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift`.
 - Round 3 (2026-03-24, after UI update) deep-dive found: 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift` (`badgeField` focus chain, `BradleyHandITCTT-Bold` font risk, empty induction image guard).
 - Items fixed since Round 2: `RegularFormFields`/`CompactFormFields` merged into `VisitorFormFields`; `RootView` `ZStack` now has two children; CSV in-file duplicate detection; Windows `\r\n` CSV handling; cold-launch auto-checkout catch-up; enum-driven sheet state in `WelcomeView`.
-- Remaining open HIGH priority items: 1 in `VisitorTabs.swift` (optional-chain CSV write), 1 in `WelcomeView.swift` (`pagerNumber` empty string vs nil).
-- Next recommended pass: fix the remaining two 🟠 HIGH data-integrity issues (CSV optional-chain write path and `pagerNumber` nil semantics).
+- Remaining open HIGH priority items: none.
+- Next recommended pass: address the remaining 🟡 MEDIUM issues in `WelcomeView.swift`.
 - CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
 
 ---

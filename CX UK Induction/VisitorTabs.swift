@@ -230,7 +230,7 @@ struct ArchivedVisitorsView: View {
 
         do {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("archived_visitors_\(Int(Date().timeIntervalSince1970)).csv")
-            try csv.data(using: .utf8)?.write(to: url, options: .atomic)
+            try csv.write(to: url, atomically: true, encoding: .utf8)
             return url
         } catch {
             return nil
@@ -409,4 +409,3 @@ private func restoreFormAppearance() {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-
