@@ -247,8 +247,8 @@ When signing in, optionally set a pass expiry duration (e.g. 2 h, 4 h, full day)
 ### 9. 🌟 Vehicle Watch List
 Maintain a configurable list of flagged car registrations (e.g. known trespassers). When a matching registration is entered at sign-in, reception sees a discreet alert before the form is submitted, prompting manual intervention.
 
-### 10. 🌟 Visitor Analytics Dashboard
-A new "Analytics" tab showing: total visitors today / this week / this month, a bar chart of visitors by hour-of-day, average visit duration, top 5 most-visited departments, and busiest day-of-week. Built with Swift Charts.
+### 10. ✅ Visitor Analytics Dashboard (Implemented 2026-04-22)
+Implemented as a PIN-protected "Analytics Dashboard" opened from Settings. Includes: total visitors today / this week / this month, bar chart of visitors by hour-of-day, average visit duration, top 5 most-visited departments, and busiest day-of-week, built with Swift Charts.
 
 ### 11. 🌟 Emergency Evacuation Broadcast
 A dedicated "Evacuate" button (PIN-protected) that sends a push notification to all devices currently signed in as kiosk displays and optionally triggers a configurable webhook (e.g. Teams channel alert) with the current active visitor count and list.

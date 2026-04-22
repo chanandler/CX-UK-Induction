@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import UniformTypeIdentifiers
+import Charts
 
 struct WelcomeView: View {
     @Environment(VisitorStore.self) private var store
@@ -57,6 +58,7 @@ struct WelcomeView: View {
     private let pinSessionTimeout: TimeInterval = 5 * 60
 
     @State private var showingSignInBook = false
+    @State private var showingAnalytics = false
     @State private var showingPinGate = false
     @State private var pendingProtectedAction: ProtectedAction?
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
@@ -73,6 +75,7 @@ struct WelcomeView: View {
         case exportCSV
         case signInBook
         case fireRollCall
+        case analytics
     }
 
     // Track pagers already in use by active visitors.
@@ -203,9 +206,17 @@ struct WelcomeView: View {
                     autoBackupEnabled: $autoBackupEnabled,
                     onManualBackup: runManualBackup,
                     onImportCSV: { showingImportPicker = true },
+                    onOpenAnalytics: {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            requestProtectedAccess(for: .analytics)
+                        }
+                    },
                     existingBackups: BackupScheduler.existingBackups()
                 )
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showingAnalytics) {
+                AnalyticsDashboardView(visitors: allVisitors)
             }
             .sheet(isPresented: $showingPinGate, onDismiss: {
                 pendingProtectedAction = nil
@@ -778,6 +789,7 @@ struct WelcomeView: View {
         case .exportCSV: return "Export CSV"
         case .signInBook: return "Sign In Book"
         case .fireRollCall: return "Fire Alarm Roll Call"
+        case .analytics: return "Analytics Dashboard"
         }
     }
 
@@ -796,6 +808,8 @@ struct WelcomeView: View {
             showingSignInBook = true
         case .fireRollCall:
             showingRollCall = true
+        case .analytics:
+            showingAnalytics = true
         }
     }
 
@@ -1341,6 +1355,7 @@ private struct AutoCheckoutSettingsView: View {
     @Binding var autoBackupEnabled: Bool
     var onManualBackup: () -> Void
     var onImportCSV: () -> Void
+    var onOpenAnalytics: () -> Void
     var existingBackups: [URL]
     @Environment(\.dismiss) private var dismiss
     @State private var showingPinChange = false
@@ -1393,6 +1408,18 @@ private struct AutoCheckoutSettingsView: View {
                         Label("Import CSV…", systemImage: "arrow.down.doc")
                     }
                     Text("Imports visitor records from a CSV backup. Duplicate entries are skipped. Missing columns (older files) receive safe default values.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Insights") {
+                    Button {
+                        onOpenAnalytics()
+                        dismiss()
+                    } label: {
+                        Label("Analytics Dashboard", systemImage: "chart.bar.xaxis")
+                    }
+                    Text("View visitor trends, totals, busiest times, and top departments.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
