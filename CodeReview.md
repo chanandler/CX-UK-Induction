@@ -35,17 +35,9 @@
 
 ---
 
-### VisitorTabs.swift (Round 2 — 2026-03-24)
-
-- [x] 🟠 ~~**`exportCSV()` silently produces an empty/missing file via optional-chain write**~~ — Fixed 2026-04-22.
-
----
-
 ### WelcomeView.swift (Round 2 — 2026-03-24)
 
-- [x] 🟠 ~~**`submit()` stores empty string `""` as `pagerNumber` instead of `nil`**~~ — Fixed 2026-04-22.
-
-- [ ] 🟡 **Form shows validation errors on initial empty state** — Every `*Invalid` computed property (`firstNameInvalid`, `lastNameInvalid`, etc.) returns `true` when its field is empty. As a result, all required fields display red borders and "... is required" captions the moment the form first loads, before the user has typed a single character. The standard UX pattern is to only show errors after the first submission attempt or after the user has interacted with a field (`@State private var hasAttemptedSubmit`). Fix: gate error display on a `hasAttemptedSubmit` flag that is set to `true` when the Register button is tapped.
+- [x] 🟡 ~~**Form shows validation errors on initial empty state**~~ — Fixed 2026-04-22.
 
 - [ ] 🟡 **`LeavingSearchSheet.filtered` snapshot freeze fails when the initial visitor list is empty** — `let source = snapshot.isEmpty ? activeVisitors : snapshot` is used as a guard to freeze the list when the sheet opens. However, when the sheet opens with zero active visitors, `onAppear` sets `snapshot = []` (empty), so `snapshot.isEmpty` remains `true` forever. Any visitor who signs in while the sheet is open will immediately appear in the list, defeating the freeze intent. Fix: use an `Optional<[Visitor]>` (`var snapshot: [Visitor]? = nil`) and set it to `activeVisitors` (even `[]`) in `onAppear`; use `snapshot ?? activeVisitors` in `filtered`.
 
@@ -99,6 +91,7 @@
 | 2026-04-22 | WelcomeView.swift | Sheet-state boolean explosion reduced via enum-driven `activeSheet` modal routing |
 | 2026-04-22 | VisitorTabs.swift + WelcomeView.swift | CSV export write path switched to `String.write` (removed optional-chain write risk) |
 | 2026-04-22 | WelcomeView.swift | `submit()` now stores `pagerNumber` as `nil` when blank |
+| 2026-04-22 | WelcomeView.swift | Validation errors now gated by `hasAttemptedSubmit` (no initial red state) |
 
 ---
 
@@ -136,18 +129,6 @@
 - Backup scheduling: add a second `AutoCheckoutScheduler`-style class (`BackupScheduler`) triggered at 06:00 daily, or extend `AutoCheckoutScheduler` to support multiple actions.
 - CSV parsing: use `String.components(separatedBy:)` with quote-aware splitting to handle fields that contain commas (reverse of `escapedAsCSVField`).
 - SwiftData insert: fetch existing records first and build a `Set` of `(firstName+lastName+checkIn)` keys for O(1) duplicate detection.
-
----
-
-## Notes
-
-- All 🔴 CRITICAL issues resolved as of 2026-03-23.
-- Round 2 (2026-03-24, first pass) deep-dive found: 3 🟠 HIGH in `Models.swift`, 1 🟠 HIGH in `VisitorTabs.swift`, 2 🟠 HIGH + 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift`.
-- Round 3 (2026-03-24, after UI update) deep-dive found: 2 🟡 MEDIUM + 1 🟢 LOW in `WelcomeView.swift` (`badgeField` focus chain, `BradleyHandITCTT-Bold` font risk, empty induction image guard).
-- Items fixed since Round 2: `RegularFormFields`/`CompactFormFields` merged into `VisitorFormFields`; `RootView` `ZStack` now has two children; CSV in-file duplicate detection; Windows `\r\n` CSV handling; cold-launch auto-checkout catch-up; enum-driven sheet state in `WelcomeView`.
-- Remaining open HIGH priority items: none.
-- Next recommended pass: address the remaining 🟡 MEDIUM issues in `WelcomeView.swift`.
-- CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
 
 ---
 
@@ -231,6 +212,8 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
 - Tracker audit updated on 2026-04-22 after fixes to previously-open HIGH and MEDIUM issues.
 - Issues closed in this pass: duplicate detection within imported CSV, Windows `\r\n` CSV parsing, cold-launch auto-checkout catch-up, and enum-driven sheet state consolidation in `WelcomeView`.
+
+
 - Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 6 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

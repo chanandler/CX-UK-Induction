@@ -20,6 +20,7 @@ struct WelcomeView: View {
     @State private var badgeNumber = ""
     @State private var blockedCar: Bool = false
     @State private var pagerNumber: String = ""
+    @State private var hasAttemptedSubmit = false
 
     @State private var activeSheet: ActiveSheet?
     @State private var showBlockedCarPrompt = false
@@ -106,11 +107,11 @@ struct WelcomeView: View {
     
     init() {}
     
-    private var firstNameInvalid: Bool { firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private var lastNameInvalid: Bool { lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private var companyInvalid: Bool { company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private var visitingInvalid: Bool { visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private var badgeInvalid: Bool { badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var firstNameInvalid: Bool { hasAttemptedSubmit && firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var lastNameInvalid: Bool { hasAttemptedSubmit && lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var companyInvalid: Bool { hasAttemptedSubmit && company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var visitingInvalid: Bool { hasAttemptedSubmit && visiting.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var badgeInvalid: Bool { hasAttemptedSubmit && badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     private var pagerInvalid: Bool { blockedCar && pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
@@ -544,6 +545,7 @@ struct WelcomeView: View {
         if store.lastError != nil {
             return
         }
+        hasAttemptedSubmit = false
         firstName = ""
         lastName = ""
         company = ""
@@ -637,6 +639,8 @@ struct WelcomeView: View {
     
     private var registerButton: some View {
         Button(action: {
+            hasAttemptedSubmit = true
+            guard isValid else { return }
             if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 pendingSubmit = true
                 showBlockedCarPrompt = true
@@ -656,7 +660,6 @@ struct WelcomeView: View {
         .tint(.cemexBlue)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: Color.cemexBlue.opacity(0.35), radius: 6, x: 0, y: 3)
-        .disabled(!isValid)
     }
 
     private var leavingButton: some View {
