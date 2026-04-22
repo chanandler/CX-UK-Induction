@@ -201,7 +201,10 @@ final class VisitorStore {
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
-        let lines = raw.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        // Support both Unix (\n) and Windows (\r\n) line endings.
+        let lines = raw.components(separatedBy: CharacterSet.newlines)
+            .map { $0.trimmingCharacters(in: .newlines) }
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         guard lines.count >= 2 else {
             lastError = .importEmpty
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])

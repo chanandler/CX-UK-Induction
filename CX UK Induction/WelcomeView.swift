@@ -441,6 +441,9 @@ struct WelcomeView: View {
                 }
             }
             .onAppear {
+                // Run a catch-up pass on launch so overnight records are closed even
+                // if the app was not running at the scheduled timer time.
+                store.autoCheckoutPreviousDay(context, at: Date())
                 if autoCheckoutEnabled { startScheduler() }
                 if autoBackupEnabled { startBackupScheduler() }
             }

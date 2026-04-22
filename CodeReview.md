@@ -100,9 +100,9 @@
 
 - [x] 🟠 ~~**CSV import does not detect duplicates within the imported file itself**~~ — Fixed 2026-04-22. `previewImport` now tracks keys seen during the current import pass (`seenKeys`) in addition to existing database keys, so duplicate rows inside the same CSV are skipped.
 
-- [ ] 🟠 **CSV parser does not strip `\r` from Windows-style line endings** — `raw.components(separatedBy: "\n")` splits on `\n` only, leaving a trailing `\r` at the end of the last field of every line when the file uses `\r\n` line endings (common for CSV files exported from Windows Excel). This causes date parsing to fail for the `Date Signed In` column and corrupts values in the final column of every row. Fix: replace the separator with `CharacterSet.newlines` (i.e. `raw.components(separatedBy: .init(charactersIn: "\r\n")).filter { !$0.isEmpty }`) or call `replacingOccurrences(of: "\r\n", with: "\n")` on `raw` before splitting.
+- [x] 🟠 ~~**CSV parser does not strip `\r` from Windows-style line endings**~~ — Fixed 2026-04-22. Import line splitting now uses `CharacterSet.newlines` and trims newline characters before parsing fields, so Windows `\r\n` files are handled correctly.
 
-- [ ] 🟠 **Auto-checkout skipped on cold app relaunch** — `autoCheckoutPreviousDay` is only ever invoked from the `AutoCheckoutScheduler` timer closure. If the app is killed overnight and relaunched the next morning after the configured checkout hour, `startScheduler()` schedules the timer for the *next* matching weekday; the current day's checkout cycle is never triggered. Visitors who signed in yesterday remain active indefinitely until the following day's timer fires. Fix: call `autoCheckoutPreviousDay` unconditionally on `onAppear` (regardless of timer) and let the timer handle subsequent daily runs.
+- [x] 🟠 ~~**Auto-checkout skipped on cold app relaunch**~~ — Fixed 2026-04-22. `WelcomeView.onAppear` now runs `autoCheckoutPreviousDay(context, at: Date())` immediately on launch, then starts the scheduler for subsequent runs.
 
 ---
 
@@ -294,8 +294,8 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 
 ### 25. 🌟 Duplicate Sign-In Prevention
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
-- Tracker audit completed on 2026-04-22 against current source files.
-- No additional previously-open issues were verified as fixed during this audit.
-- Current open issue counts: 5 🟠 HIGH, 6 🟡 MEDIUM, 6 🟢 LOW.
-- The highest-priority remaining items are still the data-integrity issues in `Models.swift` and CSV export write-path issue in `VisitorTabs.swift` / `WelcomeView.swift`.
+- Tracker audit updated on 2026-04-22 after fixes to three previously-open HIGH-priority issues.
+- Issues closed in this pass: duplicate detection within imported CSV, Windows `\\r\\n` CSV parsing, and cold-launch auto-checkout catch-up.
+- Current open issue counts: 2 🟠 HIGH, 6 🟡 MEDIUM, 6 🟢 LOW.
+- The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
