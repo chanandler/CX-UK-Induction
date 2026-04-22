@@ -228,6 +228,10 @@ final class VisitorStore {
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
+        // Track keys seen during this import pass so duplicates inside the same CSV
+        // are skipped (not just duplicates already persisted in the database).
+        var seenKeys = existingKey
+
         var pending: [Visitor] = []
         var skipped = 0
         var failed = 0
@@ -254,8 +258,10 @@ final class VisitorStore {
                 continue
             }
 
-            // Duplicate check.
-            if existingKey.contains(dupKey(firstName, lastName, checkIn)) {
+            // Duplicate check against both existing records and rows already parsed
+            // in this same file.
+            let key = dupKey(firstName, lastName, checkIn)
+            if seenKeys.contains(key) {
                 skipped += 1
                 continue
             }
@@ -290,6 +296,7 @@ final class VisitorStore {
                 wasAutoCheckedOut: wasAuto
             )
             pending.append(visitor)
+            seenKeys.insert(key)
         }
 
         return (ImportSummary(imported: pending.count, skipped: skipped, failed: failed), pending)

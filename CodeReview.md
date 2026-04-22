@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-03-24
+> Generated: 2026-03-23 | Last updated: 2026-04-22
 
 ---
 
@@ -98,7 +98,7 @@
 
 ### Models.swift (Round 2 — 2026-03-24)
 
-- [ ] 🟠 **CSV import does not detect duplicates within the imported file itself** — `previewImport` builds `existingKey` from records already in the database, but never adds processed rows to that set as it loops. If the same visitor appears twice in the CSV, both rows pass the duplicate check and both end up in `pending`, creating true duplicate records after `commitImport`. Fix: insert each successfully-parsed visitor's key into a local `var seenInFile: Set<String>` and check it before appending to `pending`.
+- [x] 🟠 ~~**CSV import does not detect duplicates within the imported file itself**~~ — Fixed 2026-04-22. `previewImport` now tracks keys seen during the current import pass (`seenKeys`) in addition to existing database keys, so duplicate rows inside the same CSV are skipped.
 
 - [ ] 🟠 **CSV parser does not strip `\r` from Windows-style line endings** — `raw.components(separatedBy: "\n")` splits on `\n` only, leaving a trailing `\r` at the end of the last field of every line when the file uses `\r\n` line endings (common for CSV files exported from Windows Excel). This causes date parsing to fail for the `Date Signed In` column and corrupts values in the final column of every row. Fix: replace the separator with `CharacterSet.newlines` (i.e. `raw.components(separatedBy: .init(charactersIn: "\r\n")).filter { !$0.isEmpty }`) or call `replacingOccurrences(of: "\r\n", with: "\n")` on `raw` before splitting.
 
@@ -294,8 +294,8 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 
 ### 25. 🌟 Duplicate Sign-In Prevention
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
-- All 🔴 CRITICAL, 🟠 HIGH, and 🟡 MEDIUM issues resolved as of 2026-03-23.
-- Remaining open items: two 🟢 LOW issues in `WelcomeView.swift` (pager count constant, localisation), and one 🟡 MEDIUM (boolean `@State` flag explosion).
-- `WelcomeView.swift` and `VisitorTabs.swift` both have zero compiler errors or warnings as of 2026-03-24.
-- Next recommended pass: the remaining 🟢 LOW issues or the `@State` flag consolidation.
-- CSV backup & restore feature fully implemented 2026-03-23 (see Feature Requests section above — all items completed).
+- Tracker audit completed on 2026-04-22 against current source files.
+- No additional previously-open issues were verified as fixed during this audit.
+- Current open issue counts: 5 🟠 HIGH, 6 🟡 MEDIUM, 6 🟢 LOW.
+- The highest-priority remaining items are still the data-integrity issues in `Models.swift` and CSV export write-path issue in `VisitorTabs.swift` / `WelcomeView.swift`.
+- Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
