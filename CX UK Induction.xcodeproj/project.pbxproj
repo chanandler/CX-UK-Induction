@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		223C54362F992A240008D43A /* CodeNewFeatures.md in Resources */ = {isa = PBXBuildFile; fileRef = 223C54352F992A240008D43A /* CodeNewFeatures.md */; };
 		226471CF2F94F4B100786F29 /* SiteVisitorManagementOverview.md in Resources */ = {isa = PBXBuildFile; fileRef = 226471CE2F94F4B100786F29 /* SiteVisitorManagementOverview.md */; };
 		22B91EAC2F7138E60012FB8A /* CodeReview.md in Resources */ = {isa = PBXBuildFile; fileRef = 22B91EAB2F7138E60012FB8A /* CodeReview.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2221698B2EBE96B700020B39 /* CX UK Induction.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CX UK Induction.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		223C54352F992A240008D43A /* CodeNewFeatures.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CodeNewFeatures.md; sourceTree = "<group>"; };
 		226471CE2F94F4B100786F29 /* SiteVisitorManagementOverview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SiteVisitorManagementOverview.md; sourceTree = "<group>"; };
 		22B91EAB2F7138E60012FB8A /* CodeReview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CodeReview.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -56,6 +58,7 @@
 				2221698C2EBE96B700020B39 /* Products */,
 				22B91EAB2F7138E60012FB8A /* CodeReview.md */,
 				226471CE2F94F4B100786F29 /* SiteVisitorManagementOverview.md */,
+				223C54352F992A240008D43A /* CodeNewFeatures.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,6 +134,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				223C54362F992A240008D43A /* CodeNewFeatures.md in Resources */,
 				226471CF2F94F4B100786F29 /* SiteVisitorManagementOverview.md in Resources */,
 				22B91EAC2F7138E60012FB8A /* CodeReview.md in Resources */,
 			);
