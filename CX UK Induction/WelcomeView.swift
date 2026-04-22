@@ -54,10 +54,12 @@ struct WelcomeView: View {
 
     // Reuse a single generator instance rather than creating one per haptic call.
     private let hapticGenerator = UINotificationFeedbackGenerator()
+    private let pinSessionTimeout: TimeInterval = 5 * 60
 
     @State private var showingSignInBook = false
     @State private var showingPinGate = false
     @State private var pendingProtectedAction: ProtectedAction?
+    @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
     @State private var showPersistenceError = false
 
@@ -212,6 +214,7 @@ struct WelcomeView: View {
                     PinGateSheet(
                         actionName: protectedActionName(for: action),
                         onSuccess: {
+                            markPinSessionUnlocked()
                             showingPinGate = false
                             runProtectedAction(action)
                         },
@@ -761,6 +764,10 @@ struct WelcomeView: View {
     }
 
     private func requestProtectedAccess(for action: ProtectedAction) {
+        if isPinSessionValid {
+            runProtectedAction(action)
+            return
+        }
         pendingProtectedAction = action
         showingPinGate = true
     }
@@ -790,6 +797,16 @@ struct WelcomeView: View {
         case .fireRollCall:
             showingRollCall = true
         }
+    }
+
+    private var isPinSessionValid: Bool {
+        guard pinLastUnlockTimestamp > 0 else { return false }
+        let lastUnlock = Date(timeIntervalSince1970: pinLastUnlockTimestamp)
+        return Date().timeIntervalSince(lastUnlock) < pinSessionTimeout
+    }
+
+    private func markPinSessionUnlocked() {
+        pinLastUnlockTimestamp = Date().timeIntervalSince1970
     }
 }
 
@@ -1386,7 +1403,7 @@ private struct AutoCheckoutSettingsView: View {
                     } label: {
                         Label("Change PIN", systemImage: "key")
                     }
-                    Text("The PIN is stored securely in the iOS Keychain.")
+                    Text("The PIN is stored securely in the iOS Keychain and will be requested again after 5 minutes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
