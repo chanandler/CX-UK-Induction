@@ -13,37 +13,9 @@
 
 ## Open Issues
 
-### AutoCheckoutManager.swift
-
-- [x] 🔴 ~~**Timer added to RunLoop twice**~~ — Fixed 2026-03-23.
-
-- [x] 🔴 ~~**Recursive rescheduling creates unbounded call stack**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**Inefficient next-weekday calculation**~~ — Verified fixed (pre-existing).
-
----
-
-### CX_UK_InductionApp.swift
-
-- [x] 🔴 ~~**SwiftData container failure is silently swallowed**~~ — Fixed 2026-03-23.
-
----
-
-### Models.swift
-
-- [x] 🔴 ~~**`checkoutTime` parameter is ignored in auto-checkout**~~ — Fixed 2026-03-23.
-
-- [x] 🟠 ~~**`autoCheckoutPreviousDay` and `autoCheckoutPreviousDayReturningCount` are near-identical**~~ — Fixed 2026-03-23.
-
-- [x] 🟠 ~~**Sign-in does not validate post-trim values**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**Errors stored as plain strings with no propagation**~~ — Verified fixed (pre-existing).
-
 ---
 
 ### RootView.swift
-
-- [x] 🟢 ~~**ZStack contains only one child**~~ — Fixed 2026-03-24.
 
 - [ ] 🟢 **Preview lacks required environment** — The `#Preview` block in `RootView.swift` has no `.modelContainer` or `.environment(VisitorStore())`, so it will fail to render in Xcode canvas. Note: `WelcomeView.swift`'s `#Preview` correctly wraps `RootView()` with the required environment. Fix: apply the same setup to `RootView.swift`'s own preview.
 
@@ -51,58 +23,15 @@
 
 ### VisitorTabs.swift
 
-- [x] 🟠 ~~**`filteredActive` / `filteredArchived` do full linear scans on every render**~~ — Reviewed; no change required.
-
-- [x] 🟠 ~~**`escapeCSV` is duplicated across VisitorTabs and WelcomeView**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**Temp CSV files are never deleted**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**CSV export failure gives the user no feedback**~~ — Verified fixed (pre-existing).
-
-- [x] 🟡 ~~**CEMEX Blue defined with magic numbers in multiple places**~~ — Verified fixed (pre-existing).
-
 - [ ] 🟢 **`UITableView.appearance()` modifies global UI state** — Appearance proxy changes persist globally and can affect unrelated views. Replace with SwiftUI-native list/row modifiers where possible.
 
 ---
 
 ### WelcomeView.swift
 
-- [x] 🔴 ~~**`AutoCheckoutScheduler` is never cancelled when the view disappears**~~ — Fixed 2026-03-23.
-
-- [x] 🔴 ~~**Multiple timers can be created without cancelling the previous one**~~ — Fixed 2026-03-23.
-
-- [x] 🔴 ~~**Redundant `@Query` declarations fetch the same data three times**~~ — Fixed 2026-03-23.
-
-- [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Fixed 2026-03-24.
-- [x] 🟠 ~~**`RegularFormFields` and `CompactFormFields` are ~250 lines of near-identical code**~~ — Verified fixed (pre-existing).
-
-- [x] 🟠 ~~**`DateFormatter` instances created at multiple call sites**~~ — Fixed 2026-03-23.
-
-- [x] 🟠 ~~**Badge is required in form validation but optional in the model**~~ — Fixed 2026-03-23.
-
-- [x] 🟠 ~~**Pager picker display text and stored value are inconsistent**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**Explosion of boolean `@State` flags**~~ — Fixed 2026-04-22.
-
-- [x] 🟡 ~~**`UINotificationFeedbackGenerator` created fresh on every haptic call**~~ — Verified fixed (pre-existing).
-
-- [x] 🟡 ~~**`WelcomeView.body` exceeded Swift type-checker complexity limit**~~ — Fixed 2026-03-23.
-
-- [x] 🟡 ~~**`withAnimation` return value discarded with `_`**~~ — Fixed 2026-03-23.
-
 - [ ] 🟢 **Pager count hardcoded to 30** — The picker range `1...30` is a magic number. Extract to a named constant so it can be changed in one place.
 
 - [ ] 🟢 **All user-facing strings are hardcoded English** — No `Localizable.strings` or `String(localized:)` usage. Low priority for an internal tool, but worth noting.
-
----
-
-### Models.swift (Round 2 — 2026-03-24)
-
-- [x] 🟠 ~~**CSV import does not detect duplicates within the imported file itself**~~ — Fixed 2026-04-22.
-
-- [x] 🟠 ~~**CSV parser does not strip `\r` from Windows-style line endings**~~ — Fixed 2026-04-22.
-
-- [x] 🟠 ~~**Auto-checkout skipped on cold app relaunch**~~ — Fixed 2026-04-22.
 
 ---
 
