@@ -1650,42 +1650,42 @@ private struct VisitorFormFields: View {
 
     private var firstNameField: some View {
         FormField(label: "First Name", placeholder: "First name",
-                  text: $firstName, isInvalid: firstNameInvalid,
+                  text: autoCapitalizedWordsBinding($firstName),
+                  isInvalid: firstNameInvalid,
                   errorMessage: "First name is required")
             .focused(focusedField, equals: .firstName)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .lastName }
-            .textInputAutocapitalization(.words)
     }
 
     private var lastNameField: some View {
         FormField(label: "Last Name", placeholder: "Last name",
-                  text: $lastName, isInvalid: lastNameInvalid,
+                  text: autoCapitalizedWordsBinding($lastName),
+                  isInvalid: lastNameInvalid,
                   errorMessage: "Last name is required")
             .focused(focusedField, equals: .lastName)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .company }
-            .textInputAutocapitalization(.words)
     }
 
     private var companyField: some View {
         FormField(label: "Company", placeholder: "Company",
-                  text: $company, isInvalid: companyInvalid,
+                  text: autoCapitalizedWordsBinding($company),
+                  isInvalid: companyInvalid,
                   errorMessage: "Company is required")
             .focused(focusedField, equals: .company)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .visiting }
-            .textInputAutocapitalization(.words)
     }
 
     private var visitingField: some View {
         FormField(label: "Visiting", placeholder: "Who are you visiting",
-                  text: $visiting, isInvalid: visitingInvalid,
+                  text: autoCapitalizedWordsBinding($visiting),
+                  isInvalid: visitingInvalid,
                   errorMessage: "Who you are visiting is required")
             .focused(focusedField, equals: .visiting)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .badge }
-            .textInputAutocapitalization(.words)
     }
 
     private var badgeField: some View {
@@ -1719,6 +1719,34 @@ private struct VisitorFormFields: View {
                 }
                 focusedField.wrappedValue = nil
             }
+    }
+
+    private func autoCapitalizedWordsBinding(_ binding: Binding<String>) -> Binding<String> {
+        Binding(
+            get: { binding.wrappedValue },
+            set: { newValue in
+                binding.wrappedValue = capitalizingWordInitials(in: newValue)
+            }
+        )
+    }
+
+    private func capitalizingWordInitials(in text: String) -> String {
+        var result = ""
+        var shouldCapitalizeNext = true
+
+        for character in text {
+            if shouldCapitalizeNext, character.isLetter {
+                result.append(contentsOf: String(character).uppercased())
+                shouldCapitalizeNext = false
+            } else {
+                result.append(character)
+                if character.isWhitespace || character == "-" {
+                    shouldCapitalizeNext = true
+                }
+            }
+        }
+
+        return result
     }
 }
 
