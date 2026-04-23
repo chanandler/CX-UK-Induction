@@ -253,6 +253,14 @@ struct WelcomeView: View {
                                 pendingProtectedAction = nil
                             }
                         )
+                    } else {
+                        NavigationStack {
+                            ContentUnavailableView(
+                                "Preparing PIN Prompt",
+                                systemImage: "lock.shield",
+                                description: Text("Please try again.")
+                            )
+                        }
                     }
                 case .analytics:
                     AnalyticsDashboardView(visitors: allVisitors)
@@ -784,7 +792,10 @@ struct WelcomeView: View {
             return
         }
         pendingProtectedAction = action
-        activeSheet = .pinGate
+        // Present on next runloop so the sheet always sees the prepared action payload.
+        DispatchQueue.main.async {
+            activeSheet = .pinGate
+        }
     }
 
     private func protectedActionName(for action: ProtectedAction) -> String {
