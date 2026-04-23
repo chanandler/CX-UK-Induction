@@ -132,7 +132,6 @@ struct WelcomeView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Color(.systemGroupedBackground))
-            .autocorrectionDisabled()
 
             settingsMenu
         }
@@ -1570,6 +1569,9 @@ private struct FormField: View {
     @Binding var text: String
     var isInvalid: Bool = false
     var errorMessage: String? = nil
+    var textCapitalization: TextInputAutocapitalization? = .words
+    var keyboardType: UIKeyboardType = .default
+    var autocorrectionDisabled: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -1580,7 +1582,9 @@ private struct FormField: View {
                 .textCase(.uppercase)
 
             TextField(placeholder, text: $text)
-                .textInputAutocapitalization(.words)
+                .textInputAutocapitalization(textCapitalization)
+                .keyboardType(keyboardType)
+                .autocorrectionDisabled(autocorrectionDisabled)
                 .font(.body)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 13)
@@ -1689,11 +1693,13 @@ private struct VisitorFormFields: View {
                   text: Binding(get: { badgeNumber },
                                 set: { badgeNumber = $0.filter { $0.isNumber } }),
                   isInvalid: badgeInvalid,
-                  errorMessage: "Badge number is required")
+                  errorMessage: "Badge number is required",
+                  textCapitalization: .never,
+                  keyboardType: .numbersAndPunctuation,
+                  autocorrectionDisabled: true)
             .focused(focusedField, equals: .badge)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .carReg }
-            .keyboardType(.numberPad)
     }
 
     private var carRegField: some View {
@@ -1701,11 +1707,11 @@ private struct VisitorFormFields: View {
                   text: Binding(
                     get: { carRegistration },
                     set: { carRegistration = String($0.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }) }
-                  ))
+                  ),
+                  textCapitalization: .characters,
+                  keyboardType: .asciiCapable,
+                  autocorrectionDisabled: true)
             .focused(focusedField, equals: .carReg)
-            .textInputAutocapitalization(.characters)
-            .keyboardType(.asciiCapable)
-            .autocorrectionDisabled(true)
             .submitLabel(.done)
             .onSubmit {
                 if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
