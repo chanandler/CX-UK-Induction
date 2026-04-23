@@ -54,7 +54,7 @@ struct WelcomeView: View {
     private let hapticGenerator = UINotificationFeedbackGenerator()
     private let pinSessionTimeout: TimeInterval = 5 * 60
 
-    @State private var pendingProtectedAction: ProtectedAction?
+    @State private var pinGateAction: ProtectedAction = .settings
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
     @State private var showPersistenceError = false
@@ -197,9 +197,7 @@ struct WelcomeView: View {
                         shareItem = nil
                     }
             }
-            .sheet(item: $activeSheet, onDismiss: {
-                pendingProtectedAction = nil
-            }) { sheet in
+            .sheet(item: $activeSheet) { sheet in
                 switch sheet {
                 case .about:
                     AboutView()
@@ -239,28 +237,17 @@ struct WelcomeView: View {
                 case .rollCall:
                     FireAlarmRollCallView(visitors: activeVisitors) { activeSheet = nil }
                 case .pinGate:
-                    if let action = pendingProtectedAction {
-                        PinGateSheet(
-                            actionName: protectedActionName(for: action),
-                            onSuccess: {
-                                markPinSessionUnlocked()
-                                activeSheet = nil
-                                runProtectedAction(action)
-                            },
-                            onCancel: {
-                                activeSheet = nil
-                                pendingProtectedAction = nil
-                            }
-                        )
-                    } else {
-                        NavigationStack {
-                            ContentUnavailableView(
-                                "Preparing PIN Prompt",
-                                systemImage: "lock.shield",
-                                description: Text("Please try again.")
-                            )
+                    PinGateSheet(
+                        actionName: protectedActionName(for: pinGateAction),
+                        onSuccess: {
+                            markPinSessionUnlocked()
+                            activeSheet = nil
+                            runProtectedAction(pinGateAction)
+                        },
+                        onCancel: {
+                            activeSheet = nil
                         }
-                    }
+                    )
                 case .analytics:
                     AnalyticsDashboardView(visitors: allVisitors)
                 case .importConfirmation:
@@ -790,11 +777,8 @@ struct WelcomeView: View {
             runProtectedAction(action)
             return
         }
-        pendingProtectedAction = action
-        // Present on next runloop so the sheet always sees the prepared action payload.
-        DispatchQueue.main.async {
-            activeSheet = .pinGate
-        }
+        pinGateAction = action
+        activeSheet = .pinGate
     }
 
     private func protectedActionName(for action: ProtectedAction) -> String {
