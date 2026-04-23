@@ -1580,6 +1580,7 @@ private struct FormField: View {
                 .textCase(.uppercase)
 
             TextField(placeholder, text: $text)
+                .textInputAutocapitalization(.words)
                 .font(.body)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 13)
