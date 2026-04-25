@@ -90,9 +90,3 @@
 | 2026-03-24 | `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
 
 ---
-
-
-
-- Current open issue counts: 1 🟠 HIGH, 1 🟡 MEDIUM, 0 🟢 LOW.
-- The highest-priority remaining items are the CSV multiline import parsing bug (`Models.swift`) and PIN brute-force throttling/lockout (`PINSecurity.swift`).
-- Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
