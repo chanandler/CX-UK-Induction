@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-04-22
+> Generated: 2026-03-23 | Last updated: 2026-04-25
 
 ---
 
@@ -18,6 +18,16 @@
 ### VisitorTabs.swift
 
 ### WelcomeView.swift
+
+- [ ] 🟠 **Analytics launch from Settings is timing-dependent (`DispatchQueue.main.asyncAfter`)** — Opening Analytics from `AutoCheckoutSettingsView` currently relies on a fixed `0.2s` delay before calling `requestProtectedAccess(for: .analytics)` (`WelcomeView.swift:217`). This can race on slower devices, different animation settings, or future sheet transition changes and intermittently fail to open the gate/dashboard. Replace with deterministic sheet-state sequencing (e.g. drive from a dedicated pending action state and trigger on dismiss completion rather than a hardcoded delay).
+
+### Models.swift
+
+- [ ] 🟠 **CSV import breaks quoted multiline fields due pre-splitting by newline** — `previewImport` splits raw CSV using `components(separatedBy: CharacterSet.newlines)` before row parsing (`Models.swift:213`), but `parseCSVLine` only parses a single line (`Models.swift:338`). Any valid quoted field containing embedded newlines will be split into multiple pseudo-rows, producing false failures and potential data corruption. Implement a record-level parser that respects quote state across line breaks before field tokenization.
+
+### PINSecurity.swift
+
+- [ ] 🟡 **PIN verification has no brute-force throttling or lockout** — `PinGateSheet.submit()` allows unlimited rapid retries (`PINSecurity.swift:144`) with immediate feedback and no cooldown. Because this gate protects settings/export/sign-in-book/fire roll-call/admin analytics, add attempt throttling (e.g. exponential backoff, temporary lockout after N failures, and optional persistent fail counter) to reduce brute-force risk on unattended kiosks.
 
 ---
 
@@ -85,5 +95,5 @@
 
 
 - Current open issue counts: 2 🟠 HIGH, 1 🟡 MEDIUM, 0 🟢 LOW.
-- The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
+- The highest-priority remaining items are the CSV multiline import parsing bug (`Models.swift`) and timing-dependent analytics launch flow (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
