@@ -209,17 +209,17 @@ final class VisitorStore {
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
-        // Support both Unix (\n) and Windows (\r\n) line endings.
-        let lines = raw.components(separatedBy: CharacterSet.newlines)
-            .map { $0.trimmingCharacters(in: .newlines) }
+        // Parse records with quote-awareness so embedded newlines inside quoted
+        // fields are preserved as part of a single CSV row.
+        let records = parseCSVRecords(raw)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        guard lines.count >= 2 else {
+        guard records.count >= 2 else {
             lastError = .importEmpty
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
         // Parse header row to build column-name → index map.
-        let headers = parseCSVLine(lines[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let headers = parseCSVLine(records[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         func col(_ name: String) -> Int? { headers.firstIndex(of: name) }
 
         // Require at minimum the four identity columns.
@@ -247,8 +247,8 @@ final class VisitorStore {
         var skipped = 0
         var failed = 0
 
-        for line in lines.dropFirst() {
-            let fields = parseCSVLine(line)
+        for record in records.dropFirst() {
+            let fields = parseCSVLine(record)
             func field(_ idx: Int?) -> String {
                 guard let i = idx, i < fields.count else { return "" }
                 return fields[i].trimmingCharacters(in: .whitespacesAndNewlines)
@@ -328,6 +328,60 @@ final class VisitorStore {
     }
 
     // MARK: - Private CSV helpers
+
+    /// Splits raw CSV text into logical records while respecting quoted fields
+    /// that may contain embedded newline characters.
+    private func parseCSVRecords(_ raw: String) -> [String] {
+        var records: [String] = []
+        var current = ""
+        var inQuotes = false
+        var idx = raw.startIndex
+
+        while idx < raw.endIndex {
+            let ch = raw[idx]
+
+            if ch == "\"" {
+                if inQuotes {
+                    let next = raw.index(after: idx)
+                    if next < raw.endIndex, raw[next] == "\"" {
+                        // Escaped quote ("") inside a quoted field.
+                        current.append(ch)
+                        current.append(raw[next])
+                        idx = raw.index(after: next)
+                        continue
+                    }
+                    inQuotes = false
+                    current.append(ch)
+                } else {
+                    inQuotes = true
+                    current.append(ch)
+                }
+            } else if (ch == "\n" || ch == "\r"), !inQuotes {
+                if !current.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    records.append(current)
+                }
+                current = ""
+
+                // Consume CRLF as a single newline separator.
+                if ch == "\r" {
+                    let next = raw.index(after: idx)
+                    if next < raw.endIndex, raw[next] == "\n" {
+                        idx = next
+                    }
+                }
+            } else {
+                current.append(ch)
+            }
+
+            idx = raw.index(after: idx)
+        }
+
+        if !current.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            records.append(current)
+        }
+
+        return records
+    }
 
     private func dupKey(_ first: String, _ last: String, _ date: Date) -> String {
         "\(first.lowercased())|\(last.lowercased())|\(date.timeIntervalSinceReferenceDate)"

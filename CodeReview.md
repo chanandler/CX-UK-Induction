@@ -21,8 +21,6 @@
 
 ### Models.swift
 
-- [ ] 🟠 **CSV import breaks quoted multiline fields due pre-splitting by newline** — `previewImport` splits raw CSV using `components(separatedBy: CharacterSet.newlines)` before row parsing (`Models.swift:213`), but `parseCSVLine` only parses a single line (`Models.swift:338`). Any valid quoted field containing embedded newlines will be split into multiple pseudo-rows, producing false failures and potential data corruption. Implement a record-level parser that respects quote state across line breaks before field tokenization.
-
 ### PINSecurity.swift
 
 - [ ] 🟡 **PIN verification has no brute-force throttling or lockout** — `PinGateSheet.submit()` allows unlimited rapid retries (`PINSecurity.swift:144`) with immediate feedback and no cooldown. Because this gate protects settings/export/sign-in-book/fire roll-call/admin analytics, add attempt throttling (e.g. exponential backoff, temporary lockout after N failures, and optional persistent fail counter) to reduce brute-force risk on unattended kiosks.
@@ -75,6 +73,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-007 signature font fallback hardened — now checks installed font availability and uses explicit fallback chain instead of silent `Font.custom` fallback |
 | 2026-04-25 | WelcomeView.swift | BUG-008 empty induction content guard added — if `imageNames` is empty, flow now auto-cancels once via `onComplete(false)` |
 | 2026-04-25 | WelcomeView.swift | Analytics launch flow from Settings de-raced — removed fixed `DispatchQueue.main.asyncAfter` delay and replaced with deterministic post-sheet-dismiss protected-action queue |
+| 2026-04-25 | Models.swift | CSV import multiline quote handling fixed — replaced newline pre-split with quote-aware record parsing before field tokenization |
 
 ---
 
