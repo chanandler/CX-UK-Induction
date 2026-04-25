@@ -699,18 +699,6 @@ struct WelcomeView: View {
     
     private var settingsMenu: some View {
         HStack(spacing: 10) {
-            Button {
-                requestProtectedAccess(for: .fireRollCall)
-            } label: {
-                Image(systemName: "flame.fill")
-                    .imageScale(.medium)
-                    .foregroundStyle(.red)
-                    .padding(10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
-            }
-
             Menu {
                 Button {
                     requestProtectedAccess(for: .exportCSV)
@@ -740,6 +728,18 @@ struct WelcomeView: View {
                 Image(systemName: "gearshape.fill")
                     .imageScale(.large)
                     .padding(12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
+            }
+
+            Button {
+                requestProtectedAccess(for: .fireRollCall)
+            } label: {
+                Image(systemName: "flame.fill")
+                    .imageScale(.medium)
+                    .foregroundStyle(.red)
+                    .padding(10)
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
                     .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
