@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟢 **BUG-002: All user-facing strings are hardcoded English** — No `Localizable.strings` or `String(localized:)` usage. Low priority for an internal tool, but worth noting.
-
 - [ ] 🟡 **BUG-003: `LeavingSearchSheet.filtered` snapshot freeze fails when the initial visitor list is empty** — `let source = snapshot.isEmpty ? activeVisitors : snapshot` is used as a guard to freeze the list when the sheet opens. However, when the sheet opens with zero active visitors, `onAppear` sets `snapshot = []` (empty), so `snapshot.isEmpty` remains `true` forever. Any visitor who signs in while the sheet is open will immediately appear in the list, defeating the freeze intent. Fix: use an `Optional<[Visitor]>` (`var snapshot: [Visitor]? = nil`) and set it to `activeVisitors` (even `[]`) in `onAppear`; use `snapshot ?? activeVisitors` in `filtered`.
 
 - [ ] 🟡 **BUG-004: `SignInBookView.onCheckedOut` callback is dead code** — The `onCheckedOut: (String) -> Void` parameter is accepted by `SignInBookView` but is never called anywhere within the view. The active-visitor list rows contain no checkout action. Either the callback should be removed from the API surface or a checkout button should be wired to it, otherwise callers set up a closure that can never fire.
@@ -73,6 +71,7 @@
 | 2026-04-25 | RootView.swift | Preview lacks required environment — added `.modelContainer(for: Visitor.self, inMemory: true)` and `.environment(VisitorStore())` |
 | 2026-04-25 | VisitorTabs.swift | `UITableView.appearance()` global UI state removed — replaced lifecycle appearance proxy mutation with local SwiftUI list/form styling only |
 | 2026-04-25 | WelcomeView.swift | BUG-001 pager count magic number removed — `1...30` extracted to `availablePagerRange` constant |
+| 2026-04-25 | Models.swift + PINSecurity.swift + VisitorTabs.swift + Localizable.strings | BUG-002 localization baseline added — introduced `Localizable.strings` and replaced key user-facing error/alert strings with `String(localized:)` |
 
 ---
 
@@ -91,6 +90,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 3 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 2 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

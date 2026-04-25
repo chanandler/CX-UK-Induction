@@ -187,10 +187,10 @@ struct ArchivedVisitorsView: View {
                 shareItem = nil
             })
         }
-        .alert("Export Failed", isPresented: $showExportError) {
-            Button("OK", role: .cancel) { }
+        .alert(String(localized: "archived.alert.export_failed.title"), isPresented: $showExportError) {
+            Button(String(localized: "common.ok"), role: .cancel) { }
         } message: {
-            Text("The CSV file could not be created. Please try again.")
+            Text(String(localized: "archived.alert.export_failed.message"))
         }
         .onChange(of: searchText) { _, _ in
             shareItem = nil

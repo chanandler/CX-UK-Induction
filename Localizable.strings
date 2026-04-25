@@ -1,0 +1,20 @@
+"store.error.save_failed_prefix" = "Save failed: ";
+"store.error.fetch_failed_prefix" = "Fetch failed: ";
+"store.error.import_access_denied" = "Import failed: could not access the selected file.";
+"store.error.import_unreadable" = "Import failed: could not read file.";
+"store.error.import_empty" = "Import failed: file appears empty.";
+"store.error.import_missing_columns" = "Import failed: required columns (First Name, Last Name, Date Signed In) not found.";
+"store.error.signin_required_fields" = "Sign-in failed: required fields must not be blank.";
+"store.error.import_read_existing_failed" = "Import failed: could not read existing records.";
+
+"pin.error.enter_pin" = "Please enter your PIN.";
+"pin.error.incorrect_pin" = "Incorrect PIN.";
+"pin.error.minimum_length" = "PIN must be at least 4 digits.";
+"pin.error.mismatch" = "PINs do not match.";
+"pin.error.keychain_save_failed" = "Could not save PIN to Keychain.";
+"pin.error.current_incorrect" = "Current PIN is incorrect.";
+"pin.success.updated" = "PIN updated successfully.";
+
+"archived.alert.export_failed.title" = "Export Failed";
+"archived.alert.export_failed.message" = "The CSV file could not be created. Please try again.";
+"common.ok" = "OK";

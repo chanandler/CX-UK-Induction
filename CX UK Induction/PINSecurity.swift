@@ -138,26 +138,26 @@ struct PinGateSheet: View {
         switch mode {
         case .verify:
             guard !enteredPin.isEmpty else {
-                errorMessage = "Please enter your PIN."
+                errorMessage = String(localized: "pin.error.enter_pin")
                 return
             }
             guard PinKeychain.verify(enteredPin) else {
-                errorMessage = "Incorrect PIN."
+                errorMessage = String(localized: "pin.error.incorrect_pin")
                 return
             }
             onSuccess()
 
         case .create:
             guard newPin.count >= 4 else {
-                errorMessage = "PIN must be at least 4 digits."
+                errorMessage = String(localized: "pin.error.minimum_length")
                 return
             }
             guard newPin == confirmPin else {
-                errorMessage = "PINs do not match."
+                errorMessage = String(localized: "pin.error.mismatch")
                 return
             }
             guard PinKeychain.set(newPin) else {
-                errorMessage = "Could not save PIN to Keychain."
+                errorMessage = String(localized: "pin.error.keychain_save_failed")
                 return
             }
             onSuccess()
@@ -234,27 +234,27 @@ struct PinChangeSheet: View {
         successMessage = nil
 
         guard newPin.count >= 4 else {
-            errorMessage = "PIN must be at least 4 digits."
+            errorMessage = String(localized: "pin.error.minimum_length")
             return
         }
         guard newPin == confirmPin else {
-            errorMessage = "PINs do not match."
+            errorMessage = String(localized: "pin.error.mismatch")
             return
         }
 
         if hasExistingPin {
             guard PinKeychain.change(currentPin: currentPin, newPin: newPin) else {
-                errorMessage = "Current PIN is incorrect."
+                errorMessage = String(localized: "pin.error.current_incorrect")
                 return
             }
         } else {
             guard PinKeychain.set(newPin) else {
-                errorMessage = "Could not save PIN to Keychain."
+                errorMessage = String(localized: "pin.error.keychain_save_failed")
                 return
             }
         }
 
-        successMessage = "PIN updated successfully."
+        successMessage = String(localized: "pin.success.updated")
         currentPin = ""
         newPin = ""
         confirmPin = ""

@@ -58,14 +58,22 @@ enum StoreError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .validationFailed(let msg):   return msg
-        case .saveFailed(let e):           return "Save failed: \(e.localizedDescription)"
-        case .fetchFailed(let e):          return "Fetch failed: \(e.localizedDescription)"
-        case .importAccessDenied:          return "Import failed: could not access the selected file."
-        case .importUnreadable:            return "Import failed: could not read file."
-        case .importEmpty:                 return "Import failed: file appears empty."
-        case .importMissingColumns:        return "Import failed: required columns (First Name, Last Name, Date Signed In) not found."
-        case .importMessage(let msg):      return msg
+        case .validationFailed(let msg):
+            return msg
+        case .saveFailed(let e):
+            return String(localized: "store.error.save_failed_prefix") + e.localizedDescription
+        case .fetchFailed(let e):
+            return String(localized: "store.error.fetch_failed_prefix") + e.localizedDescription
+        case .importAccessDenied:
+            return String(localized: "store.error.import_access_denied")
+        case .importUnreadable:
+            return String(localized: "store.error.import_unreadable")
+        case .importEmpty:
+            return String(localized: "store.error.import_empty")
+        case .importMissingColumns:
+            return String(localized: "store.error.import_missing_columns")
+        case .importMessage(let msg):
+            return msg
         }
     }
 }
@@ -102,7 +110,7 @@ final class VisitorStore {
         // Guard against blank-after-trim values slipping through
         guard !trimmedFirst.isEmpty, !trimmedLast.isEmpty,
               !trimmedCompany.isEmpty, !trimmedVisiting.isEmpty else {
-            lastError = .validationFailed("Sign-in failed: required fields must not be blank.")
+            lastError = .validationFailed(String(localized: "store.error.signin_required_fields"))
             return
         }
 
@@ -227,7 +235,7 @@ final class VisitorStore {
             let all = try context.fetch(FetchDescriptor<Visitor>())
             existingKey = Set(all.map { dupKey($0.firstName, $0.lastName, $0.checkIn) })
         } catch {
-            lastError = .importMessage("Import failed: could not read existing records.")
+            lastError = .importMessage(String(localized: "store.error.import_read_existing_failed"))
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
