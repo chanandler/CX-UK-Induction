@@ -14,4 +14,6 @@ struct RootView: View {
 
 #Preview {
     RootView()
+        .modelContainer(for: Visitor.self, inMemory: true)
+        .environment(VisitorStore())
 }

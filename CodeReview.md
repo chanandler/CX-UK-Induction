@@ -15,12 +15,6 @@
 
 ---
 
-### RootView.swift
-
-- [ ] 🟢 **Preview lacks required environment** — The `#Preview` block in `RootView.swift` has no `.modelContainer` or `.environment(VisitorStore())`, so it will fail to render in Xcode canvas. Note: `WelcomeView.swift`'s `#Preview` correctly wraps `RootView()` with the required environment. Fix: apply the same setup to `RootView.swift`'s own preview.
-
----
-
 ### VisitorTabs.swift
 
 - [ ] 🟢 **`UITableView.appearance()` modifies global UI state** — Appearance proxy changes persist globally and can affect unrelated views. Replace with SwiftUI-native list/row modifiers where possible.
@@ -82,6 +76,7 @@
 | 2026-04-22 | VisitorTabs.swift + WelcomeView.swift | CSV export write path switched to `String.write` (removed optional-chain write risk) |
 | 2026-04-22 | WelcomeView.swift | `submit()` now stores `pagerNumber` as `nil` when blank |
 | 2026-04-22 | WelcomeView.swift | Validation errors now gated by `hasAttemptedSubmit` (no initial red state) |
+| 2026-04-25 | RootView.swift | Preview lacks required environment — added `.modelContainer(for: Visitor.self, inMemory: true)` and `.environment(VisitorStore())` |
 
 ---
 
@@ -100,6 +95,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 6 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 5 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
