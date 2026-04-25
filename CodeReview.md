@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟠 **Analytics launch from Settings is timing-dependent (`DispatchQueue.main.asyncAfter`)** — Opening Analytics from `AutoCheckoutSettingsView` currently relies on a fixed `0.2s` delay before calling `requestProtectedAccess(for: .analytics)` (`WelcomeView.swift:217`). This can race on slower devices, different animation settings, or future sheet transition changes and intermittently fail to open the gate/dashboard. Replace with deterministic sheet-state sequencing (e.g. drive from a dedicated pending action state and trigger on dismiss completion rather than a hardcoded delay).
-
 ### Models.swift
 
 - [ ] 🟠 **CSV import breaks quoted multiline fields due pre-splitting by newline** — `previewImport` splits raw CSV using `components(separatedBy: CharacterSet.newlines)` before row parsing (`Models.swift:213`), but `parseCSVLine` only parses a single line (`Models.swift:338`). Any valid quoted field containing embedded newlines will be split into multiple pseudo-rows, producing false failures and potential data corruption. Implement a record-level parser that respects quote state across line breaks before field tokenization.
@@ -76,6 +74,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-006 badge keyboard focus chain fixed — added keyboard toolbar `Next` action to move focus from Badge Number to Car Registration |
 | 2026-04-25 | WelcomeView.swift | BUG-007 signature font fallback hardened — now checks installed font availability and uses explicit fallback chain instead of silent `Font.custom` fallback |
 | 2026-04-25 | WelcomeView.swift | BUG-008 empty induction content guard added — if `imageNames` is empty, flow now auto-cancels once via `onComplete(false)` |
+| 2026-04-25 | WelcomeView.swift | Analytics launch flow from Settings de-raced — removed fixed `DispatchQueue.main.asyncAfter` delay and replaced with deterministic post-sheet-dismiss protected-action queue |
 
 ---
 
@@ -94,6 +93,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 1 🟡 MEDIUM, 0 🟢 LOW.
-- The highest-priority remaining items are the CSV multiline import parsing bug (`Models.swift`) and timing-dependent analytics launch flow (`WelcomeView.swift`).
+- Current open issue counts: 1 🟠 HIGH, 1 🟡 MEDIUM, 0 🟢 LOW.
+- The highest-priority remaining items are the CSV multiline import parsing bug (`Models.swift`) and PIN brute-force throttling/lockout (`PINSecurity.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

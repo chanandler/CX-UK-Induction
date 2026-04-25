@@ -58,6 +58,7 @@ struct WelcomeView: View {
     private let availablePagerRange: ClosedRange<Int> = 1...30
 
     @State private var pinGateAction: ProtectedAction = .settings
+    @State private var queuedProtectedActionAfterDismiss: ProtectedAction?
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
     @State private var showPersistenceError = false
@@ -200,7 +201,12 @@ struct WelcomeView: View {
                         shareItem = nil
                     }
             }
-            .sheet(item: $activeSheet) { sheet in
+            .sheet(item: $activeSheet, onDismiss: {
+                if let action = queuedProtectedActionAfterDismiss {
+                    queuedProtectedActionAfterDismiss = nil
+                    requestProtectedAccess(for: action)
+                }
+            }) { sheet in
                 switch sheet {
                 case .about:
                     AboutView()
@@ -214,9 +220,8 @@ struct WelcomeView: View {
                         onImportCSV: { showingImportPicker = true },
                         onSignOutNow: invalidatePinSession,
                         onOpenAnalytics: {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                requestProtectedAccess(for: .analytics)
-                            }
+                            queuedProtectedActionAfterDismiss = .analytics
+                            activeSheet = nil
                         },
                         existingBackups: BackupScheduler.existingBackups()
                     )
@@ -1479,7 +1484,6 @@ private struct AutoCheckoutSettingsView: View {
                 Section("Insights") {
                     Button {
                         onOpenAnalytics()
-                        dismiss()
                     } label: {
                         Label("Analytics Dashboard", systemImage: "chart.bar.xaxis")
                     }
