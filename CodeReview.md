@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟢 **BUG-005: `showSignedOutBannerTemporarily()` name is misleading** — The method name implies a transient, self-dismissing banner, but there is no auto-dismiss timer; the banner persists until the user manually taps "Done". Rename the method to `showSignedOutBanner()` to accurately reflect its behaviour, or add a `DispatchQueue.main.asyncAfter` auto-dismiss (e.g. after 8 seconds) to match the implied semantics.
-
 - [ ] 🟡 **BUG-006: `badgeField` uses `.keyboardType(.numberPad)` which voids the keyboard focus chain** — The badge number field has `.submitLabel(.next)` and `.onSubmit { focusedField.wrappedValue = .carReg }` applied, but the number pad keyboard on iOS shows no return key, so `onSubmit` is dead code for this field. Users cannot advance keyboard focus from the badge field to the car registration field and must tap it manually. Fix: keep `.keyboardType(.numberPad)` and add a keyboard toolbar "Next" button via `ToolbarItemGroup(placement: .keyboard) { Button("Next") { focusedField = .carReg } }`, or switch to `.keyboardType(.default)` which preserves the return key.
 
 - [ ] 🟡 **BUG-007: `InductionSignatureSheet` relies on a custom font name that may silently fall back to system default** — `Text("\(firstName) \(lastName)").font(.custom("BradleyHandITCTT-Bold", size: 58))` calls `Font.custom(_:size:)`, which silently falls back to the default system font if the named font is not present on the device. If that happens the "signature" looks like regular body text rather than a handwritten name, which defeats the visual purpose of the sheet. Fix: either bundle the font file in the app target and register it under `UIAppFonts` in `Info.plist` to guarantee availability, or replace it with a `PKCanvasView`-based real handwritten signature capture.
@@ -70,6 +68,7 @@
 | 2026-04-25 | Models.swift + PINSecurity.swift + VisitorTabs.swift + Localizable.strings | BUG-002 localization baseline added — introduced `Localizable.strings` and replaced key user-facing error/alert strings with `String(localized:)` |
 | 2026-04-25 | WelcomeView.swift | BUG-003 `LeavingSearchSheet` snapshot freeze fixed — `snapshot` changed to optional and `filtered` now uses `snapshot ?? activeVisitors` |
 | 2026-04-25 | WelcomeView.swift | BUG-004 `SignInBookView.onCheckedOut` dead callback fixed — added active-row checkout action that calls `store.checkOut` and `onCheckedOut(visitor.fullName)` |
+| 2026-04-25 | WelcomeView.swift | BUG-005 misleading method name fixed — `showSignedOutBannerTemporarily()` renamed to `showSignedOutBanner()` |
 
 ---
 
@@ -88,6 +87,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 3 🟡 MEDIUM, 2 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 3 🟡 MEDIUM, 1 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

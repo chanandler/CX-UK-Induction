@@ -221,7 +221,7 @@ struct WelcomeView: View {
                 case .leaving:
                     LeavingSearchSheet(activeVisitors: activeVisitors) { name in
                         lastCheckedOutName = name
-                        showSignedOutBannerTemporarily()
+                        showSignedOutBanner()
                         activeSheet = nil
                     }
                     .presentationDetents([.large])
@@ -231,7 +231,7 @@ struct WelcomeView: View {
                         activeSheet = nil
                     } onCheckedOut: { name in
                         lastCheckedOutName = name
-                        showSignedOutBannerTemporarily()
+                        showSignedOutBanner()
                         activeSheet = nil
                     }
                     .interactiveDismissDisabled()
@@ -581,7 +581,7 @@ struct WelcomeView: View {
     }
 
 
-    private func showSignedOutBannerTemporarily() {
+    private func showSignedOutBanner() {
         withAnimation { showCheckoutBanner = true }
         hapticGenerator.prepare()
         hapticGenerator.notificationOccurred(.success)
