@@ -6,6 +6,10 @@ import Security
 enum PinKeychain {
     private static let service = "com.cemex.cxukinduction"
     private static let account = "app_pin"
+    private static let failedAttemptsKey = "pin_failed_attempts"
+    private static let lockoutUntilKey = "pin_lockout_until"
+
+    private static var defaults: UserDefaults { .standard }
 
     static func hasPin() -> Bool {
         readPin() != nil
@@ -14,6 +18,33 @@ enum PinKeychain {
     static func verify(_ pin: String) -> Bool {
         guard let stored = readPin() else { return false }
         return stored == pin
+    }
+
+    static var lockoutRemainingSeconds: Int {
+        let remaining = defaults.double(forKey: lockoutUntilKey) - Date().timeIntervalSince1970
+        return max(0, Int(ceil(remaining)))
+    }
+
+    static func clearLockout() {
+        defaults.removeObject(forKey: failedAttemptsKey)
+        defaults.removeObject(forKey: lockoutUntilKey)
+    }
+
+    /// Records a failed verification attempt and returns the lockout time
+    /// (in seconds) if the attempt triggered a temporary lockout.
+    @discardableResult
+    static func registerFailedAttempt() -> Int {
+        let attempts = defaults.integer(forKey: failedAttemptsKey) + 1
+        defaults.set(attempts, forKey: failedAttemptsKey)
+
+        guard attempts >= 3 else { return 0 }
+
+        // Exponential backoff after 3 failed attempts: 30s, 60s, 120s...
+        let exponent = min(attempts - 3, 4) // cap at 8 minutes
+        let lockoutSeconds = Int(pow(2.0, Double(exponent)) * 30.0)
+        let until = Date().timeIntervalSince1970 + Double(lockoutSeconds)
+        defaults.set(until, forKey: lockoutUntilKey)
+        return lockoutSeconds
     }
 
     @discardableResult
@@ -137,14 +168,27 @@ struct PinGateSheet: View {
 
         switch mode {
         case .verify:
+            let remaining = PinKeychain.lockoutRemainingSeconds
+            guard remaining == 0 else {
+                let template = String(localized: "pin.error.locked_try_again_template")
+                errorMessage = String(format: template, remaining)
+                return
+            }
             guard !enteredPin.isEmpty else {
                 errorMessage = String(localized: "pin.error.enter_pin")
                 return
             }
             guard PinKeychain.verify(enteredPin) else {
-                errorMessage = String(localized: "pin.error.incorrect_pin")
+                let lockout = PinKeychain.registerFailedAttempt()
+                if lockout > 0 {
+                    let template = String(localized: "pin.error.locked_try_again_template")
+                    errorMessage = String(format: template, lockout)
+                } else {
+                    errorMessage = String(localized: "pin.error.incorrect_pin")
+                }
                 return
             }
+            PinKeychain.clearLockout()
             onSuccess()
 
         case .create:

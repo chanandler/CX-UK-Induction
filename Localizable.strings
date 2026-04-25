@@ -13,6 +13,7 @@
 "pin.error.mismatch" = "PINs do not match.";
 "pin.error.keychain_save_failed" = "Could not save PIN to Keychain.";
 "pin.error.current_incorrect" = "Current PIN is incorrect.";
+"pin.error.locked_try_again_template" = "Too many attempts. Try again in %d seconds.";
 "pin.success.updated" = "PIN updated successfully.";
 
 "archived.alert.export_failed.title" = "Export Failed";

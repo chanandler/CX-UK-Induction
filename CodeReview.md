@@ -74,6 +74,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-008 empty induction content guard added — if `imageNames` is empty, flow now auto-cancels once via `onComplete(false)` |
 | 2026-04-25 | WelcomeView.swift | Analytics launch flow from Settings de-raced — removed fixed `DispatchQueue.main.asyncAfter` delay and replaced with deterministic post-sheet-dismiss protected-action queue |
 | 2026-04-25 | Models.swift | CSV import multiline quote handling fixed — replaced newline pre-split with quote-aware record parsing before field tokenization |
+| 2026-04-25 | PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — failed attempts now trigger exponential temporary lockout with localized countdown messaging; lockout resets on successful unlock |
 
 ---
 
