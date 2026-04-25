@@ -212,6 +212,7 @@ struct WelcomeView: View {
                         autoBackupEnabled: $autoBackupEnabled,
                         onManualBackup: runManualBackup,
                         onImportCSV: { showingImportPicker = true },
+                        onSignOutNow: invalidatePinSession,
                         onOpenAnalytics: {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                 requestProtectedAccess(for: .analytics)
@@ -826,6 +827,10 @@ struct WelcomeView: View {
     private func markPinSessionUnlocked() {
         pinLastUnlockTimestamp = Date().timeIntervalSince1970
     }
+
+    private func invalidatePinSession() {
+        pinLastUnlockTimestamp = 0
+    }
 }
 
 
@@ -1399,6 +1404,7 @@ private struct AutoCheckoutSettingsView: View {
     @Binding var autoBackupEnabled: Bool
     var onManualBackup: () -> Void
     var onImportCSV: () -> Void
+    var onSignOutNow: () -> Void
     var onOpenAnalytics: () -> Void
     var existingBackups: [URL]
     @Environment(\.dismiss) private var dismiss
@@ -1473,6 +1479,12 @@ private struct AutoCheckoutSettingsView: View {
                         showingPinChange = true
                     } label: {
                         Label("Change PIN", systemImage: "key")
+                    }
+                    Button {
+                        onSignOutNow()
+                        dismiss()
+                    } label: {
+                        Label("Sign Out Now", systemImage: "lock")
                     }
                     Text("The PIN is stored securely in the iOS Keychain and will be requested again after 5 minutes.")
                         .font(.caption)
