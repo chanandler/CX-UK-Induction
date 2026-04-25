@@ -53,6 +53,7 @@ struct WelcomeView: View {
     // Reuse a single generator instance rather than creating one per haptic call.
     private let hapticGenerator = UINotificationFeedbackGenerator()
     private let pinSessionTimeout: TimeInterval = 5 * 60
+    private let availablePagerRange: ClosedRange<Int> = 1...30
 
     @State private var pinGateAction: ProtectedAction = .settings
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
@@ -322,7 +323,7 @@ struct WelcomeView: View {
                                 .padding(.vertical, 4)
                             VStack(alignment: .leading, spacing: 4) {
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
-                                    ForEach(1...30, id: \.self) { i in
+                                    ForEach(availablePagerRange, id: \.self) { i in
                                         let tag = String(i)
                                         let isTaken = effectiveUsedPagers.contains(tag)
                                         let isSelected = pagerNumber == tag

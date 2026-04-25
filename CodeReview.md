@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟢 **BUG-001: Pager count hardcoded to 30** — The picker range `1...30` is a magic number. Extract to a named constant so it can be changed in one place.
-
 - [ ] 🟢 **BUG-002: All user-facing strings are hardcoded English** — No `Localizable.strings` or `String(localized:)` usage. Low priority for an internal tool, but worth noting.
 
 - [ ] 🟡 **BUG-003: `LeavingSearchSheet.filtered` snapshot freeze fails when the initial visitor list is empty** — `let source = snapshot.isEmpty ? activeVisitors : snapshot` is used as a guard to freeze the list when the sheet opens. However, when the sheet opens with zero active visitors, `onAppear` sets `snapshot = []` (empty), so `snapshot.isEmpty` remains `true` forever. Any visitor who signs in while the sheet is open will immediately appear in the list, defeating the freeze intent. Fix: use an `Optional<[Visitor]>` (`var snapshot: [Visitor]? = nil`) and set it to `activeVisitors` (even `[]`) in `onAppear`; use `snapshot ?? activeVisitors` in `filtered`.
@@ -74,6 +72,7 @@
 | 2026-04-22 | WelcomeView.swift | Validation errors now gated by `hasAttemptedSubmit` (no initial red state) |
 | 2026-04-25 | RootView.swift | Preview lacks required environment — added `.modelContainer(for: Visitor.self, inMemory: true)` and `.environment(VisitorStore())` |
 | 2026-04-25 | VisitorTabs.swift | `UITableView.appearance()` global UI state removed — replaced lifecycle appearance proxy mutation with local SwiftUI list/form styling only |
+| 2026-04-25 | WelcomeView.swift | BUG-001 pager count magic number removed — `1...30` extracted to `availablePagerRange` constant |
 
 ---
 
@@ -92,6 +91,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 4 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 3 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
