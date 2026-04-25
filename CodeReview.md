@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟡 **BUG-004: `SignInBookView.onCheckedOut` callback is dead code** — The `onCheckedOut: (String) -> Void` parameter is accepted by `SignInBookView` but is never called anywhere within the view. The active-visitor list rows contain no checkout action. Either the callback should be removed from the API surface or a checkout button should be wired to it, otherwise callers set up a closure that can never fire.
-
 - [ ] 🟢 **BUG-005: `showSignedOutBannerTemporarily()` name is misleading** — The method name implies a transient, self-dismissing banner, but there is no auto-dismiss timer; the banner persists until the user manually taps "Done". Rename the method to `showSignedOutBanner()` to accurately reflect its behaviour, or add a `DispatchQueue.main.asyncAfter` auto-dismiss (e.g. after 8 seconds) to match the implied semantics.
 
 - [ ] 🟡 **BUG-006: `badgeField` uses `.keyboardType(.numberPad)` which voids the keyboard focus chain** — The badge number field has `.submitLabel(.next)` and `.onSubmit { focusedField.wrappedValue = .carReg }` applied, but the number pad keyboard on iOS shows no return key, so `onSubmit` is dead code for this field. Users cannot advance keyboard focus from the badge field to the car registration field and must tap it manually. Fix: keep `.keyboardType(.numberPad)` and add a keyboard toolbar "Next" button via `ToolbarItemGroup(placement: .keyboard) { Button("Next") { focusedField = .carReg } }`, or switch to `.keyboardType(.default)` which preserves the return key.
@@ -71,6 +69,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-001 pager count magic number removed — `1...30` extracted to `availablePagerRange` constant |
 | 2026-04-25 | Models.swift + PINSecurity.swift + VisitorTabs.swift + Localizable.strings | BUG-002 localization baseline added — introduced `Localizable.strings` and replaced key user-facing error/alert strings with `String(localized:)` |
 | 2026-04-25 | WelcomeView.swift | BUG-003 `LeavingSearchSheet` snapshot freeze fixed — `snapshot` changed to optional and `filtered` now uses `snapshot ?? activeVisitors` |
+| 2026-04-25 | WelcomeView.swift | BUG-004 `SignInBookView.onCheckedOut` dead callback fixed — added active-row checkout action that calls `store.checkOut` and `onCheckedOut(visitor.fullName)` |
 
 ---
 
@@ -89,6 +88,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 4 🟡 MEDIUM, 2 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 3 🟡 MEDIUM, 2 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

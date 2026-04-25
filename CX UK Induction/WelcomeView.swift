@@ -1049,26 +1049,36 @@ struct SignInBookView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(activeVisitors) { visitor in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(visitor.fullName)
-                                    .font(.headline)
-                                Text(visitor.company)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                let pagerString: String = {
-                                    if let p = visitor.pagerNumber, !p.isEmpty { return "Pager: " + p }
-                                    return "Pager: None"
-                                }()
-                                Text(pagerString)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text("Badge: \(visitor.badgeNumber)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text("Checked in: \(dateTime(visitor.checkIn))")
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(visitor.fullName)
+                                        .font(.headline)
+                                    Text(visitor.company)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text("Car: \(visitor.carRegistration.isEmpty ? "None" : visitor.carRegistration)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    let pagerString: String = {
+                                        if let p = visitor.pagerNumber, !p.isEmpty { return "Pager: " + p }
+                                        return "Pager: None"
+                                    }()
+                                    Text(pagerString)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text("Badge: \(visitor.badgeNumber)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text("Checked in: \(dateTime(visitor.checkIn))")
+                                }
+                                Spacer(minLength: 8)
+                                Button(role: .destructive) {
+                                    store.checkOut(context, visitor)
+                                    onCheckedOut(visitor.fullName)
+                                } label: {
+                                    Label("Check out", systemImage: "door.right.hand.open")
+                                }
+                                .buttonStyle(.borderedProminent)
                             }
                             .padding(.vertical, 4)
                         }
