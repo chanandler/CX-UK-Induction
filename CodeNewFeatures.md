@@ -119,5 +119,6 @@ Before calling `store.signIn()`, query SwiftData for any active visitor with the
 - ✅ **VisitorTabs UI isolation** — Removed global `UITableView.appearance()` mutations; styling now stays local to affected views.
 - ✅ **Preview reliability** — Fixed missing preview environment wiring for `RootView` (`.modelContainer` + `.environment(VisitorStore())`).
 - ✅ **Checkout banner UX update** — Removed manual Done button, added visible 5-second countdown, and auto-dismiss back to registration view.
+- ✅ **Emergency shortcut on registration screen** — Added a small fire icon button beside the Settings cog as a direct shortcut to Fire Alarm Roll Call, routed through the same PIN-gated access flow.
 
 - Tracker audit updated on 2026-04-25 after closure of BUG-001 through BUG-008 low/medium items from `CodeReview.md`.
