@@ -693,40 +693,54 @@ struct WelcomeView: View {
     }
     
     private var settingsMenu: some View {
-        Menu {
-            Button {
-                requestProtectedAccess(for: .exportCSV)
-            } label: {
-                Label("Export CSV", systemImage: "square.and.arrow.up")
-            }
-            .disabled(allVisitors.isEmpty)
-
+        HStack(spacing: 10) {
             Button {
                 requestProtectedAccess(for: .fireRollCall)
             } label: {
-                Label("Fire Alarm Roll Call", systemImage: "alarm")
+                Image(systemName: "flame.fill")
+                    .imageScale(.medium)
+                    .foregroundStyle(.red)
+                    .padding(10)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
             }
 
-            Button {
-                activeSheet = .about
+            Menu {
+                Button {
+                    requestProtectedAccess(for: .exportCSV)
+                } label: {
+                    Label("Export CSV", systemImage: "square.and.arrow.up")
+                }
+                .disabled(allVisitors.isEmpty)
+
+                Button {
+                    requestProtectedAccess(for: .fireRollCall)
+                } label: {
+                    Label("Fire Alarm Roll Call", systemImage: "alarm")
+                }
+
+                Button {
+                    activeSheet = .about
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
+                
+                Button {
+                    requestProtectedAccess(for: .settings)
+                } label: {
+                    Label("Settings", systemImage: "slider.horizontal.3")
+                }
             } label: {
-                Label("About", systemImage: "info.circle")
+                Image(systemName: "gearshape.fill")
+                    .imageScale(.large)
+                    .padding(12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
             }
-            
-            Button {
-                requestProtectedAccess(for: .settings)
-            } label: {
-                Label("Settings", systemImage: "slider.horizontal.3")
-            }
-        } label: {
-            Image(systemName: "gearshape.fill")
-                .imageScale(.large)
-                .padding(12)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
-                .shadow(color: .black.opacity(0.10), radius: 4, x: 0, y: 2)
-                .padding([.leading, .bottom], 12)
         }
+        .padding([.leading, .bottom], 12)
     }
 
     private var checkoutBanner: some View {
