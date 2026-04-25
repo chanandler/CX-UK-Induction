@@ -1,5 +1,5 @@
 # Code New Features Tracker
-> Generated: 2026-04-22 | Last updated: 2026-04-22
+> Generated: 2026-04-22 | Last updated: 2026-04-25
 
 ## Feature Requests
 
@@ -103,5 +103,21 @@ Audit every screen for VoiceOver support: add `accessibilityLabel` to icon-only 
 
 ### 25. 🌟 Duplicate Sign-In Prevention
 Before calling `store.signIn()`, query SwiftData for any active visitor with the same `firstName + lastName` signed in today and show a confirmation dialog ("This person appears to be already signed in — are you sure you want to add a new record?"). Prevents accidental double sign-ins for the same person.
-- Tracker audit updated on 2026-04-22 after fixes to previously-open HIGH and MEDIUM issues.
-- Issues closed in this pass: duplicate detection within imported CSV, Windows `\r\n` CSV parsing, cold-launch auto-checkout catch-up, and enum-driven sheet state consolidation in `WelcomeView`.
+
+---
+
+## Recently Completed Improvements (2026-04-25)
+
+- ✅ **PIN-protected flow hardening** — Fixed first-open blank PIN prompt race by carrying protected action state directly into the PIN sheet path.
+- ✅ **PIN session UX update** — Added 5-minute PIN session timeout handling already in app flow and stabilized sheet transitions for protected areas.
+- ✅ **Form keyboard and focus improvements** — Badge field now has a keyboard `Next` toolbar action to reliably move focus to Car Registration.
+- ✅ **Input behavior improvements** — Added robust capitalization handling for name/company/visiting fields and refined keyboard traits per field.
+- ✅ **Sign In Book action wiring** — Added active-row checkout action so `onCheckedOut` callback is live and banner feedback triggers correctly.
+- ✅ **Induction flow safety** — Added guard for empty induction image sets; flow now safely auto-cancels instead of allowing sign completion with no content.
+- ✅ **Signature font fallback hardening** — Replaced silent `Font.custom` fallback behavior with explicit installed-font checks and deterministic fallback chain.
+- ✅ **Localization baseline introduced** — Added `Localizable.strings` and migrated key user-facing error/alert text to `String(localized:)`.
+- ✅ **VisitorTabs UI isolation** — Removed global `UITableView.appearance()` mutations; styling now stays local to affected views.
+- ✅ **Preview reliability** — Fixed missing preview environment wiring for `RootView` (`.modelContainer` + `.environment(VisitorStore())`).
+- ✅ **Checkout banner UX update** — Removed manual Done button, added visible 5-second countdown, and auto-dismiss back to registration view.
+
+- Tracker audit updated on 2026-04-25 after closure of BUG-001 through BUG-008 low/medium items from `CodeReview.md`.
