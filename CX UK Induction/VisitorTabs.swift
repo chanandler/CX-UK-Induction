@@ -103,8 +103,6 @@ struct ActiveVisitorsView: View {
             .toolbarBackground(.hidden, for: .tabBar)
         }
         .background(Color.clear)
-        .onAppear(perform: makeScrollAndListsTransparent)
-        .onDisappear(perform: restoreScrollAndListAppearance)
     }
 
     private var filteredActive: [Visitor] {
@@ -198,8 +196,6 @@ struct ArchivedVisitorsView: View {
             shareItem = nil
         }
         .background(Color.clear)
-        .onAppear(perform: makeScrollAndListsTransparent)
-        .onDisappear(perform: restoreScrollAndListAppearance)
     }
 
     private var filteredArchived: [Visitor] {
@@ -322,8 +318,6 @@ struct VisitorDetail: View {
         .background(Color.clear)
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle(visitor.fullName)
-        .onAppear(perform: makeFormsTransparent)
-        .onDisappear(perform: restoreFormAppearance)
         .overlay(ClearBackgroundView())
     }
 
@@ -378,30 +372,6 @@ private struct ClearBackgroundView: UIViewRepresentable {
         return view
     }
     func updateUIView(_ uiView: UIView, context: Context) { }
-}
-
-private func makeScrollAndListsTransparent() {
-    UITableView.appearance().backgroundColor = .clear
-    UITableViewCell.appearance().backgroundColor = .clear
-    UIScrollView.appearance().backgroundColor = .clear
-}
-
-private func restoreScrollAndListAppearance() {
-    UITableView.appearance().backgroundColor = nil
-    UITableViewCell.appearance().backgroundColor = nil
-    UIScrollView.appearance().backgroundColor = nil
-}
-
-private func makeFormsTransparent() {
-    UITableView.appearance().backgroundColor = .clear
-    UITableViewCell.appearance().backgroundColor = .clear
-    UIScrollView.appearance().backgroundColor = .clear
-}
-
-private func restoreFormAppearance() {
-    UITableView.appearance().backgroundColor = nil
-    UITableViewCell.appearance().backgroundColor = nil
-    UIScrollView.appearance().backgroundColor = nil
 }
 
 #Preview {

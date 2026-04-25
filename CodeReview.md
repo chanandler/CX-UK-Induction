@@ -17,10 +17,6 @@
 
 ### VisitorTabs.swift
 
-- [ ] 🟢 **`UITableView.appearance()` modifies global UI state** — Appearance proxy changes persist globally and can affect unrelated views. Replace with SwiftUI-native list/row modifiers where possible.
-
----
-
 ### WelcomeView.swift
 
 - [ ] 🟢 **BUG-001: Pager count hardcoded to 30** — The picker range `1...30` is a magic number. Extract to a named constant so it can be changed in one place.
@@ -77,6 +73,7 @@
 | 2026-04-22 | WelcomeView.swift | `submit()` now stores `pagerNumber` as `nil` when blank |
 | 2026-04-22 | WelcomeView.swift | Validation errors now gated by `hasAttemptedSubmit` (no initial red state) |
 | 2026-04-25 | RootView.swift | Preview lacks required environment — added `.modelContainer(for: Visitor.self, inMemory: true)` and `.environment(VisitorStore())` |
+| 2026-04-25 | VisitorTabs.swift | `UITableView.appearance()` global UI state removed — replaced lifecycle appearance proxy mutation with local SwiftUI list/form styling only |
 
 ---
 
@@ -95,6 +92,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 5 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 5 🟡 MEDIUM, 4 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.
