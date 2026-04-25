@@ -1730,12 +1730,6 @@ private struct VisitorFormFields: View {
             .focused(focusedField, equals: .badge)
             .submitLabel(.next)
             .onSubmit { focusedField.wrappedValue = .carReg }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Next") { focusedField.wrappedValue = .carReg }
-                }
-            }
     }
 
     private var carRegField: some View {
