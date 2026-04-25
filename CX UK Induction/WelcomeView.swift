@@ -911,6 +911,7 @@ private struct InductionSignatureSheet: View {
     let onDismiss: (Bool) -> Void
 
     @State private var signatureVisible = false
+    private let signatureFontSize: CGFloat = 58
 
     var body: some View {
         VStack(spacing: 0) {
@@ -938,7 +939,7 @@ private struct InductionSignatureSheet: View {
 
             // Signature box
             Text("\(firstName) \(lastName)")
-                .font(.custom("BradleyHandITCTT-Bold", size: 58))
+                .font(signatureFont)
                 .foregroundStyle(Color(red: 0/255, green: 30/255, blue: 100/255))
                 .minimumScaleFactor(0.4)
                 .lineLimit(1)
@@ -988,6 +989,23 @@ private struct InductionSignatureSheet: View {
                 signatureVisible = true
             }
         }
+    }
+
+    /// Avoid silent fallback from Font.custom by selecting only installed fonts.
+    private var signatureFont: Font {
+        if let installedScriptFontName = installedSignatureFontName {
+            return .custom(installedScriptFontName, size: signatureFontSize)
+        }
+        return .system(size: signatureFontSize, weight: .regular, design: .serif)
+    }
+
+    private var installedSignatureFontName: String? {
+        let candidates = [
+            "BradleyHandITCTT-Bold",
+            "SnellRoundhand-Bold",
+            "MarkerFelt-Wide"
+        ]
+        return candidates.first { UIFont(name: $0, size: signatureFontSize) != nil }
     }
 }
 
