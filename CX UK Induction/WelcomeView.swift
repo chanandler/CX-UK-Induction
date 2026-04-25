@@ -35,6 +35,8 @@ struct WelcomeView: View {
     
     @State private var showCheckoutBanner = false
     @State private var lastCheckedOutName: String = ""
+    @State private var checkoutBannerSecondsRemaining = 5
+    @State private var checkoutBannerCountdownID = UUID()
     
     @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
@@ -582,6 +584,8 @@ struct WelcomeView: View {
 
 
     private func showSignedOutBanner() {
+        checkoutBannerSecondsRemaining = 5
+        checkoutBannerCountdownID = UUID()
         withAnimation { showCheckoutBanner = true }
         hapticGenerator.prepare()
         hapticGenerator.notificationOccurred(.success)
@@ -737,23 +741,6 @@ struct WelcomeView: View {
                             .font(.title2)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(.white.opacity(0.9))
-                        Button("Done") {
-                            withAnimation { showCheckoutBanner = false }
-                        }
-                        .font(.headline)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(.systemGray5))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color(.systemGray3), lineWidth: 1)
-                        )
-                        .foregroundStyle(.primary)
-                        .padding(.top, 12)
-                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .padding(.vertical, 28)
                     .padding(.horizontal, 24)
@@ -763,12 +750,30 @@ struct WelcomeView: View {
                             .fill(Color.green)
                             .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 6)
                     )
+                    .overlay(alignment: .topTrailing) {
+                        Text("\(checkoutBannerSecondsRemaining)s")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(.black.opacity(0.25), in: Capsule())
+                            .padding(12)
+                    }
                     .padding(.horizontal, 16)
                     .padding(.top, 24)
                     Spacer()
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.easeInOut(duration: 0.3), value: showCheckoutBanner)
+                .task(id: checkoutBannerCountdownID) {
+                    for second in stride(from: 5, through: 1, by: -1) {
+                        guard showCheckoutBanner else { return }
+                        checkoutBannerSecondsRemaining = second
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        if Task.isCancelled { return }
+                    }
+                    withAnimation { showCheckoutBanner = false }
+                }
             }
         }
     }
