@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟢 **BUG-008: `InductionFlowView` does not guard against an empty `imageNames` array** — `if index < imageNames.count - 1` evaluates to `0 < -1` (false) when `imageNames` is empty, immediately showing the "Tap here to sign" button with zero induction pages displayed. The visitor would be able to complete the induction flow without seeing any induction content. Fix: add a guard at the top of the view body: `if imageNames.isEmpty { onComplete(false); return }`.
-
 ---
 
 ## Completed Issues
@@ -67,6 +65,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-005 misleading method name fixed — `showSignedOutBannerTemporarily()` renamed to `showSignedOutBanner()` |
 | 2026-04-25 | WelcomeView.swift | BUG-006 badge keyboard focus chain fixed — added keyboard toolbar `Next` action to move focus from Badge Number to Car Registration |
 | 2026-04-25 | WelcomeView.swift | BUG-007 signature font fallback hardened — now checks installed font availability and uses explicit fallback chain instead of silent `Font.custom` fallback |
+| 2026-04-25 | WelcomeView.swift | BUG-008 empty induction content guard added — if `imageNames` is empty, flow now auto-cancels once via `onComplete(false)` |
 
 ---
 
@@ -85,6 +84,6 @@
 
 
 
-- Current open issue counts: 2 🟠 HIGH, 1 🟡 MEDIUM, 1 🟢 LOW.
+- Current open issue counts: 2 🟠 HIGH, 1 🟡 MEDIUM, 0 🟢 LOW.
 - The highest-priority remaining items are the CSV optional-chain write path (`VisitorTabs.swift` / `WelcomeView.swift`) and pager empty-string vs `nil` semantics (`WelcomeView.swift`).
 - Feature Idea 10 (Visitor Analytics Dashboard) is now implemented and marked complete.

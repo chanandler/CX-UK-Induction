@@ -832,57 +832,69 @@ private struct InductionFlowView: View {
 
     @State private var index: Int = 0
     @State private var showingSignatureSheet: Bool = false
+    @State private var handledEmptyImages = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 8) {
-                TabView(selection: $index) {
-                    ForEach(Array(imageNames.enumerated()), id: \.offset) { i, name in
-                        ZoomableImage(name: name)
-                            .tag(i)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if imageNames.isEmpty {
+                Color.clear
+                    .onAppear {
+                        guard !handledEmptyImages else { return }
+                        handledEmptyImages = true
+                        onComplete(false)
                     }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .automatic))
-                .indexViewStyle(.page(backgroundDisplayMode: .interactive))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if index < imageNames.count - 1 {
-                    Button {
-                        withAnimation { index += 1 }
-                    } label: {
-                        Label("Next", systemImage: "chevron.right")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .padding(.horizontal)
-                } else {
-                    Button {
-                        showingSignatureSheet = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "signature")
-                                .font(.title3)
-                            Text("Tap here to sign")
-                                .font(.headline)
+            } else {
+                NavigationStack {
+                    VStack(spacing: 8) {
+                        TabView(selection: $index) {
+                            ForEach(Array(imageNames.enumerated()), id: \.offset) { i, name in
+                                ZoomableImage(name: name)
+                                    .tag(i)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .tabViewStyle(.page(indexDisplayMode: .automatic))
+                        .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        if index < imageNames.count - 1 {
+                            Button {
+                                withAnimation { index += 1 }
+                            } label: {
+                                Label("Next", systemImage: "chevron.right")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .padding(.horizontal)
+                        } else {
+                            Button {
+                                showingSignatureSheet = true
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "signature")
+                                        .font(.title3)
+                                    Text("Tap here to sign")
+                                        .font(.headline)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.cemexBlue)
+                            .padding(.horizontal)
+                            .padding(.bottom, 4)
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.cemexBlue)
-                    .padding(.horizontal)
-                    .padding(.bottom, 4)
-                }
-            }
-            .navigationTitle("Visitor Induction")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { onComplete(false) }
+                    .navigationTitle("Visitor Induction")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Cancel") { onComplete(false) }
+                        }
+                    }
                 }
             }
         }
