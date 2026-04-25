@@ -23,8 +23,6 @@
 
 ### PINSecurity.swift
 
-- [ ] 🟡 **PIN verification has no brute-force throttling or lockout** — `PinGateSheet.submit()` allows unlimited rapid retries (`PINSecurity.swift:144`) with immediate feedback and no cooldown. Because this gate protects settings/export/sign-in-book/fire roll-call/admin analytics, add attempt throttling (e.g. exponential backoff, temporary lockout after N failures, and optional persistent fail counter) to reduce brute-force risk on unattended kiosks.
-
 ---
 
 ## Completed Issues
@@ -74,7 +72,7 @@
 | 2026-04-25 | WelcomeView.swift | BUG-008 empty induction content guard added — if `imageNames` is empty, flow now auto-cancels once via `onComplete(false)` |
 | 2026-04-25 | WelcomeView.swift | Analytics launch flow from Settings de-raced — removed fixed `DispatchQueue.main.asyncAfter` delay and replaced with deterministic post-sheet-dismiss protected-action queue |
 | 2026-04-25 | Models.swift | CSV import multiline quote handling fixed — replaced newline pre-split with quote-aware record parsing before field tokenization |
-| 2026-04-25 | PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — failed attempts now trigger exponential temporary lockout with localized countdown messaging; lockout resets on successful unlock |
+| 2026-04-25 | PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — 5 failed attempts lock for 5 minutes, next 5 lock for 10 minutes, next 5 lock for 30 minutes (capped), with localized countdown messaging; reset on successful unlock |
 
 ---
 

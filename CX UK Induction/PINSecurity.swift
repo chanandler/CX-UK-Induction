@@ -7,6 +7,7 @@ enum PinKeychain {
     private static let service = "com.cemex.cxukinduction"
     private static let account = "app_pin"
     private static let failedAttemptsKey = "pin_failed_attempts"
+    private static let lockoutStageKey = "pin_lockout_stage"
     private static let lockoutUntilKey = "pin_lockout_until"
 
     private static var defaults: UserDefaults { .standard }
@@ -27,6 +28,7 @@ enum PinKeychain {
 
     static func clearLockout() {
         defaults.removeObject(forKey: failedAttemptsKey)
+        defaults.removeObject(forKey: lockoutStageKey)
         defaults.removeObject(forKey: lockoutUntilKey)
     }
 
@@ -37,11 +39,27 @@ enum PinKeychain {
         let attempts = defaults.integer(forKey: failedAttemptsKey) + 1
         defaults.set(attempts, forKey: failedAttemptsKey)
 
-        guard attempts >= 3 else { return 0 }
+        // Lockout policy:
+        // - First 5 failed attempts => 5 minutes
+        // - Next 5 failed attempts => 10 minutes
+        // - Next 5 failed attempts (and beyond) => 30 minutes
+        guard attempts >= 5 else { return 0 }
 
-        // Exponential backoff after 3 failed attempts: 30s, 60s, 120s...
-        let exponent = min(attempts - 3, 4) // cap at 8 minutes
-        let lockoutSeconds = Int(pow(2.0, Double(exponent)) * 30.0)
+        defaults.set(0, forKey: failedAttemptsKey)
+
+        let nextStage = min(defaults.integer(forKey: lockoutStageKey) + 1, 3)
+        defaults.set(nextStage, forKey: lockoutStageKey)
+
+        let lockoutSeconds: Int
+        switch nextStage {
+        case 1:
+            lockoutSeconds = 5 * 60
+        case 2:
+            lockoutSeconds = 10 * 60
+        default:
+            lockoutSeconds = 30 * 60
+        }
+
         let until = Date().timeIntervalSince1970 + Double(lockoutSeconds)
         defaults.set(until, forKey: lockoutUntilKey)
         return lockoutSeconds
