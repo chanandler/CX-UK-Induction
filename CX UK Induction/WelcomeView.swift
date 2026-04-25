@@ -1138,7 +1138,7 @@ private struct LeavingSearchSheet: View {
     let onCheckedOut: (String) -> Void
     @State private var searchText = ""
     @State private var path: [Visitor] = []
-    @State private var snapshot: [Visitor] = []
+    @State private var snapshot: [Visitor]? = nil
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -1216,7 +1216,7 @@ private struct LeavingSearchSheet: View {
     }
 
     private var filtered: [Visitor] {
-        let source = snapshot.isEmpty ? activeVisitors : snapshot
+        let source = snapshot ?? activeVisitors
         if searchText.isEmpty { return source }
         let q = searchText.lowercased()
         return source.filter { v in
