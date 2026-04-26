@@ -19,9 +19,17 @@
 
 ### WelcomeView.swift
 
+- [ ] 🟡 **One-tap destructive checkout in Sign In Book has no confirmation/undo** — In `SignInBookView`, the active visitor row “Check out” action immediately calls `store.checkOut(context, visitor)` (`WelcomeView.swift`) with no confirmation step. On reception kiosks this creates accidental checkout risk from stray taps. Add a confirmation dialog (or undo snackbar) before mutating checkout state.
+
 ### Models.swift
 
 ### PINSecurity.swift
+
+---
+
+### Project Configuration
+
+- [ ] 🟡 **Internal tracker/roadmap markdown files are bundled into app resources** — The Xcode project currently includes `CodeReview.md`, `CodeNewFeatures.md`, and `SiteVisitorManagementOverview.md` in `PBXResourcesBuildPhase` (`CX UK Induction.xcodeproj/project.pbxproj`). This unnecessarily ships internal operational notes and security roadmap details inside the app bundle. Remove these docs from target resources.
 
 ---
 
