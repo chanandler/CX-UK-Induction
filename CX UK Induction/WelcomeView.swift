@@ -34,7 +34,6 @@ struct WelcomeView: View {
     @State private var lastRegisteredName: String = ""
     
     @State private var showCheckoutBanner = false
-    @State private var lastCheckedOutName: String = ""
     @State private var checkoutBannerSecondsRemaining = 5
     @State private var checkoutBannerCountdownID = UUID()
     
@@ -227,8 +226,7 @@ struct WelcomeView: View {
                     )
                     .presentationDetents([.large])
                 case .leaving:
-                    LeavingSearchSheet(activeVisitors: activeVisitors) { name in
-                        lastCheckedOutName = name
+                    LeavingSearchSheet(activeVisitors: activeVisitors) { _ in
                         showSignedOutBanner()
                         activeSheet = nil
                     }
@@ -237,8 +235,7 @@ struct WelcomeView: View {
                 case .signInBook:
                     SignInBookView {
                         activeSheet = nil
-                    } onCheckedOut: { name in
-                        lastCheckedOutName = name
+                    } onCheckedOut: { _ in
                         showSignedOutBanner()
                         activeSheet = nil
                     }

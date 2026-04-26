@@ -229,6 +229,16 @@ final class VisitorStore {
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
         }
 
+        // Optional columns resolved once to avoid repeated header scans per row.
+        let iCompany = col("Company")
+        let iVisiting = col("Visiting")
+        let iCarRegistration = col("Car Registration")
+        let iBlockedCar = col("Blocked Car")
+        let iPagerNumber = col("Pager Number")
+        let iBadgeNumber = col("Badge Number")
+        let iCheckOut = col("Date Signed Out") ?? col("Check Out")
+        let iAutoLoggedOut = col("Auto Logged Out")
+
         // Build a set of existing records for duplicate detection.
         let existingKey: Set<String>
         do {
@@ -278,19 +288,19 @@ final class VisitorStore {
             }
 
             // Optional / potentially missing columns get safe defaults.
-            let company         = field(col("Company"))
-            let visiting        = field(col("Visiting"))
-            let carReg          = field(col("Car Registration"))
-            let blockedCarStr   = field(col("Blocked Car")).lowercased()
+            let company         = field(iCompany)
+            let visiting        = field(iVisiting)
+            let carReg          = field(iCarRegistration)
+            let blockedCarStr   = field(iBlockedCar).lowercased()
             let blockedCar      = blockedCarStr == "yes" || blockedCarStr == "true" || blockedCarStr == "1"
-            let pagerRaw        = field(col("Pager Number"))
+            let pagerRaw        = field(iPagerNumber)
             let pagerNumber: String? = pagerRaw.isEmpty ? nil : pagerRaw
-            let badgeNumber     = field(col("Badge Number"))
-            let checkOutStr     = field(col("Date Signed Out") ?? col("Check Out"))
+            let badgeNumber     = field(iBadgeNumber)
+            let checkOutStr     = field(iCheckOut)
             let checkOut: Date? = checkOutStr.isEmpty ? nil
                 : DateFormatter.csvDateTime.date(from: checkOutStr)
                   ?? DateFormatter.csvDateTimeAlt.date(from: checkOutStr)
-            let autoStr         = field(col("Auto Logged Out")).lowercased()
+            let autoStr         = field(iAutoLoggedOut).lowercased()
             let wasAuto         = autoStr == "yes" || autoStr == "true" || autoStr == "1"
 
             let visitor = Visitor(

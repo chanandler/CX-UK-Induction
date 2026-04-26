@@ -3,10 +3,12 @@ import Charts
 
 struct AnalyticsDashboardView: View {
     let visitors: [Visitor]
+    private let metrics: AnalyticsMetrics
     @Environment(\.dismiss) private var dismiss
 
-    private var metrics: AnalyticsMetrics {
-        AnalyticsMetrics(visitors: visitors, now: Date(), calendar: .current)
+    init(visitors: [Visitor]) {
+        self.visitors = visitors
+        self.metrics = AnalyticsMetrics(visitors: visitors, now: Date(), calendar: .current)
     }
 
     var body: some View {
@@ -147,6 +149,10 @@ private struct AnalyticsMetrics {
     let topDepartments: [DepartmentCount]
     let busiestWeekday: WeekdayCount?
 
+    private static let shortWeekdaySymbols: [String] = {
+        DateFormatter().shortWeekdaySymbols ?? []
+    }()
+
     var averageDurationText: String {
         guard let averageVisitDuration else { return "N/A" }
         let minutes = Int(averageVisitDuration) / 60
@@ -202,7 +208,6 @@ private struct AnalyticsMetrics {
             .prefix(5)
             .map { $0 }
 
-        let shortSymbols = DateFormatter().shortWeekdaySymbols ?? []
         var weekdayMap: [Int: Int] = [:]
         for visitor in visitors {
             let weekday = calendar.component(.weekday, from: visitor.checkIn)
@@ -211,7 +216,7 @@ private struct AnalyticsMetrics {
 
         let orderedWeekdays = [2, 3, 4, 5, 6, 7, 1] // Mon...Sun
         let weekdayCounts: [WeekdayCount] = orderedWeekdays.map { weekday in
-            let name = shortSymbols[safe: weekday - 1] ?? "Day"
+            let name = Self.shortWeekdaySymbols[safe: weekday - 1] ?? "Day"
             return WeekdayCount(weekday: weekday, name: name, count: weekdayMap[weekday, default: 0])
         }
         if let top = weekdayCounts.max(by: { $0.count < $1.count }), top.count > 0 {
