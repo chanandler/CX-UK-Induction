@@ -1095,6 +1095,7 @@ struct SignInBookView: View {
 
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
+    @State private var pendingCheckoutVisitor: Visitor?
 
     let onDone: () -> Void
     let onCheckedOut: (String) -> Void
@@ -1132,8 +1133,7 @@ struct SignInBookView: View {
                                 }
                                 Spacer(minLength: 8)
                                 Button(role: .destructive) {
-                                    store.checkOut(context, visitor)
-                                    onCheckedOut(visitor.fullName)
+                                    pendingCheckoutVisitor = visitor
                                 } label: {
                                     Label("Check out", systemImage: "door.right.hand.open")
                                 }
@@ -1189,6 +1189,25 @@ struct SignInBookView: View {
                         dismiss()
                     }
                 }
+            }
+            .confirmationDialog(
+                "Confirm Check Out",
+                isPresented: Binding(
+                    get: { pendingCheckoutVisitor != nil },
+                    set: { if !$0 { pendingCheckoutVisitor = nil } }
+                ),
+                presenting: pendingCheckoutVisitor
+            ) { visitor in
+                Button("Check out \(visitor.fullName)", role: .destructive) {
+                    store.checkOut(context, visitor)
+                    onCheckedOut(visitor.fullName)
+                    pendingCheckoutVisitor = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingCheckoutVisitor = nil
+                }
+            } message: { visitor in
+                Text("Are you sure you want to check out \(visitor.fullName)?")
             }
         }
     }

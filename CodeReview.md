@@ -19,8 +19,6 @@
 
 ### WelcomeView.swift
 
-- [ ] 🟡 **One-tap destructive checkout in Sign In Book has no confirmation/undo** — In `SignInBookView`, the active visitor row “Check out” action immediately calls `store.checkOut(context, visitor)` (`WelcomeView.swift`) with no confirmation step. On reception kiosks this creates accidental checkout risk from stray taps. Add a confirmation dialog (or undo snackbar) before mutating checkout state.
-
 ### Models.swift
 
 ### PINSecurity.swift
@@ -81,6 +79,7 @@
 | 2026-04-25 | ✅ WelcomeView.swift | Analytics launch flow from Settings de-raced — removed fixed `DispatchQueue.main.asyncAfter` delay and replaced with deterministic post-sheet-dismiss protected-action queue |
 | 2026-04-25 | ✅ Models.swift | CSV import multiline quote handling fixed — replaced newline pre-split with quote-aware record parsing before field tokenization |
 | 2026-04-25 | ✅ PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — 5 failed attempts lock for 5 minutes, next 5 lock for 10 minutes, next 5 lock for 30 minutes (capped), with localized countdown messaging; reset on successful unlock |
+| 2026-04-26 | ✅ WelcomeView.swift | Sign In Book checkout is now confirmation-gated — active-row “Check out” stages a visitor and requires explicit confirmation before `store.checkOut` is called |
 
 ---
 
