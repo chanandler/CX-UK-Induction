@@ -27,8 +27,6 @@
 
 ### Project Configuration
 
-- [ ] 🟡 **Internal tracker/roadmap markdown files are bundled into app resources** — The Xcode project currently includes `CodeReview.md`, `CodeNewFeatures.md`, and `SiteVisitorManagementOverview.md` in `PBXResourcesBuildPhase` (`CX UK Induction.xcodeproj/project.pbxproj`). This unnecessarily ships internal operational notes and security roadmap details inside the app bundle. Remove these docs from target resources.
-
 ---
 
 ## Completed Issues
@@ -80,6 +78,7 @@
 | 2026-04-25 | ✅ Models.swift | CSV import multiline quote handling fixed — replaced newline pre-split with quote-aware record parsing before field tokenization |
 | 2026-04-25 | ✅ PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — 5 failed attempts lock for 5 minutes, next 5 lock for 10 minutes, next 5 lock for 30 minutes (capped), with localized countdown messaging; reset on successful unlock |
 | 2026-04-26 | ✅ WelcomeView.swift | Sign In Book checkout is now confirmation-gated — active-row “Check out” stages a visitor and requires explicit confirmation before `store.checkOut` is called |
+| 2026-04-26 | ✅ CX UK Induction.xcodeproj/project.pbxproj | Removed internal markdown docs (`CodeReview.md`, `CodeNewFeatures.md`, `SiteVisitorManagementOverview.md`) from `PBXResourcesBuildPhase`; only app resources (including `Localizable.strings`) remain bundled |
 
 ---
 

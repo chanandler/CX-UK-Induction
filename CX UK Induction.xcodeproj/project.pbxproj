@@ -7,10 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		223C54362F992A240008D43A /* CodeNewFeatures.md in Resources */ = {isa = PBXBuildFile; fileRef = 223C54352F992A240008D43A /* CodeNewFeatures.md */; };
-		226471CF2F94F4B100786F29 /* SiteVisitorManagementOverview.md in Resources */ = {isa = PBXBuildFile; fileRef = 226471CE2F94F4B100786F29 /* SiteVisitorManagementOverview.md */; };
 		226C39CB2F9D1E0D0067BBFF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 226C39CA2F9D1E0D0067BBFF /* Localizable.strings */; };
-		22B91EAC2F7138E60012FB8A /* CodeReview.md in Resources */ = {isa = PBXBuildFile; fileRef = 22B91EAB2F7138E60012FB8A /* CodeReview.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -138,9 +135,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				226C39CB2F9D1E0D0067BBFF /* Localizable.strings in Resources */,
-				223C54362F992A240008D43A /* CodeNewFeatures.md in Resources */,
-				226471CF2F94F4B100786F29 /* SiteVisitorManagementOverview.md in Resources */,
-				22B91EAC2F7138E60012FB8A /* CodeReview.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
