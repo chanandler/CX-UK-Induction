@@ -1342,7 +1342,21 @@ private struct AboutView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
     private var buildDateTime: String {
-        Bundle.main.object(forInfoDictionaryKey: "BuildDate") as? String ?? "Not available"
+        if let explicit = Bundle.main.object(forInfoDictionaryKey: "BuildDate") as? String {
+            let trimmed = explicit.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, trimmed != "ManualBuildDateHere" {
+                return trimmed
+            }
+        }
+
+        // Fallback to app binary modification date when plist value is not injected.
+        if let executableURL = Bundle.main.executableURL,
+           let values = try? executableURL.resourceValues(forKeys: [.contentModificationDateKey]),
+           let modified = values.contentModificationDate {
+            return DateFormatter.mediumDateTime.string(from: modified)
+        }
+
+        return "Not available"
     }
 
     var body: some View {

@@ -21,9 +21,16 @@ struct AnalyticsDashboardView: View {
     let visitors: [Visitor]
     @Environment(\.dismiss) private var dismiss
     @State private var selectedRange: AnalyticsRange = .week
+    @State private var anchorDate: Date = Date()
 
     private var metrics: AnalyticsMetrics {
-        AnalyticsMetrics(visitors: visitors, now: Date(), calendar: .current, range: selectedRange)
+        AnalyticsMetrics(
+            visitors: visitors,
+            now: Date(),
+            calendar: .current,
+            range: selectedRange,
+            anchorDate: anchorDate
+        )
     }
 
     var body: some View {
@@ -36,6 +43,18 @@ struct AnalyticsDashboardView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+
+                    DatePicker(
+                        "Period Date",
+                        selection: $anchorDate,
+                        in: ...Date(),
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.compact)
+
+                    Text(metrics.periodTitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
                     summaryGrid
 
@@ -216,6 +235,7 @@ private struct AnalyticsMetrics {
     let topDepartments: [NamedCount]
     let topCompanies: [NamedCount]
     let busiestWeekday: WeekdayCount?
+    let periodTitle: String
 
     private static let shortWeekdaySymbols: [String] = {
         DateFormatter().shortWeekdaySymbols ?? []
@@ -232,18 +252,23 @@ private struct AnalyticsMetrics {
         return "\(minutePart)m"
     }
 
-    init(visitors: [Visitor], now: Date, calendar: Calendar, range: AnalyticsRange) {
-        let startDate: Date
+    init(visitors: [Visitor], now: Date, calendar: Calendar, range: AnalyticsRange, anchorDate: Date) {
+        let referenceDate = min(anchorDate, now)
+        let periodInterval: DateInterval
         switch range {
         case .day:
-            startDate = calendar.startOfDay(for: now)
+            periodInterval = calendar.dateInterval(of: .day, for: referenceDate)
+                ?? DateInterval(start: calendar.startOfDay(for: referenceDate), duration: 24 * 60 * 60)
         case .week:
-            startDate = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? calendar.startOfDay(for: now)
+            periodInterval = calendar.dateInterval(of: .weekOfYear, for: referenceDate)
+                ?? DateInterval(start: calendar.startOfDay(for: referenceDate), duration: 7 * 24 * 60 * 60)
         case .month:
-            startDate = calendar.dateInterval(of: .month, for: now)?.start ?? calendar.startOfDay(for: now)
+            periodInterval = calendar.dateInterval(of: .month, for: referenceDate)
+                ?? DateInterval(start: calendar.startOfDay(for: referenceDate), duration: 31 * 24 * 60 * 60)
         }
 
-        let filtered = visitors.filter { $0.checkIn >= startDate && $0.checkIn <= now }
+        let endDate = min(periodInterval.end, now)
+        let filtered = visitors.filter { $0.checkIn >= periodInterval.start && $0.checkIn < endDate }
 
         totalInRange = filtered.count
 
@@ -306,7 +331,20 @@ private struct AnalyticsMetrics {
             busiestWeekday = nil
         }
 
-        trendPoints = Self.makeTrendPoints(filtered: filtered, now: now, calendar: calendar, range: range)
+        trendPoints = Self.makeTrendPoints(
+            filtered: filtered,
+            endDate: endDate,
+            calendar: calendar,
+            range: range,
+            intervalStart: periodInterval.start
+        )
+
+        let periodFormatter = DateFormatter()
+        periodFormatter.dateStyle = .medium
+        periodFormatter.timeStyle = .none
+        let startText = periodFormatter.string(from: periodInterval.start)
+        let endText = periodFormatter.string(from: endDate)
+        periodTitle = "\(startText) - \(endText)"
     }
 
     private static func topCounts(from values: [String], emptyFallback: String) -> [NamedCount] {
@@ -326,7 +364,13 @@ private struct AnalyticsMetrics {
             .map { $0 }
     }
 
-    private static func makeTrendPoints(filtered: [Visitor], now: Date, calendar: Calendar, range: AnalyticsRange) -> [TrendPoint] {
+    private static func makeTrendPoints(
+        filtered: [Visitor],
+        endDate: Date,
+        calendar: Calendar,
+        range: AnalyticsRange,
+        intervalStart: Date
+    ) -> [TrendPoint] {
         switch range {
         case .day:
             var hourBuckets = Array(repeating: 0, count: 24)
@@ -351,7 +395,6 @@ private struct AnalyticsMetrics {
             }
 
         case .month:
-            guard let monthInterval = calendar.dateInterval(of: .month, for: now) else { return [] }
             var dayMap: [Date: Int] = [:]
             for visitor in filtered {
                 let day = calendar.startOfDay(for: visitor.checkIn)
@@ -362,8 +405,8 @@ private struct AnalyticsMetrics {
             dayFormatter.dateFormat = "d MMM"
 
             var points: [TrendPoint] = []
-            var current = monthInterval.start
-            while current <= now {
+            var current = intervalStart
+            while current <= endDate {
                 let label = dayFormatter.string(from: current)
                 points.append(TrendPoint(label: label, count: dayMap[current, default: 0]))
                 guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
