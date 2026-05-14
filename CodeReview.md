@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-04-25
+> Generated: 2026-03-23 | Last updated: 2026-05-14
 
 ---
 
@@ -18,14 +18,31 @@
 ### VisitorTabs.swift
 
 ### WelcomeView.swift
+- 🟡 **MEDIUM** — **Localization coverage is incomplete across primary flows (BUG-009)**
+  - Large parts of the UI still use hardcoded English strings (registration, settings, alerts, induction, roll call, analytics labels), while only a subset is localized.
+  - Impact: inconsistent language experience and costly future localization pass.
+  - Recommendation: migrate all user-facing strings to `String(localized:)` and add missing keys to `Localizable.strings`.
+
+- 🟡 **MEDIUM** — **Sign In Book "Done" action performs dual dismissal paths (BUG-010)**
+  - `SignInBookView` calls both `onDone()` and local `dismiss()` in the same handler.
+  - Impact: redundant navigation state changes can cause sheet-state race conditions in future refactors.
+  - Recommendation: choose one ownership model for dismissal (parent-driven OR self-driven), not both.
 
 ### Models.swift
+- 🟠 **HIGH** — **CSV import can fail when file contains UTF-8 BOM in header row (BUG-011)**
+  - Header matching requires exact `"First Name"` etc; many CSV tools prepend BOM (`\u{FEFF}`) to the first header cell.
+  - Impact: valid CSV files may be rejected as “missing columns.”
+  - Recommendation: strip BOM from raw input or first parsed header before column lookup.
 
 ### PINSecurity.swift
 
 ---
 
 ### Project Configuration
+- 🟠 **HIGH** — **Daily backup filename collision overwrites earlier backup from same day (BUG-012)**
+  - `BackupScheduler.writeBackup` uses `visitor_backup_YYYY-MM-DD.csv`; multiple backups in one day replace prior file.
+  - Impact: data retention reduced and manual backups can silently overwrite scheduled backup.
+  - Recommendation: include time in filename (e.g. `visitor_backup_YYYY-MM-DD_HHmmss.csv`) and keep pruning logic date-aware.
 
 ---
 
