@@ -20,10 +20,6 @@
 ### WelcomeView.swift
 
 ### Models.swift
-- 🟠 **HIGH** — **CSV import can fail when file contains UTF-8 BOM in header row (BUG-011)**
-  - Header matching requires exact `"First Name"` etc; many CSV tools prepend BOM (`\u{FEFF}`) to the first header cell.
-  - Impact: valid CSV files may be rejected as “missing columns.”
-  - Recommendation: strip BOM from raw input or first parsed header before column lookup.
 
 ### PINSecurity.swift
 
@@ -86,6 +82,7 @@
 | 2026-05-14 | ✅ BackupScheduler.swift | BUG-012 fixed — backup filenames now include time (`visitor_backup_YYYY-MM-DD_HHmmss.csv`) to prevent same-day overwrite; prune logic updated to handle both legacy and new filename formats |
 | 2026-05-14 | ✅ WelcomeView.swift + AnalyticsDashboardView.swift + Localizable.strings | BUG-009 fixed — localized core registration/settings/sign-in-book/roll-call/induction/about flows and analytics dashboard labels/messages via `String(localized:)` with new localization keys |
 | 2026-05-14 | ✅ WelcomeView.swift | BUG-010 fixed — removed dual-dismiss path in `SignInBookView`; Done now uses single parent-driven closure (`onDone`) |
+| 2026-05-14 | ✅ Models.swift | BUG-011 fixed — CSV import header parsing now strips UTF-8 BOM from first header cell before required-column matching |
 
 ---
 

@@ -219,7 +219,14 @@ final class VisitorStore {
         }
 
         // Parse header row to build column-name → index map.
-        let headers = parseCSVLine(records[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let headers = parseCSVLine(records[0]).enumerated().map { index, value in
+            var header = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if index == 0 {
+                // Some CSV tools prepend UTF-8 BOM to the first header cell.
+                header = stripUTF8BOM(from: header)
+            }
+            return header
+        }
         func col(_ name: String) -> Int? { headers.firstIndex(of: name) }
 
         // Require at minimum the four identity columns.
@@ -338,6 +345,14 @@ final class VisitorStore {
     }
 
     // MARK: - Private CSV helpers
+
+    private func stripUTF8BOM(from value: String) -> String {
+        var result = value
+        if result.hasPrefix("\u{FEFF}") {
+            result.removeFirst()
+        }
+        return result
+    }
 
     /// Splits raw CSV text into logical records while respecting quoted fields
     /// that may contain embedded newline characters.
