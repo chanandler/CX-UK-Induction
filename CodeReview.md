@@ -18,10 +18,6 @@
 ### VisitorTabs.swift
 
 ### WelcomeView.swift
-- 🟡 **MEDIUM** — **Sign In Book "Done" action performs dual dismissal paths (BUG-010)**
-  - `SignInBookView` calls both `onDone()` and local `dismiss()` in the same handler.
-  - Impact: redundant navigation state changes can cause sheet-state race conditions in future refactors.
-  - Recommendation: choose one ownership model for dismissal (parent-driven OR self-driven), not both.
 
 ### Models.swift
 - 🟠 **HIGH** — **CSV import can fail when file contains UTF-8 BOM in header row (BUG-011)**
@@ -89,6 +85,7 @@
 | 2026-04-26 | ✅ CX UK Induction.xcodeproj/project.pbxproj | Removed internal markdown docs (`CodeReview.md`, `CodeNewFeatures.md`, `SiteVisitorManagementOverview.md`) from `PBXResourcesBuildPhase`; only app resources (including `Localizable.strings`) remain bundled |
 | 2026-05-14 | ✅ BackupScheduler.swift | BUG-012 fixed — backup filenames now include time (`visitor_backup_YYYY-MM-DD_HHmmss.csv`) to prevent same-day overwrite; prune logic updated to handle both legacy and new filename formats |
 | 2026-05-14 | ✅ WelcomeView.swift + AnalyticsDashboardView.swift + Localizable.strings | BUG-009 fixed — localized core registration/settings/sign-in-book/roll-call/induction/about flows and analytics dashboard labels/messages via `String(localized:)` with new localization keys |
+| 2026-05-14 | ✅ WelcomeView.swift | BUG-010 fixed — removed dual-dismiss path in `SignInBookView`; Done now uses single parent-driven closure (`onDone`) |
 
 ---
 

@@ -1089,7 +1089,6 @@ private struct ZoomableImage: View {
 struct SignInBookView: View {
     @Environment(VisitorStore.self) private var store
     @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
 
     @Query(filter: #Predicate<Visitor> { $0.checkOut == nil }, sort: [SortDescriptor(\.checkIn, order: .reverse)]) private var activeVisitors: [Visitor]
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archivedVisitors: [Visitor]
@@ -1184,7 +1183,6 @@ struct SignInBookView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
                         onDone()
-                        dismiss()
                     }
                 }
             }
