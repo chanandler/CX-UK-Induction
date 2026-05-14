@@ -276,16 +276,17 @@ struct WelcomeView: View {
                     }
                 }
             }
-            .alert("Thank you for registering", isPresented: $showRegisteredAlert) {
-                Button("OK", role: .cancel) { }
+            .alert(String(localized: "welcome.alert.registered.title"), isPresented: $showRegisteredAlert) {
+                Button(String(localized: "common.ok"), role: .cancel) { }
             } message: {
-                let registeredMessage: String = "\(lastRegisteredName): Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk"
+                let template = String(localized: "welcome.alert.registered.message_template")
+                let registeredMessage: String = String(format: template, lastRegisteredName)
                 Text(registeredMessage)
                     .multilineTextAlignment(.center)
             }
             // Ask if they've blocked a car when a car reg is provided
-            .alert("Have you blocked a car in?", isPresented: $showBlockedCarPrompt) {
-                Button("No", role: .cancel) {
+            .alert(String(localized: "welcome.alert.blocked_car.title"), isPresented: $showBlockedCarPrompt) {
+                Button(String(localized: "common.no"), role: .cancel) {
                     blockedCar = false
                     pagerNumber = ""
                     if pendingSubmit {
@@ -293,12 +294,12 @@ struct WelcomeView: View {
                         // pendingSubmit will be cleared in the induction completion handler
                     }
                 }
-                Button("Yes") {
+                Button(String(localized: "common.yes")) {
                     blockedCar = true
                     showPagerPrompt = true
                 }
             } message: {
-                Text("Please let us know if your parking is blocking another vehicle.")
+                Text(String(localized: "welcome.alert.blocked_car.message"))
             }
             // Pager sheet to capture contact number when a car is blocked
             .sheet(isPresented: $showPagerPrompt) {
@@ -375,10 +376,10 @@ struct WelcomeView: View {
                             }
                         }
                     }
-                    .navigationTitle("Contact Pager")
+                    .navigationTitle(String(localized: "welcome.pager.title"))
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("Cancel") {
+                            Button(String(localized: "common.cancel")) {
                                 blockedCar = false
                                 pagerNumber = ""
                                 showPagerPrompt = false
@@ -386,7 +387,7 @@ struct WelcomeView: View {
                             }
                         }
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button("Save") {
+                            Button(String(localized: "common.save")) {
                                 if normalizedUsedPagers.contains(currentNumeric) || currentNumeric.isEmpty {
                                     pagerNumber = ""
                                     return
@@ -683,7 +684,7 @@ struct WelcomeView: View {
         Button {
             requestProtectedAccess(for: .signInBook)
         } label: {
-            Label("Sign In Book", systemImage: "book.closed")
+            Label(String(localized: "welcome.menu.signin_book"), systemImage: "book.closed")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
@@ -713,13 +714,13 @@ struct WelcomeView: View {
                 Button {
                     activeSheet = .about
                 } label: {
-                    Label("About", systemImage: "info.circle")
+                    Label(String(localized: "welcome.menu.about"), systemImage: "info.circle")
                 }
                 
                 Button {
                     requestProtectedAccess(for: .settings)
                 } label: {
-                    Label("Settings", systemImage: "slider.horizontal.3")
+                    Label(String(localized: "welcome.menu.settings"), systemImage: "slider.horizontal.3")
                 }
             } label: {
                 Image(systemName: "gearshape.fill")
@@ -806,11 +807,11 @@ struct WelcomeView: View {
 
     private func protectedActionName(for action: ProtectedAction) -> String {
         switch action {
-        case .settings: return "Settings"
+        case .settings: return String(localized: "welcome.protected.settings")
         case .exportCSV: return "Export CSV"
-        case .signInBook: return "Sign In Book"
+        case .signInBook: return String(localized: "welcome.protected.signin_book")
         case .fireRollCall: return "Fire Alarm Roll Call"
-        case .analytics: return "Analytics Dashboard"
+        case .analytics: return String(localized: "welcome.protected.analytics")
         }
     }
 
@@ -902,7 +903,7 @@ private struct InductionFlowView: View {
                                 HStack(spacing: 10) {
                                     Image(systemName: "signature")
                                         .font(.title3)
-                                    Text("Tap here to sign")
+                                    Text(String(localized: "welcome.induction.tap_to_sign"))
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -914,11 +915,11 @@ private struct InductionFlowView: View {
                             .padding(.bottom, 4)
                         }
                     }
-                    .navigationTitle("Visitor Induction")
+                    .navigationTitle(String(localized: "welcome.induction.title"))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("Cancel") { onComplete(false) }
+                            Button(String(localized: "common.cancel")) { onComplete(false) }
                         }
                     }
                 }
@@ -960,7 +961,7 @@ private struct InductionSignatureSheet: View {
                     .foregroundStyle(Color.cemexBlue)
                     .padding(.top, 32)
 
-                Text("Confirm Understanding")
+                Text(String(localized: "welcome.induction.confirm_understanding"))
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
 
@@ -1003,7 +1004,7 @@ private struct InductionSignatureSheet: View {
                 Button {
                     onDismiss(true)
                 } label: {
-                    Text("I Agree")
+                    Text(String(localized: "welcome.induction.i_agree"))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -1015,7 +1016,7 @@ private struct InductionSignatureSheet: View {
                 Button(role: .cancel) {
                     onDismiss(false)
                 } label: {
-                    Text("Go Back")
+                    Text(String(localized: "welcome.induction.go_back"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -1102,7 +1103,7 @@ struct SignInBookView: View {
             List {
                 Section("Active") {
                     if activeVisitors.isEmpty {
-                        Text("No active visitors")
+                        Text(String(localized: "welcome.signin_book.no_active"))
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(activeVisitors) { visitor in
@@ -1142,7 +1143,7 @@ struct SignInBookView: View {
                 }
                 Section("Archived") {
                     if archivedVisitors.isEmpty {
-                        Text("No archived visitors")
+                        Text(String(localized: "welcome.signin_book.no_archived"))
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(archivedVisitors) { visitor in
@@ -1178,7 +1179,7 @@ struct SignInBookView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Sign In Book")
+            .navigationTitle(String(localized: "welcome.signin_book.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
@@ -1188,7 +1189,7 @@ struct SignInBookView: View {
                 }
             }
             .confirmationDialog(
-                "Confirm Check Out",
+                String(localized: "welcome.signin_book.confirm_checkout_title"),
                 isPresented: Binding(
                     get: { pendingCheckoutVisitor != nil },
                     set: { if !$0 { pendingCheckoutVisitor = nil } }
@@ -1200,7 +1201,7 @@ struct SignInBookView: View {
                     onCheckedOut(visitor.fullName)
                     pendingCheckoutVisitor = nil
                 }
-                Button("Cancel", role: .cancel) {
+                Button(String(localized: "common.cancel"), role: .cancel) {
                     pendingCheckoutVisitor = nil
                 }
             } message: { visitor in
@@ -1243,7 +1244,7 @@ private struct LeavingSearchSheet: View {
                     }
                 }
                 .listStyle(.insetGrouped)
-                .navigationTitle("Find your name")
+                .navigationTitle(String(localized: "welcome.leaving.find_name"))
                 .searchable(text: $searchText, prompt: "Search by name, company, or car")
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -1274,7 +1275,7 @@ private struct LeavingSearchSheet: View {
                     .navigationTitle(v.fullName)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("Cancel") {
+                            Button(String(localized: "common.cancel")) {
                                 dismiss()
                             }
                         }
@@ -1367,14 +1368,14 @@ private struct AboutView: View {
                 Text("Version \(version) (Build \(build))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Built on \(buildDateTime)")
+                Text("\(String(localized: "welcome.about.built_on")) \(buildDateTime)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Divider()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("About")
+                    Text(String(localized: "welcome.about.title"))
                         .font(.headline)
-                    Text("Developed by Clint Yarwood (Cemex UK IT) for visitor registration at CEMEX UK HQ.")
+                    Text(String(localized: "welcome.about.description"))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal)
@@ -1428,7 +1429,7 @@ struct FireAlarmRollCallView: View {
                 .cornerRadius(8)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Fire Roll Call")
+            .navigationTitle(String(localized: "welcome.roll_call.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
@@ -1515,7 +1516,7 @@ private struct AutoCheckoutSettingsView: View {
                     Button {
                         onOpenAnalytics()
                     } label: {
-                        Label("Analytics Dashboard", systemImage: "chart.bar.xaxis")
+                        Label(String(localized: "welcome.settings.analytics_dashboard"), systemImage: "chart.bar.xaxis")
                     }
                     Text("View visitor trends, totals, busiest times, and top departments.")
                         .font(.caption)
@@ -1532,14 +1533,14 @@ private struct AutoCheckoutSettingsView: View {
                         onSignOutNow()
                         dismiss()
                     } label: {
-                        Label("Sign Out Now", systemImage: "lock")
+                        Label(String(localized: "welcome.settings.sign_out_now"), systemImage: "lock")
                     }
                     Text("The PIN is stored securely in the iOS Keychain and will be requested again after 5 minutes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(String(localized: "welcome.settings.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
             }
@@ -1575,7 +1576,7 @@ private struct ImportConfirmationView: View {
             .navigationTitle("Import CSV")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel", role: .cancel) { onCancel() }
+                    Button(String(localized: "common.cancel"), role: .cancel) { onCancel() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Import \(summary.imported) Records") { onConfirm() }

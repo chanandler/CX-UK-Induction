@@ -48,13 +48,15 @@ extension BackupScheduler {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
 
-    /// Writes `csvString` to Documents as `visitor_backup_YYYY-MM-DD.csv`,
+    /// Writes `csvString` to Documents as `visitor_backup_YYYY-MM-DD_HHmmss.csv`,
     /// then deletes backup files older than `keepDays` days.
     /// Returns the written file URL, or nil on failure.
     @discardableResult
     static func writeBackup(csvString: String, keepDays: Int = 30) -> URL? {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd_HHmmss"
         let filename = "visitor_backup_\(formatter.string(from: Date())).csv"
         let fileURL = documentsURL.appendingPathComponent(filename)
 
@@ -86,11 +88,17 @@ extension BackupScheduler {
     private static func pruneOldBackups(keepDays: Int) {
         let cutoff = Calendar.current.date(byAdding: .day, value: -keepDays, to: Date()) ?? Date()
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd"
         for url in existingBackups() {
             // Parse the date from the filename so we don't need filesystem metadata.
-            let name = url.deletingPathExtension().lastPathComponent // "visitor_backup_YYYY-MM-DD"
-            let dateString = String(name.dropFirst("visitor_backup_".count))
+            // Supports both:
+            // - visitor_backup_YYYY-MM-DD.csv
+            // - visitor_backup_YYYY-MM-DD_HHmmss.csv
+            let name = url.deletingPathExtension().lastPathComponent
+            let suffix = String(name.dropFirst("visitor_backup_".count))
+            let dateString = String(suffix.prefix(10))
             if let fileDate = formatter.date(from: dateString), fileDate < cutoff {
                 try? FileManager.default.removeItem(at: url)
             }

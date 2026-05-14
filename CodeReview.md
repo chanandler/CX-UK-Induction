@@ -18,11 +18,6 @@
 ### VisitorTabs.swift
 
 ### WelcomeView.swift
-- 🟡 **MEDIUM** — **Localization coverage is incomplete across primary flows (BUG-009)**
-  - Large parts of the UI still use hardcoded English strings (registration, settings, alerts, induction, roll call, analytics labels), while only a subset is localized.
-  - Impact: inconsistent language experience and costly future localization pass.
-  - Recommendation: migrate all user-facing strings to `String(localized:)` and add missing keys to `Localizable.strings`.
-
 - 🟡 **MEDIUM** — **Sign In Book "Done" action performs dual dismissal paths (BUG-010)**
   - `SignInBookView` calls both `onDone()` and local `dismiss()` in the same handler.
   - Impact: redundant navigation state changes can cause sheet-state race conditions in future refactors.
@@ -39,10 +34,6 @@
 ---
 
 ### Project Configuration
-- 🟠 **HIGH** — **Daily backup filename collision overwrites earlier backup from same day (BUG-012)**
-  - `BackupScheduler.writeBackup` uses `visitor_backup_YYYY-MM-DD.csv`; multiple backups in one day replace prior file.
-  - Impact: data retention reduced and manual backups can silently overwrite scheduled backup.
-  - Recommendation: include time in filename (e.g. `visitor_backup_YYYY-MM-DD_HHmmss.csv`) and keep pruning logic date-aware.
 
 ---
 
@@ -96,6 +87,8 @@
 | 2026-04-25 | ✅ PINSecurity.swift + Localizable.strings | PIN gate brute-force protection added — 5 failed attempts lock for 5 minutes, next 5 lock for 10 minutes, next 5 lock for 30 minutes (capped), with localized countdown messaging; reset on successful unlock |
 | 2026-04-26 | ✅ WelcomeView.swift | Sign In Book checkout is now confirmation-gated — active-row “Check out” stages a visitor and requires explicit confirmation before `store.checkOut` is called |
 | 2026-04-26 | ✅ CX UK Induction.xcodeproj/project.pbxproj | Removed internal markdown docs (`CodeReview.md`, `CodeNewFeatures.md`, `SiteVisitorManagementOverview.md`) from `PBXResourcesBuildPhase`; only app resources (including `Localizable.strings`) remain bundled |
+| 2026-05-14 | ✅ BackupScheduler.swift | BUG-012 fixed — backup filenames now include time (`visitor_backup_YYYY-MM-DD_HHmmss.csv`) to prevent same-day overwrite; prune logic updated to handle both legacy and new filename formats |
+| 2026-05-14 | ✅ WelcomeView.swift + AnalyticsDashboardView.swift + Localizable.strings | BUG-009 fixed — localized core registration/settings/sign-in-book/roll-call/induction/about flows and analytics dashboard labels/messages via `String(localized:)` with new localization keys |
 
 ---
 

@@ -10,9 +10,9 @@ private enum AnalyticsRange: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .day: return "Day"
-        case .week: return "Week"
-        case .month: return "Month"
+        case .day: return String(localized: "analytics.range.day")
+        case .week: return String(localized: "analytics.range.week")
+        case .month: return String(localized: "analytics.range.month")
         }
     }
 }
@@ -37,7 +37,7 @@ struct AnalyticsDashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Picker("Range", selection: $selectedRange) {
+                    Picker(String(localized: "analytics.range"), selection: $selectedRange) {
                         ForEach(AnalyticsRange.allCases) { range in
                             Text(range.title).tag(range)
                         }
@@ -45,7 +45,7 @@ struct AnalyticsDashboardView: View {
                     .pickerStyle(.segmented)
 
                     DatePicker(
-                        "Period Date",
+                        String(localized: "analytics.period_date"),
                         selection: $anchorDate,
                         in: ...Date(),
                         displayedComponents: [.date]
@@ -59,10 +59,10 @@ struct AnalyticsDashboardView: View {
                     summaryGrid
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Trend (\(selectedRange.title))")
+                        Text("\(String(localized: "analytics.trend")) (\(selectedRange.title))")
                             .font(.headline)
                         if metrics.trendPoints.isEmpty {
-                            emptyState("No data for this period")
+                            emptyState(String(localized: "analytics.empty.no_data_period"))
                         } else {
                             Chart(metrics.trendPoints) { item in
                                 BarMark(
@@ -76,7 +76,7 @@ struct AnalyticsDashboardView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Visitors by Hour")
+                        Text(String(localized: "analytics.visitors_by_hour"))
                             .font(.headline)
                         Chart(metrics.hourlyCounts) { item in
                             BarMark(
@@ -89,10 +89,10 @@ struct AnalyticsDashboardView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Top Hosts / Departments")
+                        Text(String(localized: "analytics.top_hosts_departments"))
                             .font(.headline)
                         if metrics.topDepartments.isEmpty {
-                            emptyState("No host data yet")
+                            emptyState(String(localized: "analytics.empty.no_host_data"))
                         } else {
                             Chart(metrics.topDepartments) { item in
                                 BarMark(
@@ -106,10 +106,10 @@ struct AnalyticsDashboardView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Top Companies")
+                        Text(String(localized: "analytics.top_companies"))
                             .font(.headline)
                         if metrics.topCompanies.isEmpty {
-                            emptyState("No company data yet")
+                            emptyState(String(localized: "analytics.empty.no_company_data"))
                         } else {
                             Chart(metrics.topCompanies) { item in
                                 BarMark(
@@ -123,14 +123,14 @@ struct AnalyticsDashboardView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Busiest Day")
+                        Text(String(localized: "analytics.busiest_day"))
                             .font(.headline)
                         if let busiest = metrics.busiestWeekday {
                             HStack {
                                 Text(busiest.name)
                                     .font(.title3.bold())
                                 Spacer()
-                                Text("\(busiest.count) visitors")
+                                Text(String(format: String(localized: "analytics.visitor_count_format"), busiest.count))
                                     .foregroundStyle(.secondary)
                             }
                             .padding(14)
@@ -139,17 +139,17 @@ struct AnalyticsDashboardView: View {
                                     .fill(Color(.secondarySystemBackground))
                             )
                         } else {
-                            emptyState("No visit records yet")
+                            emptyState(String(localized: "analytics.empty.no_visit_records"))
                         }
                     }
                 }
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Analytics")
+            .navigationTitle(String(localized: "analytics.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") { dismiss() }
+                    Button(String(localized: "common.done")) { dismiss() }
                 }
             }
         }
@@ -158,12 +158,12 @@ struct AnalyticsDashboardView: View {
     private var summaryGrid: some View {
         let columns = [GridItem(.flexible()), GridItem(.flexible())]
         return LazyVGrid(columns: columns, spacing: 12) {
-            summaryCard("Visits", value: "\(metrics.totalInRange)", symbol: "person.2")
-            summaryCard("Unique Visitors", value: "\(metrics.uniqueVisitors)", symbol: "person.crop.circle.badge.checkmark")
-            summaryCard("Avg Visit", value: metrics.averageDurationText, symbol: "clock")
-            summaryCard("Active Now", value: "\(metrics.activeNow)", symbol: "person.crop.circle.badge.exclamationmark")
-            summaryCard("Repeat Visitors", value: "\(metrics.repeatVisitors)", symbol: "arrow.triangle.2.circlepath")
-            summaryCard("Auto Check-out", value: metrics.autoCheckoutRateText, symbol: "moon.zzz")
+            summaryCard(String(localized: "analytics.card.visits"), value: "\(metrics.totalInRange)", symbol: "person.2")
+            summaryCard(String(localized: "analytics.card.unique_visitors"), value: "\(metrics.uniqueVisitors)", symbol: "person.crop.circle.badge.checkmark")
+            summaryCard(String(localized: "analytics.card.avg_visit"), value: metrics.averageDurationText, symbol: "clock")
+            summaryCard(String(localized: "analytics.card.active_now"), value: "\(metrics.activeNow)", symbol: "person.crop.circle.badge.exclamationmark")
+            summaryCard(String(localized: "analytics.card.repeat_visitors"), value: "\(metrics.repeatVisitors)", symbol: "arrow.triangle.2.circlepath")
+            summaryCard(String(localized: "analytics.card.auto_checkout"), value: metrics.autoCheckoutRateText, symbol: "moon.zzz")
         }
     }
 
