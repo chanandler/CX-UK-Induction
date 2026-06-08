@@ -15,20 +15,16 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-
----
-
-### VisitorTabs.swift
-
-### WelcomeView.swift
-
-### Models.swift
-
-### PINSecurity.swift
-
----
-
-### Project Configuration
+| BUG-039 | 🟡 MEDIUM | WelcomeView.swift | Potential double-presentation race when `pendingSubmit` interacts with `showBlockedCarPrompt` and `showPagerPrompt` on rapid taps | `decoratedContentPart3.onChange` handlers for `showPagerPrompt` and `showBlockedCarPrompt` both can trigger `showingInduction = true` if state flips quickly; consider centralizing transition via a single state machine. |
+| BUG-040 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `AutoCheckoutSettingsView` shows both "Backup Now" and "Export Backup Now" wired to the same action | Both buttons call `onManualBackup`; clarify intent or remove duplication (one might be for local write, the other for share/export). |
+| BUG-041 | 🟢 LOW | AdminAndUtilitiesViews.swift | `PreRegisteredListView` date label shows "Date not set" but sorts undated visitors after dated ones inconsistently with comment | Sorting comment says "b first" when `a` has no date, but actual return puts `b` first; verify desired order and adjust code/comment for alignment. |
+| BUG-042 | 🟢 LOW | WelcomeView.swift | Multiple `.alert` and `.sheet` modifiers create a long decorator chain, increasing maintenance complexity | `decoratedContentPart1/2/3` split helps, but consider consolidating related alerts into a single enum-driven presentation to reduce state coupling. |
+| BUG-043 | 🟢 LOW | VisitorTabs.swift | `ClearBackgroundView` manipulates UIKit view hierarchy asynchronously for transparency | Could cause flicker or maintenance risk; consider using `.scrollContentBackground(.hidden)` and explicit `.background(Color.clear)` only, or contain UIKit hack behind platform checks. |
+| BUG-044 | 🟢 LOW | Models.swift | `dupKey` normalizes to minute precision but uses `timeIntervalSinceReferenceDate` (Double) which still includes seconds component from constructed minute | The constructed date uses only Y-M-D-H-M, which is fine, but documenting the rationale would help; alternatively store an Int minute timestamp to avoid float comparisons. |
+| BUG-045 | 🟡 MEDIUM | WelcomeView.swift | Kiosk mode banner auto-hide task not cancelled on view disappear | `.task` in `checkoutBanner` and kiosk banner hide task rely on Task cancellation by scope; ensure cancellation when view disappears or when state flips to avoid lingering async work. |
+| BUG-046 | 🟢 LOW | AdminAndUtilitiesViews.swift | `StaffCarPagerSheet` has `hasAttemptedSave` dead state | `hasAttemptedSave` is set but never toggled in current code path; either remove or use to show validation error when tapping a disabled Save. |
+| BUG-047 | 🟡 MEDIUM | Models.swift | `addPreRegisteredVisitor` performs two full fetches for conflict checks | Consider narrowing fetch with predicates or using a single fetch to reduce IO; or pre-index normalized badges by day. |
+| BUG-048 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ImportConfirmationView` uses generic "Error" handling pattern elsewhere but here has no explicit error state | If commit fails, the presenting code handles `store.lastError`; consider consistent messaging inside the view or ensure all error paths are centralized. |
 
 ---
 
@@ -128,3 +124,17 @@
 
 ---
 
+## Enhancement Ideas (New)
+
+- Consolidate alert/sheet presentation in WelcomeView via a single enum-driven router to reduce state coupling and race conditions.
+- Extract pager management into a small `PagerManager` helper (usedPagers, recentlyFreedPagers grace window, issue/return helpers) to simplify WelcomeView.
+- Add accessibility labels/hints for critical buttons (Register, I'm Leaving, Fire Alarm Roll Call) and ensure minimum hit size.
+- Localize remaining hardcoded strings in AdminAndUtilitiesViews.swift (e.g., "Import Preview", "Confirm", "Cancel", etc.).
+- Consider adding unit tests using Swift Testing for CSV parsing edge cases and duplicate detection logic.
+- Add a small `Theme` layer for light/dark tokens and reuse across VisitorTabs cards and WelcomeView cards.
+- Add structured analytics export (JSON) alongside CSV for downstream processing.
+- Consider using `.task(id:)` cancellation tokens for kiosk banner/checkout banner to guarantee cleanup on state change.
+- Review backup retention policy (30 days) as a setting surfaced in Settings.
+- Consider a small `AppStrings` centralization for common labels and reuse across flows.
+
+---
