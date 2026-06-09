@@ -73,10 +73,6 @@ struct WelcomeView: View {
     @State private var queuedProtectedActionAfterDismiss: ProtectedAction?
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
-    // Hidden 10-tap reset state
-    @State private var headerTapCount = 0
-    @State private var headerTapWindowID = UUID()
-    
     // Added state for recently freed pagers and grace window duration
     @State private var recentlyFreedPagers: Set<String> = []
     @State private var pagerGraceWindowSeconds: Int = 3
@@ -182,14 +178,13 @@ struct WelcomeView: View {
             visitor.badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == entered
         }
     }
-    private var hasDuplicateActiveSignInToday: Bool {
+    private var hasDuplicateActiveSignIn: Bool {
         let enteredFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let enteredLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !enteredFirst.isEmpty, !enteredLast.isEmpty else { return false }
         return activeVisitors.contains { visitor in
             visitor.firstName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == enteredFirst &&
-            visitor.lastName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == enteredLast &&
-            Calendar.current.isDateInToday(visitor.checkIn)
+            visitor.lastName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == enteredLast
         }
     }
 
@@ -248,24 +243,7 @@ struct WelcomeView: View {
         ZStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    BrandHeader(onHeaderTap: {
-                        // Start/refresh a 5-second window for accumulating taps
-                        if headerTapCount == 0 {
-                            headerTapWindowID = UUID()
-                            Task { [id = headerTapWindowID] in
-                                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                                if !Task.isCancelled, id == headerTapWindowID {
-                                    headerTapCount = 0
-                                }
-                            }
-                        }
-                        headerTapCount += 1
-                        if headerTapCount >= 10 {
-                            headerTapCount = 0
-                            headerTapWindowID = UUID() // invalidate any pending reset task
-                            resetPINCompletely()
-                        }
-                    })
+                    BrandHeader()
                     formCard
                         .offset(y: -32)
                         .padding(.bottom, 48)
@@ -275,14 +253,6 @@ struct WelcomeView: View {
             .background(Color(.systemGroupedBackground))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func resetPINCompletely() {
-        _ = PinKeychain.reset()
-        hapticGenerator.prepare()
-        hapticGenerator.notificationOccurred(.warning)
-        activeAlert = .pinReset
-        invalidatePinSession()
     }
 
     // MARK: - Form card
@@ -839,7 +809,7 @@ struct WelcomeView: View {
             activeAlert = .badgeConflict
             return
         }
-        if !allowDuplicateSignIn && hasDuplicateActiveSignInToday {
+        if !allowDuplicateSignIn && hasDuplicateActiveSignIn {
             activeAlert = .duplicateSignIn
             return
         }
@@ -1466,7 +1436,6 @@ struct WelcomeView: View {
 
 
 private struct BrandHeader: View {
-    var onHeaderTap: () -> Void
     var body: some View {
         ZStack(alignment: .bottom) {
             // Blue band
@@ -1524,12 +1493,6 @@ private struct BrandHeader: View {
                 )
                 .frame(height: 48)
             }
-        }
-        .overlay(alignment: .center) {
-            // Transparent full-area tap target to ensure taps register even when scrolling
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { onHeaderTap() }
         }
     }
 }
@@ -1827,4 +1790,3 @@ private struct PagerSelectionSheet: View {
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
 }
-

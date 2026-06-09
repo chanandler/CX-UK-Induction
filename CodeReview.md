@@ -15,9 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-071 | 🔴 CRITICAL | WelcomeView.swift | Hidden 10-tap header gesture fully resets admin PIN without current PIN/authentication, allowing local privilege bypass | `headerTapCount` + `resetPINCompletely()` in `BrandHeader` tap handler |
-| BUG-072 | 🟠 HIGH | CSVExport.swift | Regression risk against BUG-048 intent: export writes `"N/A"` sentinels for empty car/pager/badge/check-out fields; re-import preserves `"N/A"` as real values and can poison pager/badge logic | `car.isEmpty ? "N/A"` / `pager.isEmpty ? "N/A"` / `badge.isEmpty ? "N/A"` / checkout `"N/A"` |
-| BUG-073 | 🟠 HIGH | WelcomeView.swift | Regression of BUG-031 behavior: duplicate active sign-in guard only checks visitors signed in **today**; active duplicate records from prior days bypass the guard | `hasDuplicateActiveSignInToday` includes `Calendar.current.isDateInToday(visitor.checkIn)` |
 | BUG-074 | 🟡 MEDIUM | Models.swift | Regression of BUG-058 behavior: pre-registration badge conflict check still falls back to `createdAt` when `visitDate` is nil, causing false conflicts against undated records | `candidateDate = p.visitDate ?? p.createdAt` in `addPreRegisteredVisitor` |
 | BUG-075 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Pre-registration admin shows badge-conflict UI for any add failure (including persistence errors), giving incorrect remediation to users | On `onAdd == false`, code sets both `showLocalError` and `badgeConflict` unconditionally |
 | BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
@@ -44,6 +41,9 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-071 fixed — removed hidden header tap gesture that reset admin PIN without authentication |
+| 2026-06-09 | ✅ CSVExport.swift | BUG-072 fixed — CSV export now writes empty values (not `"N/A"`) for optional fields so import round-trip preserves semantics |
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-073 fixed — duplicate active sign-in guard now checks all active visitors, not only records signed in today |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-058 fixed — Badge conflict allocation now only considers pre-registered records with an explicit visitDate; fallback to createdAt removed to avoid false conflicts |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-049 fixed — Backup scheduler now uses the settings-controlled time (hour/minute) instead of a hardcoded 06:00 |
 | 2026-06-09 | ✅ CSVExport.swift + WelcomeView.swift + VisitorTabs.swift | BUG-048 fixed — Centralized CSV export into CSVExporter with a single unified schema; both exports now use the same code |

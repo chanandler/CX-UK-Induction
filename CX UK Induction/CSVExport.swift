@@ -28,12 +28,12 @@ struct CSVExporter {
                 v.lastName,
                 v.company,
                 v.visiting,
-                car.isEmpty ? "N/A" : car,
+                car,
                 v.blockedCar ? "Yes" : "No",
-                pager.isEmpty ? "N/A" : pager,
-                badge.isEmpty ? "N/A" : badge,
+                pager,
+                badge,
                 DateFormatter.csvDateTime.string(from: v.checkIn),
-                v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? "N/A",
+                v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? "",
                 v.wasAutoCheckedOut ? "Yes" : "No",
                 v.wasPreRegistered ? "Yes" : "No"
             ]
