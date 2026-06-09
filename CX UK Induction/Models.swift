@@ -634,16 +634,15 @@ final class VisitorStore {
         return records
     }
 
-    /// Normalize duplicate key to minute precision to avoid mismatches
+    /// Normalize duplicate key to minute precision using an integer timestamp to avoid
+    /// floating-point precision issues. We floor the reference time to whole minutes so
+    /// CSV-rounded times (no seconds) and persisted times (with seconds/subseconds) map
+    /// to the same logical minute bucket.
     private func dupKey(_ first: String, _ last: String, _ date: Date) -> String {
-        // Normalize to minute precision so CSV-rounded times and persisted times
-        // (which may include seconds/subseconds) map to the same logical key.
-        let cal = Calendar(identifier: .gregorian)
-        let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        // Force unwrap is safe here because the provided components are sufficient to form a date.
-        let minute = cal.date(from: comps) ?? date
-        let stamp = minute.timeIntervalSinceReferenceDate
-        return "\(first.lowercased())|\(last.lowercased())|\(stamp)"
+        // Compute minutes since the reference date as an Int to avoid Double precision artifacts.
+        let seconds = date.timeIntervalSinceReferenceDate
+        let minutesInt = Int(floor(seconds / 60.0))
+        return "\(first.lowercased())|\(last.lowercased())|\(minutesInt)"
     }
 
     /// A minimal quote-aware CSV line parser that handles double-quoted fields
