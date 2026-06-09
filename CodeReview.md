@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-048 | 🟡 MEDIUM | VisitorTabs.swift + WelcomeView.swift | CSV export logic duplicated with different headers/columns; risk of divergence and inconsistent backups/exports | `VisitorTabs.ArchivedVisitorsView.exportCSV()` vs `WelcomeView.exportCSV(from:)` produce different schemas |
 | BUG-049 | 🟡 MEDIUM | WelcomeView.swift | Backup scheduler time is hardcoded to 06:00 and not coupled to settings segmented control; no user-configurable time like auto-checkout | `startBackupScheduler()` uses `scheduleDailyBackup(atHour: 6, minute: 0)` while settings only toggles enable |
 | BUG-058 | 🟡 MEDIUM | WelcomeView.swift | `allocatedBadges(on:)` assumes `PreRegisteredVisitor.visitDate` exists; if schema differs, fallback to `createdAt` may cause false conflicts | Comment notes assumption; enforce via model or guard logic |
 | BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
@@ -42,6 +41,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ CSVExport.swift + WelcomeView.swift + VisitorTabs.swift | BUG-048 fixed — Centralized CSV export into CSVExporter with a single unified schema; both exports now use the same code |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift | BUG-047 fixed — Heatmap now uses a consistent Monday-first mapping with locale-safe labels; counts and labels aligned |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift | BUG-054 fixed — Corrected heatmap empty-state check to sum counts instead of using an invalid tuple count test |
 | 2026-06-09 | ✅ WelcomeView.swift + AdminAndUtilitiesViews.swift | BUG-061 fixed — Added settings-controlled toggle (autoReturnPagersOnAutoCheckout) and gated auto-return of staff pagers during auto-checkout; default off to avoid surprises |
+

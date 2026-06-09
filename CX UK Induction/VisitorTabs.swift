@@ -208,28 +208,7 @@ struct ArchivedVisitorsView: View {
     }
 
     private func exportCSV() -> URL? {
-        let header = ["First Name","Last Name","Company","Visiting","Car Registration","Check In","Check Out","Pre-Registered"]
-        let rows: [[String]] = filteredArchived.map { v in
-            [v.firstName,
-             v.lastName,
-             v.company,
-             v.visiting,
-             v.carRegistration,
-             DateFormatter.csvDateTime.string(from: v.checkIn),
-             v.checkOut.map { DateFormatter.csvDateTime.string(from: $0) } ?? "",
-             v.wasPreRegistered ? "Yes" : "No"]
-        }
-        let csv = ([header] + rows).map { row in
-            row.map { $0.escapedAsCSVField }.joined(separator: ",")
-        }.joined(separator: "\n")
-
-        do {
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("archived_visitors_\(Int(Date().timeIntervalSince1970)).csv")
-            try csv.write(to: url, atomically: true, encoding: .utf8)
-            return url
-        } catch {
-            return nil
-        }
+        return CSVExporter.exportVisitors(filteredArchived)
     }
 }
 
