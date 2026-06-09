@@ -615,11 +615,14 @@ struct PreRegistrationAdminView: View {
 
                         // Local badge conflict validation: same date and same badge number already allocated
                         let sameDay = Calendar.current.startOfDay(for: visitDate)
+                        let normalizedEnteredBadge = normalizedBadgeValue(badgeNumber)
                         let conflict = preRegisteredVisitors.contains { v in
-                            guard !badgeNumber.isEmpty, !v.badgeNumber.isEmpty else { return false }
+                            guard !normalizedEnteredBadge.isEmpty else { return false }
+                            let normalizedExistingBadge = normalizedBadgeValue(v.badgeNumber)
+                            guard !normalizedExistingBadge.isEmpty else { return false }
                             guard let vDate = v.visitDate else { return false }
                             let vDay = Calendar.current.startOfDay(for: vDate)
-                            return v.badgeNumber == badgeNumber && vDay == sameDay
+                            return normalizedExistingBadge == normalizedEnteredBadge && vDay == sameDay
                         }
 
                         if conflict {
@@ -690,6 +693,10 @@ struct PreRegistrationAdminView: View {
             get: { badgeNumber },
             set: { badgeNumber = $0.filter(\.isNumber) }
         )
+    }
+
+    private func normalizedBadgeValue(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
     private func clearForm() {
@@ -802,10 +809,14 @@ struct ReturningVisitorSearchView: View {
             return firstMatches && lastMatches
         }
 
-        // Deduplicate by (first, last) keeping the most recent record by checkIn
+        // Deduplicate by (first, last, company) keeping the most recent record by checkIn.
+        // Including company avoids merging distinct people with the same name.
         var latestByName: [String: Visitor] = [:]
         for v in matches {
-            let key = "\(v.firstName.lowercased())|\(v.lastName.lowercased())"
+            let first = v.firstName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let last = v.lastName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let company = v.company.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let key = "\(first)|\(last)|\(company)"
             if let existing = latestByName[key] {
                 if v.checkIn > existing.checkIn { latestByName[key] = v }
             } else {

@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
-| BUG-065 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `ReturningVisitorSearchView` dedup key uses lowercased names only; company changes may merge different people with same name; consider including company | Dedup key: `first|last` only |
 | BUG-067 | 🟡 MEDIUM | WelcomeView.swift | `fileImporter` allowed content types include very broad `.data` and `.text`; may surface irrelevant files | Consider restricting to CSV UTTypes only |
 | BUG-070 | 🟡 MEDIUM | WelcomeView.swift | `pendingSubmit`/`hasRoutedToInduction`/`showPagerPrompt` interplay is complex; race risk remains if alert and sheet overlap; consider unifying via a small state machine | Complex guard in `routeToInductionIfReady()` |
 | BUG-050 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Settings strings and some labels remain hardcoded and not localized | Examples: "Backup Now", "Import CSV…", "Open Analytics", section titles, etc. |
@@ -39,6 +37,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-062 fixed — local pre-registration badge conflict check now compares normalized badge values (trimmed/lowercased) |
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-065 fixed — returning-visitor dedup key now includes company (`first|last|company`) to avoid merging distinct same-name people |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-075 fixed — pre-registration add failures now show the actual store error and only enable badge-conflict UI when the error is genuinely a badge conflict |
 | 2026-06-09 | ✅ Models.swift | BUG-074 fixed — pre-registration badge conflict now checks only records with explicit `visitDate`; no fallback to `createdAt` |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-071 fixed — removed hidden header tap gesture that reset admin PIN without authentication |
