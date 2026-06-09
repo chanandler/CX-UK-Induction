@@ -50,36 +50,36 @@ struct AutoCheckoutSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Auto Checkout") {
-                    Toggle("Enable", isOn: $enabled)
-                    Picker("Auto-checkout time", selection: fixedTimeSelectionBinding) {
-                        Text("5:00 AM (next day)").tag(0)
-                        Text("6:00 AM (next day)").tag(1)
-                        Text("7:00 AM (next day)").tag(2)
+                Section(String(localized: "settings.section.auto_checkout")) {
+                    Toggle(String(localized: "settings.auto_checkout.enable"), isOn: $enabled)
+                    Picker(String(localized: "settings.auto_checkout.time"), selection: fixedTimeSelectionBinding) {
+                        Text(String(localized: "settings.auto_checkout.time.5am")).tag(0)
+                        Text(String(localized: "settings.auto_checkout.time.6am")).tag(1)
+                        Text(String(localized: "settings.auto_checkout.time.7am")).tag(2)
                     }
                     .pickerStyle(.segmented)
-                    Toggle("Return all staff pagers during auto-checkout", isOn: $autoReturnPagersOnAutoCheckout)
+                    Toggle(String(localized: "settings.auto_checkout.return_all_pagers"), isOn: $autoReturnPagersOnAutoCheckout)
                         .tint(.red)
                 }
-                Section("Backups") {
-                    Toggle("Enable daily backup", isOn: $autoBackupEnabled)
-                    Button("Backup Now", action: onManualBackup)
-                    Button("Import CSV…", action: onImportCSV)
+                Section(String(localized: "settings.section.backups")) {
+                    Toggle(String(localized: "settings.backups.enable_daily"), isOn: $autoBackupEnabled)
+                    Button(String(localized: "settings.backups.backup_now"), action: onManualBackup)
+                    Button(String(localized: "settings.backups.import_csv"), action: onImportCSV)
                     if existingBackups.isEmpty {
-                        Text("No backups found").foregroundStyle(.secondary)
+                        Text(String(localized: "settings.backups.none_found")).foregroundStyle(.secondary)
                     } else {
                         ForEach(existingBackups, id: \.self) { url in
                             Text(url.lastPathComponent)
                         }
                     }
                 }
-                Section("Admin") {
-                    Button("Open Analytics", action: onOpenAnalytics)
-                    Button("Pre-Registration Admin", action: onOpenPreRegistrationAdmin)
-                    Button("Lock Admin Session", action: onLockAdminSession)
+                Section(String(localized: "settings.section.admin")) {
+                    Button(String(localized: "settings.admin.open_analytics"), action: onOpenAnalytics)
+                    Button(String(localized: "settings.admin.preregistration_admin"), action: onOpenPreRegistrationAdmin)
+                    Button(String(localized: "settings.admin.lock_session"), action: onLockAdminSession)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(String(localized: "settings.title"))
         }
     }
 
@@ -456,7 +456,7 @@ struct PreRegisteredListView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             if let visitDate = visitor.visitDate {
-                                Text("Visit on: \(dateOnlyFormatter.string(from: visitDate))")
+                                Text("Visit on: \(Self.dateOnlyFormatter.string(from: visitDate))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             } else {
@@ -543,12 +543,12 @@ struct PreRegisteredListView: View {
         )
     }
 
-    private var dateOnlyFormatter: DateFormatter {
+    private static let dateOnlyFormatter: DateFormatter = {
         let df = DateFormatter()
         df.dateStyle = .medium
         df.timeStyle = .none
         return df
-    }
+    }()
 }
 
 // MARK: - Pre-Registration Admin

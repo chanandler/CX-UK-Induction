@@ -113,3 +113,21 @@
 "welcome.returning.results_section" = "Results";
 "welcome.returning.enter_search_hint" = "Enter at least one search field to find a returning visitor.";
 "welcome.returning.no_results" = "No matching visitors found.";
+
+"settings.title" = "Settings";
+"settings.section.auto_checkout" = "Auto Checkout";
+"settings.auto_checkout.enable" = "Enable";
+"settings.auto_checkout.time" = "Auto-checkout time";
+"settings.auto_checkout.time.5am" = "5:00 AM (next day)";
+"settings.auto_checkout.time.6am" = "6:00 AM (next day)";
+"settings.auto_checkout.time.7am" = "7:00 AM (next day)";
+"settings.auto_checkout.return_all_pagers" = "Return all staff pagers during auto-checkout";
+"settings.section.backups" = "Backups";
+"settings.backups.enable_daily" = "Enable daily backup";
+"settings.backups.backup_now" = "Backup Now";
+"settings.backups.import_csv" = "Import CSV…";
+"settings.backups.none_found" = "No backups found";
+"settings.section.admin" = "Admin";
+"settings.admin.open_analytics" = "Open Analytics";
+"settings.admin.preregistration_admin" = "Pre-Registration Admin";
+"settings.admin.lock_session" = "Lock Admin Session";
