@@ -30,6 +30,7 @@ struct WelcomeView: View {
     @State private var showBlockedCarPrompt = false
     @State private var showPagerPrompt = false
     @State private var pendingSubmit = false
+    @State private var hasRoutedToInduction = false
     @State private var showBadgeConflictAlert = false
     @State private var showDuplicateSignInAlert = false
     
@@ -569,10 +570,8 @@ struct WelcomeView: View {
                 Button(String(localized: "common.no"), role: .cancel) {
                     blockedCar = false
                     pagerNumber = ""
-                    if pendingSubmit {
-                        showingInduction = true
-                        // pendingSubmit will be cleared in the induction completion handler
-                    }
+                    routeToInductionIfReady()
+                    // pendingSubmit will be cleared in the induction completion handler
                 }
                 Button(String(localized: "common.yes")) {
                     blockedCar = true
@@ -616,10 +615,7 @@ struct WelcomeView: View {
                     onSave: { selected in
                         pagerNumber = selected
                         showPagerPrompt = false
-                        if pendingSubmit {
-                            showingInduction = true
-                            // pendingSubmit will be cleared in the induction completion handler
-                        }
+                        routeToInductionIfReady()
                     }
                 )
                 .interactiveDismissDisabled(true)
@@ -656,10 +652,11 @@ struct WelcomeView: View {
                     visitorLastName: lastName
                 ) { confirmed in
                     showingInduction = false
+                    pendingSubmit = false
+                    hasRoutedToInduction = false
                     if confirmed {
                         submit()
                     }
-                    pendingSubmit = false
                 }
                 .ignoresSafeArea()
             }
@@ -692,16 +689,14 @@ struct WelcomeView: View {
         decoratedContentPart2
             .onChange(of: showPagerPrompt) { oldValue, newValue in
                 if oldValue == true && newValue == false {
-                    if pendingSubmit {
-                        showingInduction = true
-                    }
+                    routeToInductionIfReady()
                     pendingSubmit = false
                 }
             }
             .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
                 if oldValue == true && newValue == false {
                     if pendingSubmit && !showPagerPrompt && !blockedCar {
-                        showingInduction = true
+                        routeToInductionIfReady()
                         pendingSubmit = false
                     }
                 }
@@ -1080,12 +1075,13 @@ struct WelcomeView: View {
                 showBadgeConflictAlert = true
                 return
             }
+            hasRoutedToInduction = false
             if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 pendingSubmit = true
                 showBlockedCarPrompt = true
             } else {
                 pendingSubmit = true
-                showingInduction = true
+                routeToInductionIfReady()
             }
         }) {
             Label("Register", systemImage: "person.badge.plus")
@@ -1400,7 +1396,7 @@ struct WelcomeView: View {
         hasAttemptedSubmit = true
         pendingSubmit = true
         if droveCarRegistration == nil {
-            showingInduction = true
+            routeToInductionIfReady()
         }
     }
 
@@ -1425,7 +1421,7 @@ struct WelcomeView: View {
         hasAttemptedSubmit = true
         pendingSubmit = true
         if droveCarRegistration == nil {
-            showingInduction = true
+            routeToInductionIfReady()
         }
     }
 
@@ -1475,6 +1471,14 @@ struct WelcomeView: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Signed in \(visitorCount). Staff pagers \(pagerCount)")
+    }
+    
+    private func routeToInductionIfReady() {
+        // Prevent double-presentation. Only proceed if a submission is pending,
+        // no pager sheet is currently showing, and we haven't already routed.
+        guard pendingSubmit, !showPagerPrompt, !showBlockedCarPrompt, !hasRoutedToInduction else { return }
+        hasRoutedToInduction = true
+        showingInduction = true
     }
 }
 
