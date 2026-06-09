@@ -61,7 +61,6 @@ struct AutoCheckoutSettingsView: View {
                 Section("Backups") {
                     Toggle("Enable daily backup", isOn: $autoBackupEnabled)
                     Button("Backup Now", action: onManualBackup)
-                    Button("Export Backup Now", action: onManualBackup)
                     Button("Import CSV…", action: onImportCSV)
                     if existingBackups.isEmpty {
                         Text("No backups found").foregroundStyle(.secondary)
