@@ -518,12 +518,12 @@ struct PreRegisteredListView: View {
         return base.sorted { a, b in
             switch (a.visitDate, b.visitDate) {
             case let (da?, db?):
-                if da != db { return da < db }
+                if da != db { return da < db } // earlier dates first
                 return a.fullName.lowercased() < b.fullName.lowercased()
-            case (nil, .some):
-                return false // b has a date, a does not — b first
             case (.some, nil):
                 return true  // a has a date, b does not — a first
+            case (nil, .some):
+                return false // b has a date, a does not — b first
             case (nil, nil):
                 return a.fullName.lowercased() < b.fullName.lowercased()
             }

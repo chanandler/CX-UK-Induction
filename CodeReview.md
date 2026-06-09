@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-040 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `AutoCheckoutSettingsView` shows both "Backup Now" and "Export Backup Now" wired to the same action | Both buttons call `onManualBackup`; clarify intent or remove duplication (one might be for local write, the other for share/export). |
 | BUG-041 | 🟢 LOW | AdminAndUtilitiesViews.swift | `PreRegisteredListView` date label shows "Date not set" but sorts undated visitors after dated ones inconsistently with comment | Sorting comment says "b first" when `a` has no date, but actual return puts `b` first; verify desired order and adjust code/comment for alignment. |
 | BUG-042 | 🟢 LOW | WelcomeView.swift | Multiple `.alert` and `.sheet` modifiers create a long decorator chain, increasing maintenance complexity | `decoratedContentPart1/2/3` split helps, but consider consolidating related alerts into a single enum-driven presentation to reduce state coupling. |
 | BUG-043 | 🟢 LOW | VisitorTabs.swift | `ClearBackgroundView` manipulates UIKit view hierarchy asynchronously for transparency | Could cause flicker or maintenance risk; consider using `.scrollContentBackground(.hidden)` and explicit `.background(Color.clear)` only, or contain UIKit hack behind platform checks. |
@@ -31,6 +30,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-040 fixed — Removed redundant "Export Backup Now" button; "Backup Now" retains local CSV backup behavior |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-039 fixed — Centralized induction routing via routeToInductionIfReady() to prevent double-presentation race |
 | 2026-06-04 | ✅ WelcomeView.swift | BUG-038 fixed — Prepared haptics before presenting critical alerts (blocked-car prompt, badge conflict, duplicate sign-in) for snappier feedback |
 | 2026-06-04 | ✅ Models.swift | BUG-037 fixed — Updated backup CSV comment to reflect 12 columns (includes Pre-Registered) to match export header |
