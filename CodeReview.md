@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-041 | 🟢 LOW | AdminAndUtilitiesViews.swift | `PreRegisteredListView` date label shows "Date not set" but sorts undated visitors after dated ones inconsistently with comment | Sorting comment says "b first" when `a` has no date, but actual return puts `b` first; verify desired order and adjust code/comment for alignment. |
 | BUG-042 | 🟢 LOW | WelcomeView.swift | Multiple `.alert` and `.sheet` modifiers create a long decorator chain, increasing maintenance complexity | `decoratedContentPart1/2/3` split helps, but consider consolidating related alerts into a single enum-driven presentation to reduce state coupling. |
 | BUG-043 | 🟢 LOW | VisitorTabs.swift | `ClearBackgroundView` manipulates UIKit view hierarchy asynchronously for transparency | Could cause flicker or maintenance risk; consider using `.scrollContentBackground(.hidden)` and explicit `.background(Color.clear)` only, or contain UIKit hack behind platform checks. |
 | BUG-044 | 🟢 LOW | Models.swift | `dupKey` normalizes to minute precision but uses `timeIntervalSinceReferenceDate` (Double) which still includes seconds component from constructed minute | The constructed date uses only Y-M-D-H-M, which is fine, but documenting the rationale would help; alternatively store an Int minute timestamp to avoid float comparisons. |
@@ -30,6 +29,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | AdminAndUtilitiesViews.swift | BUG-041 fixed — Clarified date sort vs. label in PreRegisteredListView; code and comment aligned |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-040 fixed — Removed redundant "Export Backup Now" button; "Backup Now" retains local CSV backup behavior |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-039 fixed — Centralized induction routing via routeToInductionIfReady() to prevent double-presentation race |
 | 2026-06-04 | ✅ WelcomeView.swift | BUG-038 fixed — Prepared haptics before presenting critical alerts (blocked-car prompt, badge conflict, duplicate sign-in) for snappier feedback |
