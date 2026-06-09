@@ -27,17 +27,13 @@ struct WelcomeView: View {
     @State private var hasAttemptedSubmit = false
 
     @State private var activeSheet: ActiveSheet?
-    @State private var showBlockedCarPrompt = false
     @State private var showPagerPrompt = false
     @State private var pendingSubmit = false
     @State private var hasRoutedToInduction = false
-    @State private var showBadgeConflictAlert = false
-    @State private var showDuplicateSignInAlert = false
     
     @State private var showingInduction = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
     
-    @State private var showRegisteredAlert = false
     @State private var lastRegisteredName: String = ""
     @State private var isSigningInPreRegisteredVisitor = false
     @State private var selectedPreRegisteredVisitorID: UUID?
@@ -46,9 +42,8 @@ struct WelcomeView: View {
     @State private var checkoutBannerSecondsRemaining = 5
     @State private var checkoutBannerCountdownID = UUID()
 
-    @State private var showKioskBanner = false
     @State private var kioskBannerText = ""
-    @State private var showKioskConfirm = false
+    @State private var showKioskBanner = false
     
     @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
@@ -76,8 +71,6 @@ struct WelcomeView: View {
     @State private var queuedProtectedActionAfterDismiss: ProtectedAction?
     @AppStorage("pinLastUnlockTimestamp") private var pinLastUnlockTimestamp: Double = 0
 
-    @State private var showPersistenceError = false
-
     // Hidden 10-tap reset state
     @State private var headerTapCount = 0
     @State private var headerTapWindowID = UUID()
@@ -85,6 +78,29 @@ struct WelcomeView: View {
     // Added state for recently freed pagers and grace window duration
     @State private var recentlyFreedPagers: Set<String> = []
     @State private var pagerGraceWindowSeconds: Int = 3
+
+    // New consolidated alert enum and state
+    enum AppAlert: Identifiable, Equatable {
+        case registered(name: String)
+        case blockedCarPrompt
+        case badgeConflict
+        case duplicateSignIn
+        case kioskConfirm(enabled: Bool)
+        case pinReset
+        case persistenceError(message: String)
+        var id: String {
+            switch self {
+            case .registered: return "registered"
+            case .blockedCarPrompt: return "blockedCarPrompt"
+            case .badgeConflict: return "badgeConflict"
+            case .duplicateSignIn: return "duplicateSignIn"
+            case .kioskConfirm(let enabled): return enabled ? "kioskConfirm_disable" : "kioskConfirm_enable"
+            case .pinReset: return "pinReset"
+            case .persistenceError: return "persistenceError"
+            }
+        }
+    }
+    @State private var activeAlert: AppAlert?
 
     @FocusState private var focusedField: Field?
     enum Field: Hashable {
@@ -148,8 +164,6 @@ struct WelcomeView: View {
         var id: URL { url }
     }
     @State private var shareItem: ShareItem?
-    
-    @State private var showPinResetAlert = false
     
     init() {}
     
@@ -263,7 +277,7 @@ struct WelcomeView: View {
         _ = PinKeychain.reset()
         hapticGenerator.prepare()
         hapticGenerator.notificationOccurred(.warning)
-        showPinResetAlert = true
+        activeAlert = .pinReset
         invalidatePinSession()
     }
 
@@ -279,7 +293,7 @@ struct WelcomeView: View {
                 visiting: $visiting,
                 carRegistration: $carRegistration,
                 badgeNumber: $badgeNumber,
-                showBlockedCarPrompt: $showBlockedCarPrompt,
+                showBlockedCarPrompt: Binding(get: { activeAlert == .blockedCarPrompt }, set: { newValue in if newValue { activeAlert = .blockedCarPrompt } }),
                 firstNameInvalid: firstNameInvalid,
                 lastNameInvalid: lastNameInvalid,
                 companyInvalid: companyInvalid,
@@ -541,7 +555,7 @@ struct WelcomeView: View {
                                     importSummary = nil
                                     activeSheet = nil
                                 } else {
-                                    showPersistenceError = true
+                                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
                                 }
                             },
                             onCancel: {
@@ -554,51 +568,74 @@ struct WelcomeView: View {
                     }
                 }
             }
-            .alert(String(localized: "welcome.alert.registered.title"), isPresented: $showRegisteredAlert) {
-                Button(String(localized: "common.ok"), role: .cancel) { }
-            } message: {
-                let template = String(localized: "welcome.alert.registered.message_template")
-                let registeredMessage: String = String(format: template, lastRegisteredName)
-                Text(registeredMessage)
-                    .multilineTextAlignment(.center)
-                Text(String(localized: "welcome.prereg.sign_out_reminder"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            // Ask if they've blocked a car when a car reg is provided
-            .alert(String(localized: "welcome.alert.blocked_car.title"), isPresented: $showBlockedCarPrompt) {
-                Button(String(localized: "common.no"), role: .cancel) {
-                    blockedCar = false
-                    pagerNumber = ""
-                    routeToInductionIfReady()
-                    // pendingSubmit will be cleared in the induction completion handler
+            .alert(item: $activeAlert) { alert in
+                switch alert {
+                case .registered(let name):
+                    return Alert(
+                        title: Text(String(localized: "welcome.alert.registered.title")),
+                        message: Text(String(format: String(localized: "welcome.alert.registered.message_template"), name)),
+                        dismissButton: .default(Text(String(localized: "common.ok")))
+                    )
+                case .blockedCarPrompt:
+                    return Alert(
+                        title: Text(String(localized: "welcome.alert.blocked_car.title")),
+                        message: Text(String(localized: "welcome.alert.blocked_car.message")),
+                        primaryButton: .cancel(Text(String(localized: "common.no")), action: {
+                            blockedCar = false
+                            pagerNumber = ""
+                            routeToInductionIfReady()
+                        }),
+                        secondaryButton: .default(Text(String(localized: "common.yes")), action: {
+                            blockedCar = true
+                            showPagerPrompt = true
+                        })
+                    )
+                case .badgeConflict:
+                    return Alert(
+                        title: Text(String(localized: "welcome.alert.badge_conflict.title")),
+                        message: Text(String(localized: "welcome.alert.badge_conflict.message")),
+                        dismissButton: .default(Text(String(localized: "common.ok")))
+                    )
+                case .duplicateSignIn:
+                    return Alert(
+                        title: Text(String(localized: "welcome.alert.duplicate_signin.title")),
+                        message: Text(String(localized: "welcome.alert.duplicate_signin.message")),
+                        primaryButton: .cancel(Text(String(localized: "common.cancel"))),
+                        secondaryButton: .default(Text(String(localized: "welcome.alert.duplicate_signin.continue")), action: {
+                            submit(allowDuplicateSignIn: true)
+                        })
+                    )
+                case .kioskConfirm(let enabled):
+                    return Alert(
+                        title: Text(enabled ? "Disable Kiosk Mode?" : "Enable Kiosk Mode?"),
+                        message: Text(enabled ? "Reception controls will be unlocked and admin actions will require PIN again." : "The app UI will lock down to reception-safe mode. Admin actions will be hidden until unlocked with PIN."),
+                        primaryButton: .cancel(Text("Cancel")),
+                        secondaryButton: .default(Text(enabled ? "Disable" : "Enable"), action: {
+                            kioskModeEnabled.toggle()
+                            kioskBannerText = kioskModeEnabled ? "Kiosk Mode Enabled" : "Kiosk Mode Disabled"
+                            withAnimation { showKioskBanner = true }
+                            hapticGenerator.prepare()
+                            hapticGenerator.notificationOccurred(.success)
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                if !Task.isCancelled { withAnimation { showKioskBanner = false } }
+                            }
+                        })
+                    )
+                case .pinReset:
+                    return Alert(
+                        title: Text("Admin PIN Removed"),
+                        message: Text("The admin PIN was removed. Please set a new PIN to continue protecting admin actions."),
+                        primaryButton: .default(Text("Set a new PIN now"), action: { activeSheet = .pinChange }),
+                        secondaryButton: .cancel(Text("OK"))
+                    )
+                case .persistenceError(let message):
+                    return Alert(
+                        title: Text("Error"),
+                        message: Text(message),
+                        dismissButton: .default(Text("OK"), action: { store.lastError = nil })
+                    )
                 }
-                Button(String(localized: "common.yes")) {
-                    blockedCar = true
-                    showPagerPrompt = true
-                }
-            } message: {
-                Text(String(localized: "welcome.alert.blocked_car.message"))
-            }
-            .alert(String(localized: "welcome.alert.badge_conflict.title"), isPresented: $showBadgeConflictAlert) {
-                Button(String(localized: "common.ok"), role: .cancel) { }
-            } message: {
-                Text(String(localized: "welcome.alert.badge_conflict.message"))
-            }
-            .alert(String(localized: "welcome.alert.duplicate_signin.title"), isPresented: $showDuplicateSignInAlert) {
-                Button(String(localized: "common.cancel"), role: .cancel) { }
-                Button(String(localized: "welcome.alert.duplicate_signin.continue")) {
-                    submit(allowDuplicateSignIn: true)
-                }
-            } message: {
-                Text(String(localized: "welcome.alert.duplicate_signin.message"))
-            }
-            // PIN Reset Alert for 10 taps
-            .alert("Admin PIN Removed", isPresented: $showPinResetAlert) {
-                Button("Set a new PIN now") { activeSheet = .pinChange }
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("The admin PIN was removed. Please set a new PIN to continue protecting admin actions.")
             }
             // Pager sheet to capture contact number when a car is blocked
             .sheet(isPresented: $showPagerPrompt) {
@@ -619,23 +656,6 @@ struct WelcomeView: View {
                     }
                 )
                 .interactiveDismissDisabled(true)
-            }
-            .alert(kioskModeEnabled ? "Disable Kiosk Mode?" : "Enable Kiosk Mode?", isPresented: $showKioskConfirm) {
-                Button("Cancel", role: .cancel) { }
-                Button(kioskModeEnabled ? "Disable" : "Enable", role: kioskModeEnabled ? .destructive : .none) {
-                    kioskModeEnabled.toggle()
-                    kioskBannerText = kioskModeEnabled ? "Kiosk Mode Enabled" : "Kiosk Mode Disabled"
-                    withAnimation { showKioskBanner = true }
-                    hapticGenerator.prepare()
-                    hapticGenerator.notificationOccurred(.success)
-                    // Auto-hide after 2 seconds
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
-                        if !Task.isCancelled { withAnimation { showKioskBanner = false } }
-                    }
-                }
-            } message: {
-                Text(kioskModeEnabled ? "Reception controls will be unlocked and admin actions will require PIN again." : "The app UI will lock down to reception-safe mode. Admin actions will be hidden until unlocked with PIN.")
             }
     }
 
@@ -693,17 +713,12 @@ struct WelcomeView: View {
                     pendingSubmit = false
                 }
             }
-            .onChange(of: showBlockedCarPrompt) { oldValue, newValue in
-                if oldValue == true && newValue == false {
-                    if pendingSubmit && !showPagerPrompt && !blockedCar {
-                        routeToInductionIfReady()
-                        pendingSubmit = false
-                    }
-                }
+            .onChange(of: activeAlert) { oldValue, newValue in
+                // No action needed here for activeAlert changes
             }
             .onChange(of: store.lastError) { _, newValue in
-                if newValue != nil {
-                    showPersistenceError = true
+                if let newValue = newValue {
+                    activeAlert = .persistenceError(message: newValue.localizedDescription)
                 }
             }
             .onAppear {
@@ -766,7 +781,7 @@ struct WelcomeView: View {
                             } else {
                                 importSummary = nil
                                 importPending = []
-                                showPersistenceError = true
+                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
                             }
                         } else {
                             let (summary, pending) = store.previewImport(from: url, context: context)
@@ -777,25 +792,18 @@ struct WelcomeView: View {
                             } else {
                                 importSummary = nil
                                 importPending = []
-                                showPersistenceError = true
+                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
                             }
                         }
                     } catch {
                         store.lastError = .importMessage("Could not read file: \(error.localizedDescription)")
-                        showPersistenceError = true
+                        activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
                     }
 
                 case .failure(let error):
                     store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
-                    showPersistenceError = true
+                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
                 }
-            }
-            .alert("Error", isPresented: $showPersistenceError, presenting: store.lastError) { _ in
-                Button("OK", role: .cancel) {
-                    store.lastError = nil
-                }
-            } message: { error in
-                Text(error.localizedDescription)
             }
     }
 
@@ -813,11 +821,11 @@ struct WelcomeView: View {
     private func submit(allowDuplicateSignIn: Bool = false) {
         guard isValid else { return }
         guard !badgeAlreadyInUse else {
-            showBadgeConflictAlert = true
+            activeAlert = .badgeConflict
             return
         }
         if !allowDuplicateSignIn && hasDuplicateActiveSignInToday {
-            showDuplicateSignInAlert = true
+            activeAlert = .duplicateSignIn
             return
         }
         
@@ -861,13 +869,13 @@ struct WelcomeView: View {
             } catch {
                 context.rollback()
                 store.lastError = .saveFailed(underlying: error)
-                showPersistenceError = true
+                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
             }
         }
         selectedPreRegisteredVisitorID = nil
         isSigningInPreRegisteredVisitor = false
         lastRegisteredName = name
-        showRegisteredAlert = true
+        activeAlert = .registered(name: name)
     }
     
     private func startScheduler() {
@@ -900,7 +908,7 @@ struct WelcomeView: View {
             shareItem = ShareItem(url: url, deleteOnDismiss: false)
         } else {
             store.lastError = .importMessage("Backup failed: could not write file.")
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         }
     }
 
@@ -927,14 +935,14 @@ struct WelcomeView: View {
                 }
             }
         } else {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         }
     }
 
     private func checkOutSilently(_ visitor: Visitor) {
         store.checkOut(context, visitor)
         if store.lastError != nil {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         }
     }
 
@@ -953,7 +961,7 @@ struct WelcomeView: View {
             wasPreRegistered: false
         )
         if store.lastError != nil {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         } else {
             // Optional: brief haptic or feedback could be added here
         }
@@ -970,14 +978,14 @@ struct WelcomeView: View {
         if store.lastError == nil {
             activeSheet = nil
         } else {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         }
     }
 
     private func returnStaffPager(_ issue: StaffPagerIssue) {
         store.returnStaffPager(context, issue)
         if store.lastError != nil {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         } else {
             let pager = issue.pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             if !pager.isEmpty {
@@ -1016,7 +1024,7 @@ struct WelcomeView: View {
     private func deletePreRegisteredVisitor(_ visitor: PreRegisteredVisitor) {
         store.deletePreRegisteredVisitor(context, visitor)
         if store.lastError != nil {
-            showPersistenceError = true
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
         }
     }
     
@@ -1072,13 +1080,13 @@ struct WelcomeView: View {
             hasAttemptedSubmit = true
             guard isValid else { return }
             guard !badgeAlreadyInUse else {
-                showBadgeConflictAlert = true
+                activeAlert = .badgeConflict
                 return
             }
             hasRoutedToInduction = false
             if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 pendingSubmit = true
-                showBlockedCarPrompt = true
+                activeAlert = .blockedCarPrompt
             } else {
                 pendingSubmit = true
                 routeToInductionIfReady()
@@ -1360,7 +1368,7 @@ struct WelcomeView: View {
                 shareItem = ShareItem(url: url)
             } else {
                 store.lastError = .importMessage("Export failed: could not create CSV file.")
-                showPersistenceError = true
+                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
             }
         case .signInBook:
             activeSheet = .signInBook
@@ -1371,7 +1379,7 @@ struct WelcomeView: View {
         case .preRegistrationAdmin:
             activeSheet = .preRegistrationAdmin
         case .kioskModeToggle:
-            showKioskConfirm = true
+            activeAlert = .kioskConfirm(enabled: kioskModeEnabled)
         }
     }
 
@@ -1384,7 +1392,7 @@ struct WelcomeView: View {
             carRegistration = droveCarRegistration
             blockedCar = false
             pagerNumber = ""
-            showBlockedCarPrompt = true
+            activeAlert = .blockedCarPrompt
         } else {
             carRegistration = ""
             blockedCar = false
@@ -1409,7 +1417,7 @@ struct WelcomeView: View {
             carRegistration = droveCarRegistration
             blockedCar = false
             pagerNumber = ""
-            showBlockedCarPrompt = true
+            activeAlert = .blockedCarPrompt
         } else {
             carRegistration = ""
             blockedCar = false
@@ -1476,7 +1484,7 @@ struct WelcomeView: View {
     private func routeToInductionIfReady() {
         // Prevent double-presentation. Only proceed if a submission is pending,
         // no pager sheet is currently showing, and we haven't already routed.
-        guard pendingSubmit, !showPagerPrompt, !showBlockedCarPrompt, !hasRoutedToInduction else { return }
+        guard pendingSubmit, !showPagerPrompt, activeAlert != .blockedCarPrompt, !hasRoutedToInduction else { return }
         hasRoutedToInduction = true
         showingInduction = true
     }
