@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-047 | 🟠 HIGH | AnalyticsDashboardView.swift | Heatmap weekday mapping logic is confusing/inconsistent; counts keyed by raw weekday (Sun=1..Sat=7) but rendered in Mon..Sun order with remapped indices — risk of mislabeled rows in non-English locales | See comments in `heatmapMatrix(for:)` around `orderedWeekdays` and label index math; verify `shortWeekdaySymbols` indexing and mapping correctness |
-| BUG-054 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Heatmap data emptiness check uses `matrix.allSatisfy({ $0.count == 0 })` which is incorrect because `matrix` is an array of tuples, not arrays; the condition is always false | The closure references `$0.count` on a tuple; should check aggregated counts instead (e.g., `matrix.allSatisfy { $0.count == 0 }` is invalid at compile time or misleading if compiled) |
 | BUG-048 | 🟡 MEDIUM | VisitorTabs.swift + WelcomeView.swift | CSV export logic duplicated with different headers/columns; risk of divergence and inconsistent backups/exports | `VisitorTabs.ArchivedVisitorsView.exportCSV()` vs `WelcomeView.exportCSV(from:)` produce different schemas |
 | BUG-049 | 🟡 MEDIUM | WelcomeView.swift | Backup scheduler time is hardcoded to 06:00 and not coupled to settings segmented control; no user-configurable time like auto-checkout | `startBackupScheduler()` uses `scheduleDailyBackup(atHour: 6, minute: 0)` while settings only toggles enable |
 | BUG-058 | 🟡 MEDIUM | WelcomeView.swift | `allocatedBadges(on:)` assumes `PreRegisteredVisitor.visitDate` exists; if schema differs, fallback to `createdAt` may cause false conflicts | Comment notes assumption; enforce via model or guard logic |
@@ -44,4 +42,6 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AnalyticsDashboardView.swift | BUG-047 fixed — Heatmap now uses a consistent Monday-first mapping with locale-safe labels; counts and labels aligned |
+| 2026-06-09 | ✅ AnalyticsDashboardView.swift | BUG-054 fixed — Corrected heatmap empty-state check to sum counts instead of using an invalid tuple count test |
 | 2026-06-09 | ✅ WelcomeView.swift + AdminAndUtilitiesViews.swift | BUG-061 fixed — Added settings-controlled toggle (autoReturnPagersOnAutoCheckout) and gated auto-return of staff pagers during auto-checkout; default off to avoid surprises |

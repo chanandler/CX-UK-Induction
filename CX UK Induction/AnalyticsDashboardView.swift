@@ -105,7 +105,8 @@ struct AnalyticsDashboardView: View {
 
                         // Heatmap
                         let matrix = heatmapMatrix(for: selectedHeatmapMetric)
-                        if matrix.allSatisfy({ $0.count == 0 }) {
+                        let totalCount = matrix.reduce(0) { $0 + $1.count }
+                        if totalCount == 0 {
                             emptyState("No data for selected metric in this period")
                         } else {
                             Chart(matrix, id: \.hour) { item in
@@ -269,62 +270,54 @@ struct AnalyticsDashboardView: View {
         let endDate = min(periodInterval.end, now)
         let filteredVisitors = visitors.filter { $0.checkIn >= periodInterval.start && $0.checkIn < endDate }
 
-        // Map weekdays Mon=1..Sun=7 in order: [2,3,4,5,6,7,1]
-        let orderedWeekdays = [2, 3, 4, 5, 6, 7, 1]
-
-        // Initialize dictionary with (weekday, hour) keys
-        var counts: [Int: [Int: Int]] = [:] // weekday -> hour -> count
-        for weekday in orderedWeekdays {
-            counts[weekday] = [:]
-            for hour in 0..<24 {
-                counts[weekday]![hour] = 0
-            }
+        // Helper: calendar weekday (Sun=1..Sat=7) to Monday-first index (Mon=0..Sun=6)
+        let mondayFirstIndex: (Int) -> Int = { rawWeekday in
+            // rawWeekday: 1=Sun, 2=Mon, ... 7=Sat
+            return (rawWeekday + 5) % 7 // Mon(2)->0, Tue(3)->1, ..., Sun(1)->6
         }
+        // Helper: localized short weekday symbol for Monday-first index
+        let shortSymbols = DateFormatter().shortWeekdaySymbols ?? []
+        let labelForMondayIndex: (Int) -> String = { index in
+            // Map Monday-first index back to calendar weekday to index symbols
+            // calendar weekday = (index + 2) % 7, but symbols are 0-based Sun..Sat
+            let calendarWeekday = (index + 2) % 7 // 0..6 where 0=Sun
+            let symbolIndex = calendarWeekday // already 0..6 for Sun..Sat
+            return shortSymbols[safe: symbolIndex] ?? "Day"
+        }
+
+        var counts = Array(repeating: Array(repeating: 0, count: 24), count: 7)
 
         for visitor in filteredVisitors {
             let hour = calendar.component(.hour, from: visitor.checkIn)
             let rawWeekday = calendar.component(.weekday, from: visitor.checkIn) // 1=Sun .. 7=Sat
-            // Map rawWeekday to Monday=1..Sunday=7 order
-            // The orderedWeekdays array implies Monday=2 maps to 1, Sunday=1 maps to 7, etc.
-            // But we keep weekday as in orderedWeekdays values (1..7), Monday=1 in labelY and id
-            // So we use rawWeekday as is for counts keys, as orderedWeekdays contains the keys.
-            // Actually rawWeekday is Sun=1 ... Sat=7, but orderedWeekdays is Mon=2 .. Sun=1.
-            // We store counts keyed by rawWeekday, but labels shown in order orderedWeekdays.
+            let w = mondayFirstIndex(rawWeekday) // 0..6 Mon..Sun
 
-            // Check metric condition
             switch metric {
             case .visits:
-                counts[rawWeekday]?[hour, default: 0] += 1
+                counts[w][hour] += 1
             case .carVisitors:
                 if !visitor.carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    counts[rawWeekday]?[hour, default: 0] += 1
+                    counts[w][hour] += 1
                 }
             case .blockedCars:
                 if visitor.blockedCar {
-                    counts[rawWeekday]?[hour, default: 0] += 1
+                    counts[w][hour] += 1
                 }
             case .preRegistered:
                 if visitor.wasPreRegistered {
-                    counts[rawWeekday]?[hour, default: 0] += 1
+                    counts[w][hour] += 1
                 }
             }
         }
 
-        let shortWeekdaySymbols = DateFormatter().shortWeekdaySymbols ?? []
-
-        // Return tuples in Monday=1..Sunday=7 order (orderedWeekdays array), labelY from shortWeekdaySymbols[weekday-1]
         var result: [(weekday: Int, hour: Int, labelX: String, labelY: String, count: Int)] = []
-        for weekday in orderedWeekdays {
-            // Map calendar weekday 1..7 (Sun..Sat) to desired Monday=1..Sunday=7 index for labelY:
-            // Monday is 2 in calendar weekday, so Monday=1 in labelY = 2 in calendar weekday.
-            let labelYIndex = (weekday == 1) ? 0 : (weekday - 1) // Sunday=1 maps to index 0, Monday=2 maps to 1...
-            let labelY = shortWeekdaySymbols[safe: labelYIndex] ?? "Day"
+        for w in 0..<7 { // Monday-first order: 0 = Monday, ..., 6 = Sunday
+            let labelY = labelForMondayIndex(w)
             for hour in 0..<24 {
-                let count = counts[weekday]?[hour] ?? 0
+                let c = counts[w][hour]
                 let labelX = String(format: "%02d", hour)
-                // Map weekday number in Monday=1..Sunday=7 order (orderedWeekdays) to 1..7 for id/weekday
-                let weekdayIndex = orderedWeekdays.firstIndex(of: weekday).map { $0 + 1 } ?? weekday
-                result.append((weekday: weekdayIndex, hour: hour, labelX: labelX, labelY: labelY, count: count))
+                // Use weekday = w+1 for id consistency (Monday=1..Sunday=7)
+                result.append((weekday: w + 1, hour: hour, labelX: labelX, labelY: labelY, count: c))
             }
         }
         return result
@@ -743,4 +736,3 @@ private extension Array {
     ])
     .environment(VisitorStore())
 }
-
