@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-074 | 🟡 MEDIUM | Models.swift | Regression of BUG-058 behavior: pre-registration badge conflict check still falls back to `createdAt` when `visitDate` is nil, causing false conflicts against undated records | `candidateDate = p.visitDate ?? p.createdAt` in `addPreRegisteredVisitor` |
 | BUG-075 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Pre-registration admin shows badge-conflict UI for any add failure (including persistence errors), giving incorrect remediation to users | On `onAdd == false`, code sets both `showLocalError` and `badgeConflict` unconditionally |
 | BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
 | BUG-065 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `ReturningVisitorSearchView` dedup key uses lowercased names only; company changes may merge different people with same name; consider including company | Dedup key: `first|last` only |
@@ -41,6 +40,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ Models.swift | BUG-074 fixed — pre-registration badge conflict now checks only records with explicit `visitDate`; no fallback to `createdAt` |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-071 fixed — removed hidden header tap gesture that reset admin PIN without authentication |
 | 2026-06-09 | ✅ CSVExport.swift | BUG-072 fixed — CSV export now writes empty values (not `"N/A"`) for optional fields so import round-trip preserves semantics |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-073 fixed — duplicate active sign-in guard now checks all active visitors, not only records signed in today |

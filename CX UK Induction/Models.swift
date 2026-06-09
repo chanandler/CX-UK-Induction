@@ -310,7 +310,7 @@ final class VisitorStore {
                 do {
                     let all = try context.fetch(FetchDescriptor<PreRegisteredVisitor>())
                     let conflict = all.contains { p in
-                        let candidateDate = p.visitDate ?? p.createdAt
+                        guard let candidateDate = p.visitDate else { return false }
                         let pBadge = p.badgeNumber.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                         return Calendar.current.isDate(candidateDate, inSameDayAs: visitDate) && pBadge == normalizedBadge
                     }
@@ -739,4 +739,3 @@ final class VisitorStore {
         }
     }
 }
-
