@@ -320,17 +320,19 @@ struct StaffCarPagerSheet: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section {
-                    Button(action: {
-                        hasAttemptedSave = true
-                        if isValid {
-                            onIssue(firstName, lastName, carRegistration, selectedPager)
+                if hasRequiredInputs {
+                    Section {
+                        Button(action: {
+                            hasAttemptedSave = true
+                            if isValid {
+                                onIssue(firstName, lastName, carRegistration, selectedPager)
+                            }
+                        }) {
+                            Text("Issue Pager")
+                                .frame(maxWidth: .infinity)
                         }
-                    }) {
-                        Text("Issue Pager")
-                            .frame(maxWidth: .infinity)
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
 
                 Section("Pager") {
@@ -383,11 +385,15 @@ struct StaffCarPagerSheet: View {
     }
 
     private var isValid: Bool {
+        hasRequiredInputs &&
+        !usedPagers.contains(selectedPager)
+    }
+
+    private var hasRequiredInputs: Bool {
         !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !selectedPager.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !usedPagers.contains(selectedPager)
+        !selectedPager.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var carRegistrationBinding: Binding<String> {
