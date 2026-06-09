@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-058 | 🟡 MEDIUM | WelcomeView.swift | `allocatedBadges(on:)` assumes `PreRegisteredVisitor.visitDate` exists; if schema differs, fallback to `createdAt` may cause false conflicts | Comment notes assumption; enforce via model or guard logic |
 | BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
 | BUG-065 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `ReturningVisitorSearchView` dedup key uses lowercased names only; company changes may merge different people with same name; consider including company | Dedup key: `first|last` only |
 | BUG-067 | 🟡 MEDIUM | WelcomeView.swift | `fileImporter` allowed content types include very broad `.data` and `.text`; may surface irrelevant files | Consider restricting to CSV UTTypes only |
@@ -40,6 +39,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-058 fixed — Badge conflict allocation now only considers pre-registered records with an explicit visitDate; fallback to createdAt removed to avoid false conflicts |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-049 fixed — Backup scheduler now uses the settings-controlled time (hour/minute) instead of a hardcoded 06:00 |
 | 2026-06-09 | ✅ CSVExport.swift + WelcomeView.swift + VisitorTabs.swift | BUG-048 fixed — Centralized CSV export into CSVExporter with a single unified schema; both exports now use the same code |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift | BUG-047 fixed — Heatmap now uses a consistent Monday-first mapping with locale-safe labels; counts and labels aligned |
@@ -139,19 +139,3 @@
 | 2026-03-24 | ✅ `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
 
 ---
-
-## Enhancement Ideas (New)
-
-- Consolidate alert/sheet presentation in WelcomeView via a single enum-driven router to reduce state coupling and race conditions.
-- Extract pager management into a small `PagerManager` helper (usedPagers, recentlyFreedPagers grace window, issue/return helpers) to simplify WelcomeView.
-- Add accessibility labels/hints for critical buttons (Register, I'm Leaving, Fire Alarm Roll Call) and ensure minimum hit size.
-- Localize remaining hardcoded strings in AdminAndUtilitiesViews.swift (e.g., "Import Preview", "Confirm", "Cancel", etc.).
-- Consider adding unit tests using Swift Testing for CSV parsing edge cases and duplicate detection logic.
-- Add a small `Theme` layer for light/dark tokens and reuse across VisitorTabs cards and WelcomeView cards.
-- Add structured analytics export (JSON) alongside CSV for downstream processing.
-- Consider using `.task(id:)` cancellation tokens for kiosk banner/checkout banner to guarantee cleanup on state change.
-- Review backup retention policy (30 days) as a setting surfaced in Settings.
-- Consider a small `AppStrings` centralization for common labels and reuse across flows.
-
----
-

@@ -208,9 +208,11 @@ struct WelcomeView: View {
         let preregOnDate = preRegisteredVisitors.compactMap { p -> String? in
             let badge = normalizedBadge(p.badgeNumber)
             guard !badge.isEmpty else { return nil }
-            // Assume PreRegisteredVisitor has a visit date field named `visitDate`; if not, fall back to createdAt.
-            let candidateDate = p.visitDate ?? p.createdAt
-            return Calendar.current.isDate(candidateDate, inSameDayAs: date) ? badge : nil
+            // Only enforce conflicts when a visit date is explicitly set.
+            if let visitDate = p.visitDate, Calendar.current.isDate(visitDate, inSameDayAs: date) {
+                return badge
+            }
+            return nil
         }
         return Set(activeOnDate + preregOnDate)
     }
