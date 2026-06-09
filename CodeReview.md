@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-06-02
+> Generated: 2026-03-23 | Last updated: 2026-06-09
 
 ---
 
@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-039 | 🟡 MEDIUM | WelcomeView.swift | Potential double-presentation race when `pendingSubmit` interacts with `showBlockedCarPrompt` and `showPagerPrompt` on rapid taps | `decoratedContentPart3.onChange` handlers for `showPagerPrompt` and `showBlockedCarPrompt` both can trigger `showingInduction = true` if state flips quickly; consider centralizing transition via a single state machine. |
 | BUG-040 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `AutoCheckoutSettingsView` shows both "Backup Now" and "Export Backup Now" wired to the same action | Both buttons call `onManualBackup`; clarify intent or remove duplication (one might be for local write, the other for share/export). |
 | BUG-041 | 🟢 LOW | AdminAndUtilitiesViews.swift | `PreRegisteredListView` date label shows "Date not set" but sorts undated visitors after dated ones inconsistently with comment | Sorting comment says "b first" when `a` has no date, but actual return puts `b` first; verify desired order and adjust code/comment for alignment. |
 | BUG-042 | 🟢 LOW | WelcomeView.swift | Multiple `.alert` and `.sheet` modifiers create a long decorator chain, increasing maintenance complexity | `decoratedContentPart1/2/3` split helps, but consider consolidating related alerts into a single enum-driven presentation to reduce state coupling. |
@@ -32,6 +31,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-039 fixed — Centralized induction routing via routeToInductionIfReady() to prevent double-presentation race |
 | 2026-06-04 | ✅ WelcomeView.swift | BUG-038 fixed — Prepared haptics before presenting critical alerts (blocked-car prompt, badge conflict, duplicate sign-in) for snappier feedback |
 | 2026-06-04 | ✅ Models.swift | BUG-037 fixed — Updated backup CSV comment to reflect 12 columns (includes Pre-Registered) to match export header |
 | 2026-06-04 | ✅ PlaceholderViews.swift | BUG-036 fixed — Returning visitor search now deduplicates by (first,last) keeping the most recent visit, so company changes are handled sensibly |
