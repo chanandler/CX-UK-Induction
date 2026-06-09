@@ -92,7 +92,6 @@ struct ActiveVisitorsView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
-                .overlay(ClearBackgroundView()) // clear UIKit superviews
             }
             .navigationTitle("Signed In")
             .searchable(text: $searchText)
@@ -151,7 +150,6 @@ struct ArchivedVisitorsView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
-                .overlay(ClearBackgroundView())
             }
             .navigationTitle("Archived")
             .searchable(text: $searchText)
@@ -319,7 +317,6 @@ struct VisitorDetail: View {
         .background(Color.clear)
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle(visitor.fullName)
-        .overlay(ClearBackgroundView())
     }
 
     private func dateTime(_ date: Date) -> String {
@@ -356,23 +353,6 @@ struct ShareView: View, Identifiable {
         }
         .background(Color.clear)
     }
-}
-
-// MARK: - UIKit transparency helpers
-
-private struct ClearBackgroundView: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        DispatchQueue.main.async {
-            var current: UIView? = view
-            while let v = current {
-                v.backgroundColor = .clear
-                current = v.superview
-            }
-        }
-        return view
-    }
-    func updateUIView(_ uiView: UIView, context: Context) { }
 }
 
 #Preview {

@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-043 | 🟢 LOW | VisitorTabs.swift | `ClearBackgroundView` manipulates UIKit view hierarchy asynchronously for transparency | Could cause flicker or maintenance risk; consider using `.scrollContentBackground(.hidden)` and explicit `.background(Color.clear)` only, or contain UIKit hack behind platform checks. |
 | BUG-044 | 🟢 LOW | Models.swift | `dupKey` normalizes to minute precision but uses `timeIntervalSinceReferenceDate` (Double) which still includes seconds component from constructed minute | The constructed date uses only Y-M-D-H-M, which is fine, but documenting the rationale would help; alternatively store an Int minute timestamp to avoid float comparisons. |
 | BUG-045 | 🟡 MEDIUM | WelcomeView.swift | Kiosk mode banner auto-hide task not cancelled on view disappear | `.task` in `checkoutBanner` and kiosk banner hide task rely on Task cancellation by scope; ensure cancellation when view disappears or when state flips to avoid lingering async work. |
 | BUG-046 | 🟢 LOW | AdminAndUtilitiesViews.swift | `StaffCarPagerSheet` has `hasAttemptedSave` dead state | `hasAttemptedSave` is set but never toggled in current code path; either remove or use to show validation error when tapping a disabled Save. |
@@ -28,6 +27,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | ✅ VisitorTabs.swift | BUG-043 fixed — Removed UIKit ClearBackgroundView hack; rely on .scrollContentBackground(.hidden) and clear backgrounds to avoid flicker |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-042 fixed — Consolidated multiple alerts into a single enum-driven router with one .alert(item:) presentation to reduce decorator chain complexity |
 | 2026-06-09 | AdminAndUtilitiesViews.swift | BUG-041 fixed — Clarified date sort vs. label in PreRegisteredListView; code and comment aligned |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-040 fixed — Removed redundant "Export Backup Now" button; "Backup Now" retains local CSV backup behavior |
