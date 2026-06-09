@@ -16,9 +16,6 @@
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
 | BUG-045 | 🟡 MEDIUM | WelcomeView.swift | Kiosk mode banner auto-hide task not cancelled on view disappear | `.task` in `checkoutBanner` and kiosk banner hide task rely on Task cancellation by scope; ensure cancellation when view disappears or when state flips to avoid lingering async work. |
-| BUG-046 | 🟢 LOW | AdminAndUtilitiesViews.swift | `StaffCarPagerSheet` has `hasAttemptedSave` dead state | `hasAttemptedSave` is set but never toggled in current code path; either remove or use to show validation error when tapping a disabled Save. |
-| BUG-047 | 🟡 MEDIUM | Models.swift | `addPreRegisteredVisitor` performs two full fetches for conflict checks | Consider narrowing fetch with predicates or using a single fetch to reduce IO; or pre-index normalized badges by day. |
-| BUG-048 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ImportConfirmationView` uses generic "Error" handling pattern elsewhere but here has no explicit error state | If commit fails, the presenting code handles `store.lastError`; consider consistent messaging inside the view or ensure all error paths are centralized. |
 
 ---
 
@@ -26,6 +23,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-046 fixed — "Issue Pager" button is now always visible; tapping sets hasAttemptedSave and shows validation errors until form is valid |
 | 2026-06-09 | ✅ Models.swift | BUG-044 fixed — Duplicate key now uses integer minutes-since-reference instead of Double to avoid precision issues; documented rationale |
 | 2026-06-09 | ✅ VisitorTabs.swift | BUG-043 fixed — Removed UIKit ClearBackgroundView hack; rely on .scrollContentBackground(.hidden) and clear backgrounds to avoid flicker |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-042 fixed — Consolidated multiple alerts into a single enum-driven router with one .alert(item:) presentation to reduce decorator chain complexity |

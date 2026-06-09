@@ -316,15 +316,16 @@ struct StaffCarPagerSheet: View {
                 }
 
                 Section {
-                    if isValid {
-                        Button(action: {
+                    Button(action: {
+                        hasAttemptedSave = true
+                        if isValid {
                             onIssue(firstName, lastName, carRegistration, selectedPager)
-                        }) {
-                            Text("Issue Pager")
-                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                    }) {
+                        Text("Issue Pager")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
                 }
 
                 Section("Pager") {
