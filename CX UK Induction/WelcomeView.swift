@@ -49,6 +49,7 @@ struct WelcomeView: View {
     @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
     @AppStorage("autoCheckoutMinute") private var autoCheckoutMinute: Int = 0
+    @AppStorage("autoReturnPagersOnAutoCheckout") private var autoReturnPagersOnAutoCheckout: Bool = false
     @AppStorage("kioskModeEnabled") private var kioskModeEnabled: Bool = false
     @AppStorage("lastAutoCheckoutRun") private var lastAutoCheckoutRun: Double = 0
     @State private var scheduler = AutoCheckoutScheduler()
@@ -899,8 +900,10 @@ struct WelcomeView: View {
 
     private func performAutoCheckoutNow(at date: Date = Date()) {
         store.autoCheckoutAllActive(context, at: date)
-        for issue in activeStaffPagerIssues {
-            store.returnStaffPager(context, issue)
+        if autoReturnPagersOnAutoCheckout {
+            for issue in activeStaffPagerIssues {
+                store.returnStaffPager(context, issue)
+            }
         }
         lastAutoCheckoutRun = date.timeIntervalSince1970
     }

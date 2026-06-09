@@ -39,6 +39,7 @@ struct AutoCheckoutSettingsView: View {
     @Binding var hour: Int
     @Binding var minute: Int
     @Binding var autoBackupEnabled: Bool
+    @Binding var autoReturnPagersOnAutoCheckout: Bool
     var onManualBackup: () -> Void
     var onImportCSV: () -> Void
     var onLockAdminSession: () -> Void
@@ -57,6 +58,8 @@ struct AutoCheckoutSettingsView: View {
                         Text("7:00 AM (next day)").tag(2)
                     }
                     .pickerStyle(.segmented)
+                    Toggle("Return all staff pagers during auto-checkout", isOn: $autoReturnPagersOnAutoCheckout)
+                        .tint(.red)
                 }
                 Section("Backups") {
                     Toggle("Enable daily backup", isOn: $autoBackupEnabled)
