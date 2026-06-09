@@ -15,9 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-063 | 🟢 LOW | AnalyticsDashboardView.swift | Some summary card titles are not localized (e.g., "Car Visitors", "Blocked Car", "Same-day Checkout", etc.) | Mix of localized and hardcoded strings in `summaryGrid` |
-| BUG-064 | 🟢 LOW | WelcomeView.swift | `kioskMode` confirm alert strings are hardcoded and not localized | In `.kioskConfirm` alert case, titles and buttons are literals |
-| BUG-066 | 🟢 LOW | VisitorTabs.swift | `VisitorDetail` destructive checkout has no confirmation prompt unlike SignIn Book; risk of accidental checkout | Button("Mark as Leaving") directly calls `checkOut` |
 | BUG-068 | 🟢 LOW | AnalyticsDashboardView.swift | `AnalyticsDashboardView` depends on a module-global `ShareItem` declared in another file instead of a local/shared explicit type; creates hidden coupling | `@State private var shareItem: ShareItem?` with no local declaration in file |
 | BUG-069 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ImportConfirmationView` UI is minimal and non-localized; lacks counts formatting and accessibility | Strings are literals; improve presentation |
 
@@ -27,6 +24,9 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-063 fixed — localized remaining analytics summary card titles (`Car Visitors`, `Blocked Car`, `Same-day Checkout`, `Median Visit`, `Avg Visits / Day`, `Peak Hour`) |
+| 2026-06-09 | ✅ WelcomeView.swift + Localizable.strings | BUG-064 fixed — localized kiosk-mode confirmation alert titles/messages/actions and kiosk-mode banner text |
+| 2026-06-09 | ✅ VisitorTabs.swift + Localizable.strings | BUG-066 fixed — added confirmation alert to `VisitorDetail` destructive checkout action before mutating visitor state |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-059 fixed — switched visitor list identity from `id: \.self` to stable `id: \.id` in Leaving/Search, Sign In Book, and Fire Roll Call views |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-060 fixed — extracted repeated CEMEX button styling into reusable `View` helpers (`welcomePrimaryActionStyle`, `welcomeProminentActionStyle`, `welcomeSecondaryActionStyle`) and applied them across primary action buttons |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-055 fixed — moved `UIKit` import under `#if canImport(UIKit)` to match the guarded `ActivityView` wrapper |

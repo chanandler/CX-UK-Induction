@@ -51,6 +51,12 @@
 "analytics.card.repeat_visitors" = "Repeat Visitors";
 "analytics.card.auto_checkout" = "Auto Check-out";
 "analytics.card.pre_registered" = "Pre-registered";
+"analytics.card.car_visitors" = "Car Visitors";
+"analytics.card.blocked_car" = "Blocked Car";
+"analytics.card.same_day_checkout" = "Same-day Checkout";
+"analytics.card.median_visit" = "Median Visit";
+"analytics.card.avg_visits_per_day" = "Avg Visits / Day";
+"analytics.card.peak_hour" = "Peak Hour";
 
 "welcome.alert.registered.title" = "Thank you for registering";
 "welcome.alert.registered.message_template" = "%@: Your information has been recorded successfully.\n\nThe information collected is for safety and security purposes and all personal details will be stored in accordance with the Cemex Privacy Policy available at cemex.co.uk";
@@ -85,6 +91,14 @@
 "welcome.settings.title" = "Settings";
 "welcome.settings.analytics_dashboard" = "Analytics Dashboard";
 "welcome.settings.sign_out_now" = "Sign Out Now";
+"welcome.kiosk.confirm.disable_title" = "Disable Kiosk Mode?";
+"welcome.kiosk.confirm.enable_title" = "Enable Kiosk Mode?";
+"welcome.kiosk.confirm.disable_message" = "Reception controls will be unlocked and admin actions will require PIN again.";
+"welcome.kiosk.confirm.enable_message" = "The app UI will lock down to reception-safe mode. Admin actions will be hidden until unlocked with PIN.";
+"welcome.kiosk.action.disable" = "Disable";
+"welcome.kiosk.action.enable" = "Enable";
+"welcome.kiosk.banner.enabled" = "Kiosk Mode Enabled";
+"welcome.kiosk.banner.disabled" = "Kiosk Mode Disabled";
 "welcome.prereg.sign_out_reminder" = "Please remember to sign out when leaving the site.";
 "welcome.prereg.tap_here" = "Pre-registered? Tap here";
 "welcome.prereg.admin_title" = "Pre-registration Admin";
@@ -133,3 +147,8 @@
 "settings.admin.open_analytics" = "Open Analytics";
 "settings.admin.preregistration_admin" = "Pre-Registration Admin";
 "settings.admin.lock_session" = "Lock Admin Session";
+
+"visitor.detail.action.mark_leaving" = "Mark as Leaving";
+"visitor.detail.confirm_checkout.title" = "Confirm Check Out";
+"visitor.detail.confirm_checkout.confirm" = "Check Out";
+"visitor.detail.confirm_checkout.message_template" = "Mark %@ as leaving?";

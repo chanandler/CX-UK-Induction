@@ -590,12 +590,12 @@ struct WelcomeView: View {
                     )
                 case .kioskConfirm(let enabled):
                     return Alert(
-                        title: Text(enabled ? "Disable Kiosk Mode?" : "Enable Kiosk Mode?"),
-                        message: Text(enabled ? "Reception controls will be unlocked and admin actions will require PIN again." : "The app UI will lock down to reception-safe mode. Admin actions will be hidden until unlocked with PIN."),
-                        primaryButton: .cancel(Text("Cancel")),
-                        secondaryButton: .default(Text(enabled ? "Disable" : "Enable"), action: {
+                        title: Text(enabled ? String(localized: "welcome.kiosk.confirm.disable_title") : String(localized: "welcome.kiosk.confirm.enable_title")),
+                        message: Text(enabled ? String(localized: "welcome.kiosk.confirm.disable_message") : String(localized: "welcome.kiosk.confirm.enable_message")),
+                        primaryButton: .cancel(Text(String(localized: "common.cancel"))),
+                        secondaryButton: .default(Text(enabled ? String(localized: "welcome.kiosk.action.disable") : String(localized: "welcome.kiosk.action.enable")), action: {
                             kioskModeEnabled.toggle()
-                            kioskBannerText = kioskModeEnabled ? "Kiosk Mode Enabled" : "Kiosk Mode Disabled"
+                            kioskBannerText = kioskModeEnabled ? String(localized: "welcome.kiosk.banner.enabled") : String(localized: "welcome.kiosk.banner.disabled")
                             withAnimation { showKioskBanner = true }
                             hapticGenerator.prepare()
                             hapticGenerator.notificationOccurred(.success)

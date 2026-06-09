@@ -267,6 +267,7 @@ struct VisitorDetail: View {
     @Environment(\.modelContext) private var context
     let visitor: Visitor
     let isActive: Bool
+    @State private var showCheckoutConfirmation = false
 
     var body: some View {
         Form {
@@ -284,9 +285,9 @@ struct VisitorDetail: View {
             if isActive {
                 Section {
                     Button(role: .destructive) {
-                        store.checkOut(context, visitor)
+                        showCheckoutConfirmation = true
                     } label: {
-                        Label("Mark as Leaving", systemImage: "door.right.hand.open")
+                        Label(String(localized: "visitor.detail.action.mark_leaving"), systemImage: "door.right.hand.open")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -296,6 +297,14 @@ struct VisitorDetail: View {
         .background(Color.clear)
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle(visitor.fullName)
+        .alert(String(localized: "visitor.detail.confirm_checkout.title"), isPresented: $showCheckoutConfirmation) {
+            Button(String(localized: "common.cancel"), role: .cancel) { }
+            Button(String(localized: "visitor.detail.confirm_checkout.confirm"), role: .destructive) {
+                store.checkOut(context, visitor)
+            }
+        } message: {
+            Text(String(format: String(localized: "visitor.detail.confirm_checkout.message_template"), visitor.fullName))
+        }
     }
 
     private func dateTime(_ date: Date) -> String {

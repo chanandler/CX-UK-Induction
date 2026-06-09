@@ -333,12 +333,12 @@ struct AnalyticsDashboardView: View {
             summaryCard(String(localized: "analytics.card.repeat_visitors"), value: "\(metrics.repeatVisitors)", symbol: "arrow.triangle.2.circlepath")
             summaryCard(String(localized: "analytics.card.auto_checkout"), value: metrics.autoCheckoutRateText, symbol: "moon.zzz")
             summaryCard(String(localized: "analytics.card.pre_registered"), value: metrics.preRegisteredRateText, symbol: "person.text.rectangle")
-            summaryCard("Car Visitors", value: metrics.carVisitorRateText, symbol: "car.fill")
-            summaryCard("Blocked Car", value: metrics.blockedCarRateText, symbol: "car.2.fill")
-            summaryCard("Same-day Checkout", value: metrics.sameDayCheckoutRateText, symbol: "calendar.badge.checkmark")
-            summaryCard("Median Visit", value: metrics.medianDurationText, symbol: "clock.badge.checkmark")
-            summaryCard("Avg Visits / Day", value: metrics.averageVisitsPerDayText, symbol: "chart.bar.doc.horizontal")
-            summaryCard("Peak Hour", value: metrics.peakHourText, symbol: "sun.max")
+            summaryCard(String(localized: "analytics.card.car_visitors"), value: metrics.carVisitorRateText, symbol: "car.fill")
+            summaryCard(String(localized: "analytics.card.blocked_car"), value: metrics.blockedCarRateText, symbol: "car.2.fill")
+            summaryCard(String(localized: "analytics.card.same_day_checkout"), value: metrics.sameDayCheckoutRateText, symbol: "calendar.badge.checkmark")
+            summaryCard(String(localized: "analytics.card.median_visit"), value: metrics.medianDurationText, symbol: "clock.badge.checkmark")
+            summaryCard(String(localized: "analytics.card.avg_visits_per_day"), value: metrics.averageVisitsPerDayText, symbol: "chart.bar.doc.horizontal")
+            summaryCard(String(localized: "analytics.card.peak_hour"), value: metrics.peakHourText, symbol: "sun.max")
         }
     }
 
