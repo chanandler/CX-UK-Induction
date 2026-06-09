@@ -387,6 +387,7 @@ struct WelcomeView: View {
                         hour: $autoCheckoutHour,
                         minute: $autoCheckoutMinute,
                         autoBackupEnabled: $autoBackupEnabled,
+                        autoReturnPagersOnAutoCheckout: $autoReturnPagersOnAutoCheckout,
                         onManualBackup: runManualBackup,
                         onImportCSV: {
                             queuedImportAfterDismiss = true
