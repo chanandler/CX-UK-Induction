@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-067 | 🟡 MEDIUM | WelcomeView.swift | `fileImporter` allowed content types include very broad `.data` and `.text`; may surface irrelevant files | Consider restricting to CSV UTTypes only |
-| BUG-070 | 🟡 MEDIUM | WelcomeView.swift | `pendingSubmit`/`hasRoutedToInduction`/`showPagerPrompt` interplay is complex; race risk remains if alert and sheet overlap; consider unifying via a small state machine | Complex guard in `routeToInductionIfReady()` |
 | BUG-050 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Settings strings and some labels remain hardcoded and not localized | Examples: "Backup Now", "Import CSV…", "Open Analytics", section titles, etc. |
 | BUG-051 | 🟢 LOW | AdminAndUtilitiesViews.swift | DateFormatter created per-row in `PreRegisteredListView` (`dateOnlyFormatter`) instead of a static cached formatter | `private var dateOnlyFormatter` creates new instance each access |
 | BUG-052 | 🟢 LOW | WelcomeView.swift | Accessibility: primary actions lack explicit accessibility labels/hints and large content size adjustments | Buttons like Register/I'm Leaving/Fire Alarm shortcut rely on visible labels only; add `.accessibilityLabel`/`.accessibilityHint` and ensure min hit size |
@@ -37,6 +35,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-067 fixed — CSV file importer now accepts `.commaSeparatedText` only (removed broad `.text`/`.data` content types) |
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-070 fixed — replaced `pendingSubmit`/`hasRoutedToInduction` flow with explicit `registrationFlow` state (`idle`/`waitingBlockedCarDecision`/`waitingPagerSelection`/`waitingForInduction`) to de-risk alert/sheet overlap races |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-062 fixed — local pre-registration badge conflict check now compares normalized badge values (trimmed/lowercased) |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-065 fixed — returning-visitor dedup key now includes company (`first|last|company`) to avoid merging distinct same-name people |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-075 fixed — pre-registration add failures now show the actual store error and only enable badge-conflict UI when the error is genuinely a badge conflict |
