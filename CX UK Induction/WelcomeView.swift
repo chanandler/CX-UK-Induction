@@ -911,7 +911,7 @@ struct WelcomeView: View {
 
     private func startBackupScheduler() {
         backupScheduler.cancel()
-        backupScheduler.scheduleDailyBackup(atHour: 6, minute: 0) {
+        backupScheduler.scheduleDailyBackup(atHour: autoCheckoutHour, minute: autoCheckoutMinute) {
             let csv = store.backupCSVString(from: allVisitors)
             BackupScheduler.writeBackup(csvString: csv)
         }
