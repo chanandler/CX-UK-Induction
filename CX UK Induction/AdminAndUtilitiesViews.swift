@@ -1,6 +1,8 @@
 import SwiftUI
-import UIKit
 import SwiftData
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - UIKit Share Sheet Wrapper
 #if canImport(UIKit)

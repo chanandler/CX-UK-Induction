@@ -44,7 +44,7 @@ struct AnalyticsDashboardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedRange: AnalyticsRange = .week
     @State private var anchorDate: Date = Date()
-    @State private var shareItem: ShareItem?
+    @State private var shareItem: ExportShareItem?
     @State private var showExportError = false
     @State private var selectedHeatmapMetric: HeatmapMetric = .visits
 
@@ -215,14 +215,14 @@ struct AnalyticsDashboardView: View {
                     Menu {
                         Button("Export Analytics CSV") {
                             if let url = exportAnalyticsCSV() {
-                                shareItem = ShareItem(url: url)
+                                shareItem = ExportShareItem(url: url)
                             } else {
                                 showExportError = true
                             }
                         }
                         Button("Export Printable Report") {
                             if let url = exportPrintableReport() {
-                                shareItem = ShareItem(url: url)
+                                shareItem = ExportShareItem(url: url)
                             } else {
                                 showExportError = true
                             }
@@ -233,7 +233,7 @@ struct AnalyticsDashboardView: View {
                 }
             }
             .sheet(item: $shareItem) { item in
-                ShareView(url: item.url, onDismiss: {
+                ExportShareSheet(url: item.url, onDismiss: {
                     try? FileManager.default.removeItem(at: item.url)
                     shareItem = nil
                 })

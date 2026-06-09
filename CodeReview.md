@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-055 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ActivityView` is UIKit-gated but file still has unconditional top-level `import UIKit`; unnecessary coupling/noise for non-UIKit compilation paths | Top-level `import UIKit` with `#if canImport(UIKit)` guard below |
-| BUG-057 | 🟢 LOW | VisitorTabs.swift | Share temporary file removal relies on `onDismiss` but `ShareLink` may keep strong refs; ensure cleanup on all paths; also duplication of `ShareItem` type name with WelcomeView's nested `ShareItem` | Potential confusion between two `ShareItem` structs; consider centralizing share helpers |
 | BUG-059 | 🟢 LOW | AdminAndUtilitiesViews.swift | Several lists use `id: \.self` for model rows (`LeavingSearchSheet`, `SignInBookView`, `FireAlarmRollCallView`) instead of stable model IDs | Replace `id: \.self` with `id: \.id` for `Visitor` rows |
 | BUG-060 | 🟢 LOW | WelcomeView.swift | Multiple `.tint(.cemexBlue)` and custom shadows repeated; consider extracting a small `Theme` for consistent styling | Repetition across buttons and cards |
 | BUG-063 | 🟢 LOW | AnalyticsDashboardView.swift | Some summary card titles are not localized (e.g., "Car Visitors", "Blocked Car", "Same-day Checkout", etc.) | Mix of localized and hardcoded strings in `summaryGrid` |
@@ -31,6 +29,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-055 fixed — moved `UIKit` import under `#if canImport(UIKit)` to match the guarded `ActivityView` wrapper |
+| 2026-06-09 | ✅ VisitorTabs.swift + AnalyticsDashboardView.swift | BUG-057 fixed — share export cleanup now runs on interactive sheet dismiss via `onDisappear`, and share helper naming was clarified (`ExportShareItem` / `ExportShareSheet`) to reduce confusion with other `ShareItem` types |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-052 fixed — added explicit accessibility labels/hints to key primary/icon actions and increased utility icon touch target height to 52pt |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-053 fixed — localized analytics export error alert title/message using `String(localized:)` keys |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift + Localizable.strings | BUG-050 fixed — localized settings/admin section titles, toggles, and actions (including backup/import/analytics/pre-registration/admin lock labels) via `String(localized:)` keys |

@@ -116,7 +116,7 @@ struct ActiveVisitorsView: View {
     }
 }
 
-struct ShareItem: Identifiable {
+struct ExportShareItem: Identifiable {
     let url: URL
     var id: URL { url }
 }
@@ -126,7 +126,7 @@ struct ArchivedVisitorsView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Visitor> { $0.checkOut != nil }, sort: [SortDescriptor(\.checkOut, order: .reverse)]) private var archived: [Visitor]
     @State private var searchText = ""
-    @State private var shareItem: ShareItem?
+    @State private var shareItem: ExportShareItem?
     @State private var showExportError = false
 
     var body: some View {
@@ -158,7 +158,7 @@ struct ArchivedVisitorsView: View {
                     Menu {
                         Button {
                             if let url = exportCSV() {
-                                shareItem = ShareItem(url: url)
+                                shareItem = ExportShareItem(url: url)
                             } else {
                                 showExportError = true
                             }
@@ -180,7 +180,7 @@ struct ArchivedVisitorsView: View {
         .sheet(item: $shareItem) { item in
             // Capture the URL from the item parameter — by the time onDismiss fires
             // SwiftUI has already cleared shareItem, so reading shareItem?.url returns nil.
-            ShareView(url: item.url, onDismiss: {
+            ExportShareSheet(url: item.url, onDismiss: {
                 try? FileManager.default.removeItem(at: item.url)
                 shareItem = nil
             })
@@ -303,12 +303,13 @@ struct VisitorDetail: View {
     }
 }
 
-struct ShareView: View, Identifiable {
+struct ExportShareSheet: View, Identifiable {
     let url: URL
     var id: URL { url }
     var onDismiss: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @State private var didRunDismiss = false
 
     var body: some View {
         NavigationStack {
@@ -324,13 +325,23 @@ struct ShareView: View, Identifiable {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
-                        onDismiss?()
+                        runDismissIfNeeded()
                         dismiss()
                     }
                 }
             }
         }
+        .onDisappear {
+            // Also clean up when the sheet is dismissed interactively (swipe-down).
+            runDismissIfNeeded()
+        }
         .background(Color.clear)
+    }
+
+    private func runDismissIfNeeded() {
+        guard !didRunDismiss else { return }
+        didRunDismiss = true
+        onDismiss?()
     }
 }
 
