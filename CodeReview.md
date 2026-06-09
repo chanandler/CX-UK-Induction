@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-075 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Pre-registration admin shows badge-conflict UI for any add failure (including persistence errors), giving incorrect remediation to users | On `onAdd == false`, code sets both `showLocalError` and `badgeConflict` unconditionally |
 | BUG-062 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `PreRegistrationAdminView` local badge conflict check compares raw badge strings; case/whitespace not normalized | Use trimmed/lowercased normalization to match other checks |
 | BUG-065 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | `ReturningVisitorSearchView` dedup key uses lowercased names only; company changes may merge different people with same name; consider including company | Dedup key: `first|last` only |
 | BUG-067 | 🟡 MEDIUM | WelcomeView.swift | `fileImporter` allowed content types include very broad `.data` and `.text`; may surface irrelevant files | Consider restricting to CSV UTTypes only |
@@ -40,6 +39,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-075 fixed — pre-registration add failures now show the actual store error and only enable badge-conflict UI when the error is genuinely a badge conflict |
 | 2026-06-09 | ✅ Models.swift | BUG-074 fixed — pre-registration badge conflict now checks only records with explicit `visitDate`; no fallback to `createdAt` |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-071 fixed — removed hidden header tap gesture that reset admin PIN without authentication |
 | 2026-06-09 | ✅ CSVExport.swift | BUG-072 fixed — CSV export now writes empty values (not `"N/A"`) for optional fields so import round-trip preserves semantics |

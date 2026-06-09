@@ -561,6 +561,7 @@ struct PreRegistrationAdminView: View {
     @Environment(VisitorStore.self) private var store
     @State private var showLocalError = false
     @State private var badgeConflict = false
+    @State private var localErrorMessage = ""
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -569,6 +570,8 @@ struct PreRegistrationAdminView: View {
     @State private var badgeNumber = ""
     @State private var visitDate = Date()
     @State private var hasAttemptedSave = false
+    private let badgeConflictMessage = "That badge is already allocated for the selected visit date. Please choose a different badge number."
+    private let genericAddFailureMessage = "Could not add pre-registration. Please try again."
 
     var body: some View {
         NavigationStack {
@@ -621,6 +624,7 @@ struct PreRegistrationAdminView: View {
 
                         if conflict {
                             badgeConflict = true
+                            localErrorMessage = badgeConflictMessage
                             showLocalError = true
                             return
                         }
@@ -628,9 +632,11 @@ struct PreRegistrationAdminView: View {
                         if onAdd(firstName, lastName, company, visiting, badgeNumber, visitDate) {
                             clearForm()
                         } else {
-                            // Fallback: show local error without affecting shared store to avoid dismissal
+                            // Show the underlying store error when available.
+                            let message = store.lastError?.localizedDescription ?? genericAddFailureMessage
+                            localErrorMessage = message
+                            badgeConflict = message == badgeConflictMessage
                             showLocalError = true
-                            badgeConflict = true
                         }
                     }
                 }
@@ -667,7 +673,7 @@ struct PreRegistrationAdminView: View {
             .alert("Error", isPresented: $showLocalError) {
                 Button("OK", role: .cancel) { showLocalError = false }
             } message: {
-                Text("That badge is already allocated for the selected visit date. Please choose a different badge number.")
+                Text(localErrorMessage.isEmpty ? genericAddFailureMessage : localErrorMessage)
             }
         }
     }
@@ -1019,4 +1025,3 @@ private struct InductionSignatureSheet: View {
         }
     }
 }
-
