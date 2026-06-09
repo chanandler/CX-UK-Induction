@@ -28,8 +28,7 @@ struct WelcomeView: View {
 
     @State private var activeSheet: ActiveSheet?
     @State private var showPagerPrompt = false
-    @State private var pendingSubmit = false
-    @State private var hasRoutedToInduction = false
+    @State private var registrationFlow: RegistrationFlow = .idle
     
     @State private var showingInduction = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
@@ -132,6 +131,13 @@ struct WelcomeView: View {
         case pinChange
 
         var id: String { rawValue }
+    }
+
+    private enum RegistrationFlow {
+        case idle
+        case waitingBlockedCarDecision
+        case waitingPagerSelection
+        case waitingForInduction
     }
 
     // Track pagers already in use by active visitors.
@@ -558,10 +564,12 @@ struct WelcomeView: View {
                         primaryButton: .cancel(Text(String(localized: "common.no")), action: {
                             blockedCar = false
                             pagerNumber = ""
+                            registrationFlow = .waitingForInduction
                             routeToInductionIfReady()
                         }),
                         secondaryButton: .default(Text(String(localized: "common.yes")), action: {
                             blockedCar = true
+                            registrationFlow = .waitingPagerSelection
                             showPagerPrompt = true
                         })
                     )
@@ -623,11 +631,12 @@ struct WelcomeView: View {
                         blockedCar = false
                         pagerNumber = ""
                         showPagerPrompt = false
-                        pendingSubmit = false
+                        registrationFlow = .idle
                     },
                     onSave: { selected in
                         pagerNumber = selected
                         showPagerPrompt = false
+                        registrationFlow = .waitingForInduction
                         routeToInductionIfReady()
                     }
                 )
@@ -648,8 +657,7 @@ struct WelcomeView: View {
                     visitorLastName: lastName
                 ) { confirmed in
                     showingInduction = false
-                    pendingSubmit = false
-                    hasRoutedToInduction = false
+                    registrationFlow = .idle
                     if confirmed {
                         submit()
                     }
@@ -686,7 +694,6 @@ struct WelcomeView: View {
             .onChange(of: showPagerPrompt) { oldValue, newValue in
                 if oldValue == true && newValue == false {
                     routeToInductionIfReady()
-                    pendingSubmit = false
                 }
             }
             .onChange(of: activeAlert) { oldValue, newValue in
@@ -745,7 +752,7 @@ struct WelcomeView: View {
         decoratedContentPart3
             .fileImporter(
                 isPresented: $showingImportPicker,
-                allowedContentTypes: [.commaSeparatedText, .plainText, .text, .utf8PlainText, .data],
+                allowedContentTypes: [.commaSeparatedText],
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
@@ -1027,12 +1034,11 @@ struct WelcomeView: View {
                 activeAlert = .badgeConflict
                 return
             }
-            hasRoutedToInduction = false
             if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                pendingSubmit = true
+                registrationFlow = .waitingBlockedCarDecision
                 activeAlert = .blockedCarPrompt
             } else {
-                pendingSubmit = true
+                registrationFlow = .waitingForInduction
                 routeToInductionIfReady()
             }
         }) {
@@ -1336,17 +1342,18 @@ struct WelcomeView: View {
             carRegistration = droveCarRegistration
             blockedCar = false
             pagerNumber = ""
+            registrationFlow = .waitingBlockedCarDecision
             activeAlert = .blockedCarPrompt
         } else {
             carRegistration = ""
             blockedCar = false
             pagerNumber = ""
+            registrationFlow = .waitingForInduction
         }
         badgeNumber = visitor.badgeNumber
         isSigningInPreRegisteredVisitor = true
         selectedPreRegisteredVisitorID = visitor.id
         hasAttemptedSubmit = true
-        pendingSubmit = true
         if droveCarRegistration == nil {
             routeToInductionIfReady()
         }
@@ -1361,17 +1368,18 @@ struct WelcomeView: View {
             carRegistration = droveCarRegistration
             blockedCar = false
             pagerNumber = ""
+            registrationFlow = .waitingBlockedCarDecision
             activeAlert = .blockedCarPrompt
         } else {
             carRegistration = ""
             blockedCar = false
             pagerNumber = ""
+            registrationFlow = .waitingForInduction
         }
         badgeNumber = visitor.badgeNumber
         isSigningInPreRegisteredVisitor = false
         selectedPreRegisteredVisitorID = nil
         hasAttemptedSubmit = true
-        pendingSubmit = true
         if droveCarRegistration == nil {
             routeToInductionIfReady()
         }
@@ -1426,10 +1434,11 @@ struct WelcomeView: View {
     }
     
     private func routeToInductionIfReady() {
-        // Prevent double-presentation. Only proceed if a submission is pending,
-        // no pager sheet is currently showing, and we haven't already routed.
-        guard pendingSubmit, !showPagerPrompt, activeAlert != .blockedCarPrompt, !hasRoutedToInduction else { return }
-        hasRoutedToInduction = true
+        // Present induction only when the registration flow has reached the ready state.
+        guard registrationFlow == .waitingForInduction,
+              !showPagerPrompt,
+              activeAlert != .blockedCarPrompt,
+              !showingInduction else { return }
         showingInduction = true
     }
 }
