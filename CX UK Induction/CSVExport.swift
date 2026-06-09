@@ -1,6 +1,6 @@
 import Foundation
 
-public struct CSVExporter {
+struct CSVExporter {
     public static func exportVisitors(_ visitors: [Visitor]) -> URL? {
         // Implement unified CSV schema identical to the one in WelcomeView.exportCSV(from:)
         // Header: First Name, Last Name, Company, Visiting, Car Registration, Blocked Car, Pager Number, Badge Number, Date Signed In, Date Signed Out, Auto Logged Out, Pre-Registered
