@@ -44,6 +44,9 @@
 "analytics.empty.no_visit_records" = "No visit records yet";
 "analytics.alert.export_failed.title" = "Export Failed";
 "analytics.alert.export_failed.message" = "The analytics export could not be created. Please try again.";
+"analytics.export.title" = "Export";
+"analytics.export.ready" = "Export ready";
+"analytics.export.share" = "Share Analytics";
 "analytics.card.visits" = "Visits";
 "analytics.card.unique_visitors" = "Unique Visitors";
 "analytics.card.avg_visit" = "Avg Visit";
@@ -152,3 +155,11 @@
 "visitor.detail.confirm_checkout.title" = "Confirm Check Out";
 "visitor.detail.confirm_checkout.confirm" = "Check Out";
 "visitor.detail.confirm_checkout.message_template" = "Mark %@ as leaving?";
+
+"import.confirmation.title" = "Confirm Import";
+"import.confirmation.preview_title" = "Import Preview";
+"import.confirmation.imported" = "Imported";
+"import.confirmation.skipped" = "Skipped";
+"import.confirmation.failed" = "Failed";
+"import.confirmation.confirm" = "Confirm";
+"import.confirmation.a11y_summary_template" = "Import summary: %d imported, %d skipped, %d failed.";

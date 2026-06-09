@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-068 | 🟢 LOW | AnalyticsDashboardView.swift | `AnalyticsDashboardView` depends on a module-global `ShareItem` declared in another file instead of a local/shared explicit type; creates hidden coupling | `@State private var shareItem: ShareItem?` with no local declaration in file |
-| BUG-069 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ImportConfirmationView` UI is minimal and non-localized; lacks counts formatting and accessibility | Strings are literals; improve presentation |
 
 ---
 
@@ -24,6 +22,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-068 fixed — removed hidden dependency on cross-file share helper by introducing Analytics-local export share item/sheet (`AnalyticsExportShareItem` / `AnalyticsExportShareSheet`) |
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift + Localizable.strings | BUG-069 fixed — redesigned `ImportConfirmationView` with localized labels, structured count cards, improved action buttons, and combined accessibility summary |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-063 fixed — localized remaining analytics summary card titles (`Car Visitors`, `Blocked Car`, `Same-day Checkout`, `Median Visit`, `Avg Visits / Day`, `Peak Hour`) |
 | 2026-06-09 | ✅ WelcomeView.swift + Localizable.strings | BUG-064 fixed — localized kiosk-mode confirmation alert titles/messages/actions and kiosk-mode banner text |
 | 2026-06-09 | ✅ VisitorTabs.swift + Localizable.strings | BUG-066 fixed — added confirmation alert to `VisitorDetail` destructive checkout action before mutating visitor state |

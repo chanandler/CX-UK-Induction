@@ -44,7 +44,7 @@ struct AnalyticsDashboardView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedRange: AnalyticsRange = .week
     @State private var anchorDate: Date = Date()
-    @State private var shareItem: ExportShareItem?
+    @State private var shareItem: AnalyticsExportShareItem?
     @State private var showExportError = false
     @State private var selectedHeatmapMetric: HeatmapMetric = .visits
 
@@ -215,14 +215,14 @@ struct AnalyticsDashboardView: View {
                     Menu {
                         Button("Export Analytics CSV") {
                             if let url = exportAnalyticsCSV() {
-                                shareItem = ExportShareItem(url: url)
+                                shareItem = AnalyticsExportShareItem(url: url)
                             } else {
                                 showExportError = true
                             }
                         }
                         Button("Export Printable Report") {
                             if let url = exportPrintableReport() {
-                                shareItem = ExportShareItem(url: url)
+                                shareItem = AnalyticsExportShareItem(url: url)
                             } else {
                                 showExportError = true
                             }
@@ -233,7 +233,7 @@ struct AnalyticsDashboardView: View {
                 }
             }
             .sheet(item: $shareItem) { item in
-                ExportShareSheet(url: item.url, onDismiss: {
+                AnalyticsExportShareSheet(url: item.url, onDismiss: {
                     try? FileManager.default.removeItem(at: item.url)
                     shareItem = nil
                 })
@@ -431,6 +431,51 @@ struct AnalyticsDashboardView: View {
         } catch {
             return nil
         }
+    }
+}
+
+private struct AnalyticsExportShareItem: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
+private struct AnalyticsExportShareSheet: View, Identifiable {
+    let url: URL
+    var id: URL { url }
+    var onDismiss: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var didRunDismiss = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text(String(localized: "analytics.export.ready"))
+                ShareLink(item: url) {
+                    Label(String(localized: "analytics.export.share"), systemImage: "square.and.arrow.up")
+                }
+            }
+            .padding()
+            .navigationTitle(String(localized: "analytics.export.title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(String(localized: "common.done")) {
+                        runDismissIfNeeded()
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            runDismissIfNeeded()
+        }
+    }
+
+    private func runDismissIfNeeded() {
+        guard !didRunDismiss else { return }
+        didRunDismiss = true
+        onDismiss?()
     }
 }
 

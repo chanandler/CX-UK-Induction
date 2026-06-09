@@ -851,19 +851,66 @@ struct ImportConfirmationView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                Text("Import Preview")
-                Text("Imported: \(summary.imported)")
-                Text("Skipped: \(summary.skipped)")
-                Text("Failed: \(summary.failed)")
-                HStack {
-                    Button("Cancel", action: onCancel)
-                    Button("Confirm", action: onConfirm)
+            VStack(spacing: 18) {
+                Text(String(localized: "import.confirmation.preview_title"))
+                    .font(.title3.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 10) {
+                    summaryCard(
+                        title: String(localized: "import.confirmation.imported"),
+                        value: summary.imported,
+                        tint: .green
+                    )
+                    summaryCard(
+                        title: String(localized: "import.confirmation.skipped"),
+                        value: summary.skipped,
+                        tint: .orange
+                    )
+                    summaryCard(
+                        title: String(localized: "import.confirmation.failed"),
+                        value: summary.failed,
+                        tint: .red
+                    )
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    String(
+                        format: String(localized: "import.confirmation.a11y_summary_template"),
+                        summary.imported,
+                        summary.skipped,
+                        summary.failed
+                    )
+                )
+
+                HStack(spacing: 12) {
+                    Button(String(localized: "common.cancel"), action: onCancel)
+                        .buttonStyle(.bordered)
+                    Button(String(localized: "import.confirmation.confirm"), action: onConfirm)
+                        .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding()
-            .navigationTitle("Confirm Import")
+            .navigationTitle(String(localized: "import.confirmation.title"))
         }
+    }
+
+    private func summaryCard(title: String, value: Int, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(value)")
+                .font(.title2.bold())
+                .foregroundStyle(tint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 
