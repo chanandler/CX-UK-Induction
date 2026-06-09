@@ -1049,10 +1049,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 52)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.cemexBlue)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: Color.cemexBlue.opacity(0.35), radius: 6, x: 0, y: 3)
+        .welcomePrimaryActionStyle(emphasizedShadow: true)
         .accessibilityLabel("Register visitor")
         .accessibilityHint("Starts the visitor induction and sign-in flow.")
     }
@@ -1067,9 +1064,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 52)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.orange)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .welcomeProminentActionStyle(tint: .orange)
         .accessibilityLabel("I am leaving")
         .accessibilityHint("Opens the check-out list to sign out a visitor.")
     }
@@ -1084,9 +1079,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }
-        .buttonStyle(.bordered)
-        .tint(.cemexBlue)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .welcomeSecondaryActionStyle()
     }
 
     private var returningVisitorButton: some View {
@@ -1099,9 +1092,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }
-        .buttonStyle(.bordered)
-        .tint(.cemexBlue)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .welcomeSecondaryActionStyle()
     }
 
     private var signInBookButton: some View {
@@ -1114,9 +1105,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }
-        .buttonStyle(.bordered)
-        .tint(.cemexBlue)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .welcomeSecondaryActionStyle()
     }
     
     private var utilityActionButtons: some View {
@@ -1810,4 +1799,33 @@ private struct PagerSelectionSheet: View {
     RootView()
         .modelContainer(for: Visitor.self, inMemory: true)
         .environment(VisitorStore())
+}
+
+private extension View {
+    func welcomePrimaryActionStyle(emphasizedShadow: Bool = false) -> some View {
+        self
+            .buttonStyle(.borderedProminent)
+            .tint(.cemexBlue)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(
+                color: emphasizedShadow ? Color.cemexBlue.opacity(0.35) : .clear,
+                radius: emphasizedShadow ? 6 : 0,
+                x: 0,
+                y: emphasizedShadow ? 3 : 0
+            )
+    }
+
+    func welcomeProminentActionStyle(tint: Color) -> some View {
+        self
+            .buttonStyle(.borderedProminent)
+            .tint(tint)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    func welcomeSecondaryActionStyle() -> some View {
+        self
+            .buttonStyle(.bordered)
+            .tint(.cemexBlue)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
 }

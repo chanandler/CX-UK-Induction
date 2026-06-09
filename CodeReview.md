@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-059 | 🟢 LOW | AdminAndUtilitiesViews.swift | Several lists use `id: \.self` for model rows (`LeavingSearchSheet`, `SignInBookView`, `FireAlarmRollCallView`) instead of stable model IDs | Replace `id: \.self` with `id: \.id` for `Visitor` rows |
-| BUG-060 | 🟢 LOW | WelcomeView.swift | Multiple `.tint(.cemexBlue)` and custom shadows repeated; consider extracting a small `Theme` for consistent styling | Repetition across buttons and cards |
 | BUG-063 | 🟢 LOW | AnalyticsDashboardView.swift | Some summary card titles are not localized (e.g., "Car Visitors", "Blocked Car", "Same-day Checkout", etc.) | Mix of localized and hardcoded strings in `summaryGrid` |
 | BUG-064 | 🟢 LOW | WelcomeView.swift | `kioskMode` confirm alert strings are hardcoded and not localized | In `.kioskConfirm` alert case, titles and buttons are literals |
 | BUG-066 | 🟢 LOW | VisitorTabs.swift | `VisitorDetail` destructive checkout has no confirmation prompt unlike SignIn Book; risk of accidental checkout | Button("Mark as Leaving") directly calls `checkOut` |
@@ -29,6 +27,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-059 fixed — switched visitor list identity from `id: \.self` to stable `id: \.id` in Leaving/Search, Sign In Book, and Fire Roll Call views |
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-060 fixed — extracted repeated CEMEX button styling into reusable `View` helpers (`welcomePrimaryActionStyle`, `welcomeProminentActionStyle`, `welcomeSecondaryActionStyle`) and applied them across primary action buttons |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-055 fixed — moved `UIKit` import under `#if canImport(UIKit)` to match the guarded `ActivityView` wrapper |
 | 2026-06-09 | ✅ VisitorTabs.swift + AnalyticsDashboardView.swift | BUG-057 fixed — share export cleanup now runs on interactive sheet dismiss via `onDisappear`, and share helper naming was clarified (`ExportShareItem` / `ExportShareSheet`) to reduce confusion with other `ShareItem` types |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-052 fixed — added explicit accessibility labels/hints to key primary/icon actions and increased utility icon touch target height to 52pt |

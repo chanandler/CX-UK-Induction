@@ -116,7 +116,7 @@ struct LeavingSearchSheet: View {
 
     var body: some View {
         NavigationStack {
-            List(activeVisitors, id: \.self) { v in
+            List(activeVisitors, id: \.id) { v in
                 HStack {
                     VStack(alignment: .leading) {
                         Text("\(v.firstName) \(v.lastName)")
@@ -146,7 +146,7 @@ struct SignInBookView: View {
                         Text("No active visitors")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(activeVisitors, id: \.self) { visitor in
+                        ForEach(activeVisitors, id: \.id) { visitor in
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(visitor.fullName)
@@ -212,7 +212,7 @@ struct FireAlarmRollCallView: View {
                         Text("No active visitors")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(visitors, id: \.self) { visitor in
+                        ForEach(visitors, id: \.id) { visitor in
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(visitor.fullName)
                                     .font(.headline)
