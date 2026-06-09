@@ -29,6 +29,7 @@ struct WelcomeView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var showPagerPrompt = false
     @State private var registrationFlow: RegistrationFlow = .idle
+    @State private var deferredSelection: DeferredSelection?
     
     @State private var showingInduction = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
@@ -138,6 +139,11 @@ struct WelcomeView: View {
         case waitingBlockedCarDecision
         case waitingPagerSelection
         case waitingForInduction
+    }
+
+    private enum DeferredSelection {
+        case preRegistered(id: UUID, droveCarRegistration: String?)
+        case returningVisitor(id: UUID, droveCarRegistration: String?)
     }
 
     // Track pagers already in use by active visitors.
@@ -350,6 +356,7 @@ struct WelcomeView: View {
                     queuedProtectedActionAfterDismiss = nil
                     requestProtectedAccess(for: action)
                 }
+                applyDeferredSelectionIfNeeded()
             }) { sheet in
                 switch sheet {
                 case .about:
@@ -477,10 +484,10 @@ struct WelcomeView: View {
                 case .preRegistrationList:
                     NavigationStack {
                         PreRegisteredListView(preRegisteredVisitors: preRegisteredVisitors) { selected in
-                            prefillFromPreRegistered(selected, droveCarRegistration: nil)
+                            deferredSelection = .preRegistered(id: selected.id, droveCarRegistration: nil)
                             activeSheet = nil
                         } onSelectWithCar: { selected, carRegistration in
-                            prefillFromPreRegistered(selected, droveCarRegistration: carRegistration)
+                            deferredSelection = .preRegistered(id: selected.id, droveCarRegistration: carRegistration)
                             activeSheet = nil
                         }
                         .toolbar {
@@ -512,10 +519,10 @@ struct WelcomeView: View {
                 case .returningVisitorSearch:
                     NavigationStack {
                         ReturningVisitorSearchView(visitors: allVisitors) { selected in
-                            prefillFromReturningVisitor(selected, droveCarRegistration: nil)
+                            deferredSelection = .returningVisitor(id: selected.id, droveCarRegistration: nil)
                             activeSheet = nil
                         } onSelectWithCar: { selected, carRegistration in
-                            prefillFromReturningVisitor(selected, droveCarRegistration: carRegistration)
+                            deferredSelection = .returningVisitor(id: selected.id, droveCarRegistration: carRegistration)
                             activeSheet = nil
                         }
                         .toolbar {
@@ -1331,6 +1338,20 @@ struct WelcomeView: View {
             activeSheet = .preRegistrationAdmin
         case .kioskModeToggle:
             activeAlert = .kioskConfirm(enabled: kioskModeEnabled)
+        }
+    }
+
+    private func applyDeferredSelectionIfNeeded() {
+        guard let deferredSelection else { return }
+        self.deferredSelection = nil
+
+        switch deferredSelection {
+        case .preRegistered(let id, let droveCarRegistration):
+            guard let visitor = preRegisteredVisitors.first(where: { $0.id == id }) else { return }
+            prefillFromPreRegistered(visitor, droveCarRegistration: droveCarRegistration)
+        case .returningVisitor(let id, let droveCarRegistration):
+            guard let visitor = allVisitors.first(where: { $0.id == id }) else { return }
+            prefillFromReturningVisitor(visitor, droveCarRegistration: droveCarRegistration)
         }
     }
 
