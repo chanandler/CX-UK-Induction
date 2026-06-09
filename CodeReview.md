@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-052 | 🟢 LOW | WelcomeView.swift | Accessibility: primary actions lack explicit accessibility labels/hints and large content size adjustments | Buttons like Register/I'm Leaving/Fire Alarm shortcut rely on visible labels only; add `.accessibilityLabel`/`.accessibilityHint` and ensure min hit size |
-| BUG-053 | 🟢 LOW | AnalyticsDashboardView.swift | `AnalyticsDashboardView` export error alert is partially localized but strings like title/message in AnalyticsDashboard are still hardcoded | In `AnalyticsDashboardView`, alert title "Export Failed" and message are literal strings |
 | BUG-055 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ActivityView` is UIKit-gated but file still has unconditional top-level `import UIKit`; unnecessary coupling/noise for non-UIKit compilation paths | Top-level `import UIKit` with `#if canImport(UIKit)` guard below |
 | BUG-057 | 🟢 LOW | VisitorTabs.swift | Share temporary file removal relies on `onDismiss` but `ShareLink` may keep strong refs; ensure cleanup on all paths; also duplication of `ShareItem` type name with WelcomeView's nested `ShareItem` | Potential confusion between two `ShareItem` structs; consider centralizing share helpers |
 | BUG-059 | 🟢 LOW | AdminAndUtilitiesViews.swift | Several lists use `id: \.self` for model rows (`LeavingSearchSheet`, `SignInBookView`, `FireAlarmRollCallView`) instead of stable model IDs | Replace `id: \.self` with `id: \.id` for `Visitor` rows |
@@ -33,6 +31,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-052 fixed — added explicit accessibility labels/hints to key primary/icon actions and increased utility icon touch target height to 52pt |
+| 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-053 fixed — localized analytics export error alert title/message using `String(localized:)` keys |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift + Localizable.strings | BUG-050 fixed — localized settings/admin section titles, toggles, and actions (including backup/import/analytics/pre-registration/admin lock labels) via `String(localized:)` keys |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-051 fixed — `PreRegisteredListView` date formatter is now a cached static formatter instead of being recreated per access |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-067 fixed — CSV file importer now accepts `.commaSeparatedText` only (removed broad `.text`/`.data` content types) |

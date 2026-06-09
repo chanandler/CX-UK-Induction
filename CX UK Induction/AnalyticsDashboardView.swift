@@ -238,10 +238,10 @@ struct AnalyticsDashboardView: View {
                     shareItem = nil
                 })
             }
-            .alert("Export Failed", isPresented: $showExportError) {
+            .alert(String(localized: "analytics.alert.export_failed.title"), isPresented: $showExportError) {
                 Button(String(localized: "common.ok"), role: .cancel) { }
             } message: {
-                Text("The analytics export could not be created. Please try again.")
+                Text(String(localized: "analytics.alert.export_failed.message"))
             }
         }
     }

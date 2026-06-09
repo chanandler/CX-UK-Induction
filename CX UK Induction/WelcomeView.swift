@@ -1053,6 +1053,8 @@ struct WelcomeView: View {
         .tint(.cemexBlue)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: Color.cemexBlue.opacity(0.35), radius: 6, x: 0, y: 3)
+        .accessibilityLabel("Register visitor")
+        .accessibilityHint("Starts the visitor induction and sign-in flow.")
     }
 
     private var leavingButton: some View {
@@ -1068,6 +1070,8 @@ struct WelcomeView: View {
         .buttonStyle(.borderedProminent)
         .tint(.orange)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityLabel("I am leaving")
+        .accessibilityHint("Opens the check-out list to sign out a visitor.")
     }
 
     private var preRegisteredButton: some View {
@@ -1188,6 +1192,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "car.fill", foreground: .blue)
         }
+        .accessibilityLabel("Issue staff pager")
+        .accessibilityHint("Opens staff pager issue form.")
     }
 
     private var fireRollCallShortcutButton: some View {
@@ -1196,6 +1202,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "flame.fill", foreground: .red)
         }
+        .accessibilityLabel("Fire alarm roll call")
+        .accessibilityHint("Opens emergency roll call tools.")
     }
 
     private var returnPagersButton: some View {
@@ -1204,6 +1212,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "dot.radiowaves.left.and.right", foreground: .green)
         }
+        .accessibilityLabel("Return pagers")
+        .accessibilityHint("Opens the list of issued pagers to mark returned.")
     }
 
     private var kioskModeButton: some View {
@@ -1212,13 +1222,15 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: kioskModeEnabled ? "key.fill" : "key", foreground: .yellow)
         }
+        .accessibilityLabel(kioskModeEnabled ? "Disable kiosk mode" : "Enable kiosk mode")
+        .accessibilityHint("Requires admin PIN to change kiosk mode.")
     }
 
     private func utilityIcon(systemName: String, foreground: Color) -> some View {
         Image(systemName: systemName)
             .imageScale(.medium)
             .foregroundStyle(foreground)
-            .frame(width: 52, height: 48)
+            .frame(width: 52, height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color.cemexBlue.opacity(0.10))

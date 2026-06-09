@@ -42,6 +42,8 @@
 "analytics.empty.no_host_data" = "No host data yet";
 "analytics.empty.no_company_data" = "No company data yet";
 "analytics.empty.no_visit_records" = "No visit records yet";
+"analytics.alert.export_failed.title" = "Export Failed";
+"analytics.alert.export_failed.message" = "The analytics export could not be created. Please try again.";
 "analytics.card.visits" = "Visits";
 "analytics.card.unique_visitors" = "Unique Visitors";
 "analytics.card.avg_visit" = "Avg Visit";
