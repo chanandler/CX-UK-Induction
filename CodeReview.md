@@ -15,7 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-045 | 🟡 MEDIUM | WelcomeView.swift | Kiosk mode banner auto-hide task not cancelled on view disappear | `.task` in `checkoutBanner` and kiosk banner hide task rely on Task cancellation by scope; ensure cancellation when view disappears or when state flips to avoid lingering async work. |
 
 ---
 
@@ -23,6 +22,7 @@
 
 | Date | File | Issue |
 |---|---|---|
+| 2026-06-09 | ✅ WelcomeView.swift | BUG-045 fixed — Kiosk banner auto-hide task is now cancelled on disappear and when hidden; task handle stored and managed to prevent leaks |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-046 fixed — "Issue Pager" button is now always visible; tapping sets hasAttemptedSave and shows validation errors until form is valid |
 | 2026-06-09 | ✅ Models.swift | BUG-044 fixed — Duplicate key now uses integer minutes-since-reference instead of Double to avoid precision issues; documented rationale |
 | 2026-06-09 | ✅ VisitorTabs.swift | BUG-043 fixed — Removed UIKit ClearBackgroundView hack; rely on .scrollContentBackground(.hidden) and clear backgrounds to avoid flicker |

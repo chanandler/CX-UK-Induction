@@ -44,6 +44,7 @@ struct WelcomeView: View {
 
     @State private var kioskBannerText = ""
     @State private var showKioskBanner = false
+    @State private var kioskBannerTask: Task<Void, Never>? = nil
     
     @AppStorage("autoCheckoutEnabled") private var autoCheckoutEnabled: Bool = false
     @AppStorage("autoCheckoutHour") private var autoCheckoutHour: Int = 5
@@ -616,7 +617,8 @@ struct WelcomeView: View {
                             withAnimation { showKioskBanner = true }
                             hapticGenerator.prepare()
                             hapticGenerator.notificationOccurred(.success)
-                            Task { @MainActor in
+                            kioskBannerTask?.cancel()
+                            kioskBannerTask = Task { @MainActor in
                                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                                 if !Task.isCancelled { withAnimation { showKioskBanner = false } }
                             }
@@ -731,6 +733,9 @@ struct WelcomeView: View {
             .onDisappear {
                 scheduler.cancel()
                 backupScheduler.cancel()
+                kioskBannerTask?.cancel()
+                kioskBannerTask = nil
+                showKioskBanner = false
             }
             .onChange(of: autoCheckoutEnabled) { _, enabled in
                 if enabled { startScheduler() } else { scheduler.cancel() }
@@ -749,6 +754,12 @@ struct WelcomeView: View {
                     if shouldRunAutoCheckoutNow() {
                         performAutoCheckoutNow()
                     }
+                }
+            }
+            .onChange(of: showKioskBanner) { _, visible in
+                if !visible {
+                    kioskBannerTask?.cancel()
+                    kioskBannerTask = nil
                 }
             }
     }
