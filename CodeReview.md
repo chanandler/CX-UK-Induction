@@ -15,8 +15,6 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
-| BUG-050 | 🟡 MEDIUM | AdminAndUtilitiesViews.swift | Settings strings and some labels remain hardcoded and not localized | Examples: "Backup Now", "Import CSV…", "Open Analytics", section titles, etc. |
-| BUG-051 | 🟢 LOW | AdminAndUtilitiesViews.swift | DateFormatter created per-row in `PreRegisteredListView` (`dateOnlyFormatter`) instead of a static cached formatter | `private var dateOnlyFormatter` creates new instance each access |
 | BUG-052 | 🟢 LOW | WelcomeView.swift | Accessibility: primary actions lack explicit accessibility labels/hints and large content size adjustments | Buttons like Register/I'm Leaving/Fire Alarm shortcut rely on visible labels only; add `.accessibilityLabel`/`.accessibilityHint` and ensure min hit size |
 | BUG-053 | 🟢 LOW | AnalyticsDashboardView.swift | `AnalyticsDashboardView` export error alert is partially localized but strings like title/message in AnalyticsDashboard are still hardcoded | In `AnalyticsDashboardView`, alert title "Export Failed" and message are literal strings |
 | BUG-055 | 🟢 LOW | AdminAndUtilitiesViews.swift | `ActivityView` is UIKit-gated but file still has unconditional top-level `import UIKit`; unnecessary coupling/noise for non-UIKit compilation paths | Top-level `import UIKit` with `#if canImport(UIKit)` guard below |
@@ -35,6 +33,8 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift + Localizable.strings | BUG-050 fixed — localized settings/admin section titles, toggles, and actions (including backup/import/analytics/pre-registration/admin lock labels) via `String(localized:)` keys |
+| 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-051 fixed — `PreRegisteredListView` date formatter is now a cached static formatter instead of being recreated per access |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-067 fixed — CSV file importer now accepts `.commaSeparatedText` only (removed broad `.text`/`.data` content types) |
 | 2026-06-09 | ✅ WelcomeView.swift | BUG-070 fixed — replaced `pendingSubmit`/`hasRoutedToInduction` flow with explicit `registrationFlow` state (`idle`/`waitingBlockedCarDecision`/`waitingPagerSelection`/`waitingForInduction`) to de-risk alert/sheet overlap races |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift | BUG-062 fixed — local pre-registration badge conflict check now compares normalized badge values (trimmed/lowercased) |
