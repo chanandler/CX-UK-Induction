@@ -303,6 +303,7 @@ struct StaffCarPagerSheet: View {
     @State private var carRegistration = ""
     @State private var selectedPager = ""
     @State private var hasAttemptedSave = false
+    @FocusState private var carRegFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -314,8 +315,8 @@ struct StaffCarPagerSheet: View {
                         .textInputAutocapitalization(.words)
                     TextField("Car registration", text: carRegistrationBinding)
                         .textInputAutocapitalization(.characters)
-                        .keyboardType(.asciiCapable)
                         .autocorrectionDisabled()
+                        .focused($carRegFocused)
                     Text("The Issue button will appear once first name, last name, car registration and a pager are selected.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -382,6 +383,25 @@ struct StaffCarPagerSheet: View {
                 }
             }
             .navigationTitle("Issue Staff Pager")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    if carRegFocused {
+                        HStack(spacing: 6) {
+                            ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { digit in
+                                Button(digit) {
+                                    carRegistration.append(digit)
+                                    // Apply the same normalization as the binding to enforce uppercase and allowed chars
+                                    carRegistration = String(carRegistration.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) })
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                            Spacer()
+                            Button("Done") { carRegFocused = false }
+                                .buttonStyle(.bordered)
+                        }
+                    }
+                }
+            }
         }
     }
 
