@@ -314,6 +314,7 @@ struct StaffCarPagerSheet: View {
                         .textInputAutocapitalization(.words)
                     TextField("Car registration", text: carRegistrationBinding)
                         .textInputAutocapitalization(.characters)
+                        .keyboardType(.asciiCapable)
                         .autocorrectionDisabled()
                     Text("The Issue button will appear once first name, last name, car registration and a pager are selected.")
                         .font(.footnote)
@@ -1091,3 +1092,4 @@ private struct InductionSignatureSheet: View {
         }
     }
 }
+
