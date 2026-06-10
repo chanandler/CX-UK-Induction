@@ -17,7 +17,6 @@
 |---|---|---|---|---|
 | BUG-076 | 🟠 HIGH | AnalyticsDashboardView.swift | Heatmap weekday labels are shifted by one day due to incorrect Monday-first to symbol index mapping, so data can be shown under the wrong day label. | Monday-first label mapping uses `(index + 2) % 7` and indexes `shortWeekdaySymbols` directly in `AnalyticsDashboardView.swift:281-285` |
 | BUG-077 | 🟠 HIGH | Models.swift | CSV import duplicate detection rounds check-in to minute precision, so distinct same-minute visits from the same person can be dropped as duplicates. | `dupKey` floors to whole minutes in `Models.swift:637-645`, and this key is used for skip logic in `Models.swift:510-516` |
-| BUG-078 | 🔴 CRITICAL | CX_UK_InductionApp.swift | App hard-crashes on SwiftData container init failure (`fatalError`) with no user-safe fallback path. | `fatalError("Failed to initialise SwiftData container...")` in `CX_UK_InductionApp.swift:12` |
 | BUG-079 | 🟡 MEDIUM | WelcomeView.swift | Several visitor/admin-facing strings remain hard-coded and bypass localization, causing mixed-language UI and inconsistent copy in kiosk/sign-in contexts. | Examples at `WelcomeView.swift:618-627`, `WelcomeView.swift:1146-1179`, `WelcomeView.swift:1244-1248` |
 | BUG-080 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Heatmap chart uses non-unique identity (`id: \.hour`) for 7 rows per hour, which can produce unstable diffing/rendering in SwiftUI Chart updates. | `Chart(matrix, id: \.hour)` in `AnalyticsDashboardView.swift:112` while matrix contains repeated `hour` values across weekdays |
 | OPT-001 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Analytics metrics are recomputed from scratch on every render, with multiple full-array passes and formatter creation in hot UI paths; this can stutter as history grows. | `metrics` computed property (`AnalyticsDashboardView.swift:51-59`) and heavy metric init loops (`AnalyticsDashboardView.swift:553-698`) |
@@ -30,6 +29,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-10 | ✅ CX_UK_InductionApp.swift | BUG-078 fixed — replaced startup `fatalError` with resilient launch flow: primary persistent ModelContainer, automatic in-memory fallback with visible warning banner, and a non-crashing startup error screen if both stores fail |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-068 fixed — removed hidden dependency on cross-file share helper by introducing Analytics-local export share item/sheet (`AnalyticsExportShareItem` / `AnalyticsExportShareSheet`) |
 | 2026-06-09 | ✅ AdminAndUtilitiesViews.swift + Localizable.strings | BUG-069 fixed — redesigned `ImportConfirmationView` with localized labels, structured count cards, improved action buttons, and combined accessibility summary |
 | 2026-06-09 | ✅ AnalyticsDashboardView.swift + Localizable.strings | BUG-063 fixed — localized remaining analytics summary card titles (`Car Visitors`, `Blocked Car`, `Same-day Checkout`, `Median Visit`, `Avg Visits / Day`, `Peak Hour`) |
