@@ -4,6 +4,135 @@ import SwiftData
 import UIKit
 #endif
 
+// MARK: - Plate Keyboard (Custom)
+struct PlateKeyboard: View {
+    @Binding var text: String
+    var onDone: () -> Void
+
+    private let letters: [String] = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map { String($0) }
+    private let digits: [String] = ["1","2","3","4","5","6","7","8","9","0"]
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Number row
+            HStack(spacing: 6) {
+                ForEach(digits, id: \.self) { d in
+                    key(title: d) { insert(d) }
+                }
+                Spacer(minLength: 0)
+                key(system: "delete.left.fill", wide: false, tint: .secondary) { deleteBackward() }
+            }
+            // Letter rows (QWERTY-like grouping for familiarity)
+            HStack(spacing: 6) {
+                ForEach(["Q","W","E","R","T","Y","U","I","O","P"], id: \.self) { l in
+                    key(title: l) { insert(l) }
+                }
+            }
+            HStack(spacing: 6) {
+                Spacer(minLength: 10)
+                ForEach(["A","S","D","F","G","H","J","K","L"], id: \.self) { l in
+                    key(title: l) { insert(l) }
+                }
+                Spacer(minLength: 10)
+            }
+            HStack(spacing: 6) {
+                ForEach(["Z","X","C","V","B","N","M"], id: \.self) { l in
+                    key(title: l) { insert(l) }
+                }
+                Spacer(minLength: 0)
+                key(title: "Done", wide: true, tint: .blue) { onDone() }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, 8)
+        .padding(.bottom, 6)
+    }
+
+    private func insert(_ s: String) { text.append(contentsOf: s.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) }) }
+    private func deleteBackward() { if !text.isEmpty { _ = text.removeLast() } }
+
+    @ViewBuilder
+    private func key(title: String, wide: Bool = false, tint: Color = .primary, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.semibold)
+                .foregroundColor(tint == .primary ? .primary : .white)
+                .frame(minWidth: wide ? 72 : 34, maxWidth: wide ? .infinity : nil, minHeight: 36)
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(tint == .primary ? Color(.systemGray5) : tint)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(.separator), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 0.5, x: 0, y: 0.5)
+    }
+
+    @ViewBuilder
+    private func key(system name: String, wide: Bool = false, tint: Color = .primary, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: name)
+                .font(.body.weight(.semibold))
+                .foregroundColor(tint == .primary ? .primary : .white)
+                .frame(minWidth: wide ? 72 : 34, minHeight: 36)
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(tint == .primary ? Color(.systemGray5) : tint)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(.separator), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 0.5, x: 0, y: 0.5)
+    }
+}
+
+/// A text field wrapper that shows the PlateKeyboard above the system keyboard and filters input.
+struct PlateTextField: View {
+    let title: String
+    @Binding var text: String
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TextField(title, text: filteredBinding)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .focused($focused)
+                .submitLabel(.done)
+                .toolbar { keyboardToolbar }
+        }
+        .onAppear { focused = true }
+    }
+
+    private var filteredBinding: Binding<String> {
+        Binding(
+            get: { text },
+            set: { newValue in
+                text = String(newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) })
+            }
+        )
+    }
+
+    @ToolbarContentBuilder
+    private var keyboardToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .keyboard) {
+            PlateKeyboard(text: $text) { focused = false }
+        }
+    }
+}
+
 // MARK: - UIKit Share Sheet Wrapper
 #if canImport(UIKit)
 struct ActivityView: UIViewControllerRepresentable {
@@ -303,7 +432,6 @@ struct StaffCarPagerSheet: View {
     @State private var carRegistration = ""
     @State private var selectedPager = ""
     @State private var hasAttemptedSave = false
-    @FocusState private var carRegFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -313,10 +441,7 @@ struct StaffCarPagerSheet: View {
                         .textInputAutocapitalization(.words)
                     TextField("Last name", text: $lastName)
                         .textInputAutocapitalization(.words)
-                    TextField("Car registration", text: carRegistrationBinding)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .focused($carRegFocused)
+                    PlateTextField(title: "Car registration", text: $carRegistration)
                     Text("The Issue button will appear once first name, last name, car registration and a pager are selected.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -384,23 +509,7 @@ struct StaffCarPagerSheet: View {
             }
             .navigationTitle("Issue Staff Pager")
             .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    if carRegFocused {
-                        HStack(spacing: 6) {
-                            ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { digit in
-                                Button(digit) {
-                                    carRegistration.append(digit)
-                                    // Apply the same normalization as the binding to enforce uppercase and allowed chars
-                                    carRegistration = String(carRegistration.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) })
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                            Spacer()
-                            Button("Done") { carRegFocused = false }
-                                .buttonStyle(.bordered)
-                        }
-                    }
-                }
+                // Removed the custom toolbar for keyboard; PlateTextField provides its own keyboard with toolbar.
             }
         }
     }
@@ -415,15 +524,6 @@ struct StaffCarPagerSheet: View {
         !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !selectedPager.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var carRegistrationBinding: Binding<String> {
-        Binding(
-            get: { carRegistration },
-            set: { newValue in
-                carRegistration = String(newValue.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) })
-            }
-        )
     }
 }
 
@@ -513,9 +613,7 @@ struct PreRegisteredListView: View {
                 NavigationStack {
                     Form {
                         Section(visitor.fullName) {
-                            TextField("Car registration", text: carRegistrationBinding)
-                                .textInputAutocapitalization(.characters)
-                                .autocorrectionDisabled()
+                            PlateTextField(title: "Car registration", text: $carRegistration)
                         }
                     }
                     .navigationTitle("Car Registration")
@@ -799,9 +897,7 @@ struct ReturningVisitorSearchView: View {
                 NavigationStack {
                     Form {
                         Section(visitor.fullName) {
-                            TextField("Car registration", text: carRegistrationBinding)
-                                .textInputAutocapitalization(.characters)
-                                .autocorrectionDisabled()
+                            PlateTextField(title: "Car registration", text: $carRegistration)
                         }
                     }
                     .navigationTitle("Car Registration")
@@ -1112,4 +1208,3 @@ private struct InductionSignatureSheet: View {
         }
     }
 }
-
