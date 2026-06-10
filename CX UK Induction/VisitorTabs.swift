@@ -47,6 +47,15 @@ extension DateFormatter {
         return df
     }()
 
+    /// UK locale dd/MM/yy HH:mm:ss formatter used when CSV timestamps include seconds.
+    static let csvDateTimeWithSeconds: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_GB")
+        df.timeZone = TimeZone(identifier: "Europe/London") ?? .current
+        df.dateFormat = "dd/MM/yy HH:mm:ss"
+        return df
+    }()
+
     /// Alternative ISO-style formatter for parsing legacy CSV files that may use
     /// a different date format (yyyy-MM-dd HH:mm or similar).
     static let csvDateTimeAlt: DateFormatter = {
@@ -54,6 +63,15 @@ extension DateFormatter {
         df.locale = Locale(identifier: "en_GB")
         df.timeZone = TimeZone(identifier: "Europe/London") ?? .current
         df.dateFormat = "yyyy-MM-dd HH:mm"
+        return df
+    }()
+
+    /// Alternative ISO-style formatter with seconds.
+    static let csvDateTimeAltWithSeconds: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_GB")
+        df.timeZone = TimeZone(identifier: "Europe/London") ?? .current
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return df
     }()
 }

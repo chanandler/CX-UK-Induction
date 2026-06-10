@@ -466,12 +466,15 @@ final class VisitorStore {
         let iAutoLoggedOut = col("Auto Logged Out")
         let iPreRegistered = col("Pre-Registered")
 
-        // Note: duplicate key uses minute-precision timestamps to avoid precision mismatches.
-        // Build a set of existing records for duplicate detection.
-        let existingKey: Set<String>
+        // Build duplicate-key sets from existing records.
+        // - second precision: preserves distinct same-minute visits when seconds are present.
+        // - minute precision: keeps compatibility with legacy CSV files that only store HH:mm.
+        let existingSecondKeys: Set<String>
+        let existingMinuteKeys: Set<String>
         do {
             let all = try context.fetch(FetchDescriptor<Visitor>())
-            existingKey = Set(all.map { dupKey($0.firstName, $0.lastName, $0.checkIn) })
+            existingSecondKeys = Set(all.map { dupKeySecond($0.firstName, $0.lastName, $0.checkIn) })
+            existingMinuteKeys = Set(all.map { dupKeyMinute($0.firstName, $0.lastName, $0.checkIn) })
         } catch {
             lastError = .importMessage(String(localized: "store.error.import_read_existing_failed"))
             return (ImportSummary(imported: 0, skipped: 0, failed: 0), [])
@@ -479,7 +482,8 @@ final class VisitorStore {
 
         // Track keys seen during this import pass so duplicates inside the same CSV
         // are skipped (not just duplicates already persisted in the database).
-        var seenKeys = existingKey
+        var seenSecondKeys = existingSecondKeys
+        var seenMinuteKeys = existingMinuteKeys
 
         var pending: [Visitor] = []
         var skipped = 0
@@ -501,18 +505,28 @@ final class VisitorStore {
                 continue
             }
 
-            guard let checkIn = DateFormatter.csvDateTime.date(from: checkInStr)
-                              ?? DateFormatter.csvDateTimeAlt.date(from: checkInStr) else {
+            let parsedCheckIn = parseCSVDate(checkInStr)
+            guard let checkIn = parsedCheckIn?.date else {
                 failed += 1
                 continue
             }
 
-            // Duplicate check against both existing records and rows already parsed
-            // in this same file.
-            let key = dupKey(firstName, lastName, checkIn)
-            if seenKeys.contains(key) {
-                skipped += 1
-                continue
+            let secondKey = dupKeySecond(firstName, lastName, checkIn)
+            let minuteKey = dupKeyMinute(firstName, lastName, checkIn)
+            if parsedCheckIn?.hasSecondPrecision == true {
+                // When seconds are present, use second-level dedupe so distinct
+                // same-minute visits are preserved.
+                if seenSecondKeys.contains(secondKey) {
+                    skipped += 1
+                    continue
+                }
+            } else {
+                // For legacy minute-only timestamps, keep minute-level dedupe to
+                // avoid duplicate imports from older backup formats.
+                if seenMinuteKeys.contains(minuteKey) {
+                    skipped += 1
+                    continue
+                }
             }
 
             // Optional / potentially missing columns get safe defaults.
@@ -525,9 +539,7 @@ final class VisitorStore {
             let pagerNumber: String? = pagerRaw.isEmpty ? nil : pagerRaw
             let badgeNumber     = field(iBadgeNumber)
             let checkOutStr     = field(iCheckOut)
-            let checkOut: Date? = checkOutStr.isEmpty ? nil
-                : DateFormatter.csvDateTime.date(from: checkOutStr)
-                  ?? DateFormatter.csvDateTimeAlt.date(from: checkOutStr)
+            let checkOut: Date? = checkOutStr.isEmpty ? nil : parseCSVDate(checkOutStr)?.date
             let autoStr         = field(iAutoLoggedOut).lowercased()
             let wasAuto         = autoStr == "yes" || autoStr == "true" || autoStr == "1"
             let preRegStr       = field(iPreRegistered).lowercased()
@@ -548,7 +560,8 @@ final class VisitorStore {
                 wasPreRegistered: wasPreReg
             )
             pending.append(visitor)
-            seenKeys.insert(key)
+            seenSecondKeys.insert(secondKey)
+            seenMinuteKeys.insert(minuteKey)
         }
 
         return (ImportSummary(imported: pending.count, skipped: skipped, failed: failed), pending)
@@ -634,14 +647,33 @@ final class VisitorStore {
         return records
     }
 
-    /// Normalize duplicate key to minute precision using an integer timestamp to avoid
-    /// floating-point precision issues. We floor the reference time to whole minutes so
-    /// CSV-rounded times (no seconds) and persisted times (with seconds/subseconds) map
-    /// to the same logical minute bucket.
-    private func dupKey(_ first: String, _ last: String, _ date: Date) -> String {
-        // Compute minutes since the reference date as an Int to avoid Double precision artifacts.
-        let seconds = date.timeIntervalSinceReferenceDate
-        let minutesInt = Int(floor(seconds / 60.0))
+    private struct ParsedCSVDate {
+        let date: Date
+        let hasSecondPrecision: Bool
+    }
+
+    private func parseCSVDate(_ value: String) -> ParsedCSVDate? {
+        if let d = DateFormatter.csvDateTimeWithSeconds.date(from: value)
+            ?? DateFormatter.csvDateTimeAltWithSeconds.date(from: value) {
+            return ParsedCSVDate(date: d, hasSecondPrecision: true)
+        }
+        if let d = DateFormatter.csvDateTime.date(from: value)
+            ?? DateFormatter.csvDateTimeAlt.date(from: value) {
+            return ParsedCSVDate(date: d, hasSecondPrecision: false)
+        }
+        return nil
+    }
+
+    /// Duplicate key at second precision.
+    private func dupKeySecond(_ first: String, _ last: String, _ date: Date) -> String {
+        let secondsInt = Int(date.timeIntervalSinceReferenceDate.rounded(.towardZero))
+        return "\(first.lowercased())|\(last.lowercased())|\(secondsInt)"
+    }
+
+    /// Duplicate key at minute precision (legacy CSV fallback).
+    private func dupKeyMinute(_ first: String, _ last: String, _ date: Date) -> String {
+        let secondsInt = Int(date.timeIntervalSinceReferenceDate.rounded(.towardZero))
+        let minutesInt = secondsInt / 60
         return "\(first.lowercased())|\(last.lowercased())|\(minutesInt)"
     }
 
