@@ -9,6 +9,7 @@ struct RootView: View {
 
             WelcomeView()
         }
+        .autocorrectionDisabled()
     }
 }
 
