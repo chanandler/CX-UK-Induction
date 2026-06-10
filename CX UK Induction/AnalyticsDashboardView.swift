@@ -276,12 +276,13 @@ struct AnalyticsDashboardView: View {
             return (rawWeekday + 5) % 7 // Mon(2)->0, Tue(3)->1, ..., Sun(1)->6
         }
         // Helper: localized short weekday symbol for Monday-first index
-        let shortSymbols = DateFormatter().shortWeekdaySymbols ?? []
+        // DateFormatter.shortWeekdaySymbols is always Sun..Sat (0..6). We want Mon..Sun.
+        let shortSymbols = DateFormatter().shortWeekdaySymbols ?? [] // Sun, Mon, Tue, Wed, Thu, Fri, Sat
         let labelForMondayIndex: (Int) -> String = { index in
-            // Map Monday-first index back to calendar weekday to index symbols
-            // calendar weekday = (index + 2) % 7, but symbols are 0-based Sun..Sat
-            let calendarWeekday = (index + 2) % 7 // 0..6 where 0=Sun
-            let symbolIndex = calendarWeekday // already 0..6 for Sun..Sat
+            // index: 0..6 (Mon..Sun) → symbolIndex: 0..6 (Sun..Sat)
+            // Monday (0) should map to Mon which is at index 1 in Sun..Sat array.
+            // So symbolIndex = (index + 1) % 7
+            let symbolIndex = (index + 1) % 7
             return shortSymbols[safe: symbolIndex] ?? "Day"
         }
 
@@ -740,7 +741,11 @@ private struct AnalyticsMetrics {
                 weekdayMap[weekday, default: 0] += 1
             }
             return orderedWeekdays.map { weekday in
-                let label = shortWeekdaySymbols[safe: weekday - 1] ?? "Day"
+                // shortWeekdaySymbols is Sun..Sat; weekday is 1..7 (Sun=1..Sat=7)
+                // We want Monday-first labels, so compute Monday-first index and then offset by +1.
+                let mondayFirstIndex = (weekday + 5) % 7 // Mon=0..Sun=6
+                let symbolIndex = (mondayFirstIndex + 1) % 7 // Sun..Sat index
+                let label = shortWeekdaySymbols[safe: symbolIndex] ?? "Day"
                 return TrendPoint(label: label, count: weekdayMap[weekday, default: 0])
             }
 
