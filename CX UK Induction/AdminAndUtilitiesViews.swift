@@ -4,6 +4,20 @@ import SwiftData
 import UIKit
 #endif
 
+// MARK: - UIKit Share Sheet Wrapper
+#if canImport(UIKit)
+struct ActivityView: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
+
 // MARK: - About
 struct AboutView: View {
     var body: some View {
@@ -289,7 +303,6 @@ struct StaffCarPagerSheet: View {
     @State private var carRegistration = ""
     @State private var selectedPager = ""
     @State private var hasAttemptedSave = false
-    @FocusState private var carRegFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -302,7 +315,6 @@ struct StaffCarPagerSheet: View {
                     TextField("Car registration", text: carRegistrationBinding)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                        .focused($carRegFocused)
                     Text("The Issue button will appear once first name, last name, car registration and a pager are selected.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -369,51 +381,6 @@ struct StaffCarPagerSheet: View {
                 }
             }
             .navigationTitle("Issue Staff Pager")
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    if carRegFocused {
-                        VStack(spacing: 0) {
-                            Rectangle()
-                                .fill(Color(.separator))
-                                .frame(height: 0.5)
-                                .opacity(0.6)
-                            HStack(spacing: 8) {
-                                ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { digit in
-                                    Button(action: {
-                                        carRegistration.append(digit)
-                                        carRegistration = String(carRegistration.uppercased().filter { $0.isNumber || ("A"..."Z").contains(String($0)) })
-                                        let generator = UIImpactFeedbackGenerator(style: .light)
-                                        generator.impactOccurred()
-                                    }) {
-                                        Text(digit)
-                                            .font(.body)
-                                            .frame(width: 34, height: 32)
-                                            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                            .fill(Color(.systemGray5))
-                                    )
-                                }
-                                Spacer(minLength: 10)
-                                Button("Done") { carRegFocused = false }
-                                    .buttonStyle(.plain)
-                                    .font(.body)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(Color(.systemGray5))
-                                    )
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color(.systemGray6))
-                        }
-                    }
-                }
-            }
         }
     }
 
