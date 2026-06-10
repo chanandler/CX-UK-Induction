@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-06-09
+> Generated: 2026-03-23 | Last updated: 2026-06-10
 
 ---
 
@@ -15,6 +15,14 @@
 
 | ID | Priority | File | Issue | Evidence |
 |---|---|---|---|---|
+| BUG-076 | 🟠 HIGH | AnalyticsDashboardView.swift | Heatmap weekday labels are shifted by one day due to incorrect Monday-first to symbol index mapping, so data can be shown under the wrong day label. | Monday-first label mapping uses `(index + 2) % 7` and indexes `shortWeekdaySymbols` directly in `AnalyticsDashboardView.swift:281-285` |
+| BUG-077 | 🟠 HIGH | Models.swift | CSV import duplicate detection rounds check-in to minute precision, so distinct same-minute visits from the same person can be dropped as duplicates. | `dupKey` floors to whole minutes in `Models.swift:637-645`, and this key is used for skip logic in `Models.swift:510-516` |
+| BUG-078 | 🔴 CRITICAL | CX_UK_InductionApp.swift | App hard-crashes on SwiftData container init failure (`fatalError`) with no user-safe fallback path. | `fatalError("Failed to initialise SwiftData container...")` in `CX_UK_InductionApp.swift:12` |
+| BUG-079 | 🟡 MEDIUM | WelcomeView.swift | Several visitor/admin-facing strings remain hard-coded and bypass localization, causing mixed-language UI and inconsistent copy in kiosk/sign-in contexts. | Examples at `WelcomeView.swift:618-627`, `WelcomeView.swift:1146-1179`, `WelcomeView.swift:1244-1248` |
+| BUG-080 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Heatmap chart uses non-unique identity (`id: \.hour`) for 7 rows per hour, which can produce unstable diffing/rendering in SwiftUI Chart updates. | `Chart(matrix, id: \.hour)` in `AnalyticsDashboardView.swift:112` while matrix contains repeated `hour` values across weekdays |
+| OPT-001 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Analytics metrics are recomputed from scratch on every render, with multiple full-array passes and formatter creation in hot UI paths; this can stutter as history grows. | `metrics` computed property (`AnalyticsDashboardView.swift:51-59`) and heavy metric init loops (`AnalyticsDashboardView.swift:553-698`) |
+| QOL-001 | 🟢 LOW | AdminAndUtilitiesViews.swift | Backup list in Settings only shows filenames; adding formatted date/time, size, and a quick share/open action would reduce admin friction when restoring or auditing backups. | Current list shows only `url.lastPathComponent` in `AdminAndUtilitiesViews.swift:73-75` |
+| QOL-002 | 🟢 LOW | WelcomeView.swift | Main sign-in journey would be faster with automatic focus reset to first name after successful registration and after returning from sheets. | Field focus is wired (`WelcomeView.swift:103-106`) but no post-submit autofocus is set in reset flow (`WelcomeView.swift:854-863`) |
 
 ---
 
