@@ -18,7 +18,6 @@
 | BUG-079 | 🟡 MEDIUM | WelcomeView.swift | Several visitor/admin-facing strings remain hard-coded and bypass localization, causing mixed-language UI and inconsistent copy in kiosk/sign-in contexts. | Examples at `WelcomeView.swift:618-627`, `WelcomeView.swift:1146-1179`, `WelcomeView.swift:1244-1248` |
 | BUG-080 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Heatmap chart uses non-unique identity (`id: \.hour`) for 7 rows per hour, which can produce unstable diffing/rendering in SwiftUI Chart updates. | `Chart(matrix, id: \.hour)` in `AnalyticsDashboardView.swift:112` while matrix contains repeated `hour` values across weekdays |
 | OPT-001 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Analytics metrics are recomputed from scratch on every render, with multiple full-array passes and formatter creation in hot UI paths; this can stutter as history grows. | `metrics` computed property (`AnalyticsDashboardView.swift:51-59`) and heavy metric init loops (`AnalyticsDashboardView.swift:553-698`) |
-| QOL-001 | 🟢 LOW | AdminAndUtilitiesViews.swift | Backup list in Settings only shows filenames; adding formatted date/time, size, and a quick share/open action would reduce admin friction when restoring or auditing backups. | Current list shows only `url.lastPathComponent` in `AdminAndUtilitiesViews.swift:73-75` |
 
 ---
 
@@ -26,6 +25,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-18 | ✅ AdminAndUtilitiesViews.swift | QOL-001 fixed — backup list now shows formatted date/time and file size, with quick share/open actions to streamline restores and audits |
 | 2026-06-18 | ✅ WelcomeView.swift | QOL-002 fixed — after successful registration and when returning from sheets, the first-name field is auto-focused to speed up the next sign-in |
 | 2026-06-10 | ✅ Models.swift + VisitorTabs.swift | BUG-077 fixed — import duplicate detection now supports second-precision timestamps while retaining minute-precision fallback for legacy CSV files; added second-aware CSV parsers and precision-aware duplicate key handling |
 | 2026-06-10 | ✅ AnalyticsDashboardView.swift | BUG-076 fixed — corrected Monday-first heatmap weekday label mapping so displayed day labels align with bucketed counts |
