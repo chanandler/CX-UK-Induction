@@ -365,7 +365,7 @@ struct WelcomeView: View {
                     NavigationStack {
                         AboutView()
                             .toolbar {
-                                ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                                ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                             }
                     }
                 case .settings:
@@ -398,7 +398,7 @@ struct WelcomeView: View {
                             activeSheet = nil
                         }
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                            ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                         }
                     }
                     .presentationDetents([.large])
@@ -412,7 +412,7 @@ struct WelcomeView: View {
                             activeSheet = nil
                         }
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                            ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                         }
                     }
                     .interactiveDismissDisabled()
@@ -445,7 +445,7 @@ struct WelcomeView: View {
                             }
                         )
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                            ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                         }
                     }
                 case .returnPagers:
@@ -460,7 +460,7 @@ struct WelcomeView: View {
                             }
                         )
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                            ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                         }
                     }
                 case .pinGate:
@@ -480,7 +480,7 @@ struct WelcomeView: View {
                     NavigationStack {
                         AnalyticsDashboardView(visitors: allVisitors)
                             .toolbar {
-                                ToolbarItem(placement: .topBarTrailing) { Button("Close") { activeSheet = nil } }
+                                ToolbarItem(placement: .topBarTrailing) { Button(String(localized: "common.close")) { activeSheet = nil } }
                             }
                     }
                 case .preRegistrationList:
@@ -494,7 +494,7 @@ struct WelcomeView: View {
                         }
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button("Close") { activeSheet = nil }
+                                Button(String(localized: "common.close")) { activeSheet = nil }
                             }
                         }
                     }
@@ -529,7 +529,7 @@ struct WelcomeView: View {
                         }
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button("Close") { activeSheet = nil }
+                                Button(String(localized: "common.close")) { activeSheet = nil }
                             }
                         }
                     }
@@ -545,7 +545,7 @@ struct WelcomeView: View {
                                     importSummary = nil
                                     activeSheet = nil
                                 } else {
-                                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
                                 }
                             },
                             onCancel: {
@@ -617,16 +617,16 @@ struct WelcomeView: View {
                     )
                 case .pinReset:
                     return Alert(
-                        title: Text("Admin PIN Removed"),
-                        message: Text("The admin PIN was removed. Please set a new PIN to continue protecting admin actions."),
-                        primaryButton: .default(Text("Set a new PIN now"), action: { activeSheet = .pinChange }),
-                        secondaryButton: .cancel(Text("OK"))
+                        title: Text(String(localized: "welcome.alert.pin_reset.title")),
+                        message: Text(String(localized: "welcome.alert.pin_reset.message")),
+                        primaryButton: .default(Text(String(localized: "welcome.alert.pin_reset.action_set_now")), action: { activeSheet = .pinChange }),
+                        secondaryButton: .cancel(Text(String(localized: "common.ok")))
                     )
                 case .persistenceError(let message):
                     return Alert(
-                        title: Text("Error"),
+                        title: Text(String(localized: "common.error")),
                         message: Text(message),
-                        dismissButton: .default(Text("OK"), action: { store.lastError = nil })
+                        dismissButton: .default(Text(String(localized: "common.ok")), action: { store.lastError = nil })
                     )
                 }
             }
@@ -785,7 +785,7 @@ struct WelcomeView: View {
                             } else {
                                 importSummary = nil
                                 importPending = []
-                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
                             }
                         } else {
                             let (summary, pending) = store.previewImport(from: url, context: context)
@@ -796,17 +796,17 @@ struct WelcomeView: View {
                             } else {
                                 importSummary = nil
                                 importPending = []
-                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
                             }
                         }
                     } catch {
                         store.lastError = .importMessage("Could not read file: \(error.localizedDescription)")
-                        activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                        activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
                     }
 
                 case .failure(let error):
                     store.lastError = .importMessage("Could not open file: \(error.localizedDescription)")
-                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                    activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
                 }
             }
     }
@@ -873,7 +873,7 @@ struct WelcomeView: View {
             } catch {
                 context.rollback()
                 store.lastError = .saveFailed(underlying: error)
-                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
             }
         }
         selectedPreRegisteredVisitorID = nil
@@ -924,7 +924,7 @@ struct WelcomeView: View {
             shareItem = ShareItem(url: url, deleteOnDismiss: false)
         } else {
             store.lastError = .importMessage("Backup failed: could not write file.")
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         }
     }
 
@@ -951,14 +951,14 @@ struct WelcomeView: View {
                 }
             }
         } else {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         }
     }
 
     private func checkOutSilently(_ visitor: Visitor) {
         store.checkOut(context, visitor)
         if store.lastError != nil {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         }
     }
 
@@ -977,7 +977,7 @@ struct WelcomeView: View {
             wasPreRegistered: false
         )
         if store.lastError != nil {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         } else {
             // Optional: brief haptic or feedback could be added here
         }
@@ -994,14 +994,14 @@ struct WelcomeView: View {
         if store.lastError == nil {
             activeSheet = nil
         } else {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         }
     }
 
     private func returnStaffPager(_ issue: StaffPagerIssue) {
         store.returnStaffPager(context, issue)
         if store.lastError != nil {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         } else {
             let pager = issue.pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             if !pager.isEmpty {
@@ -1040,7 +1040,7 @@ struct WelcomeView: View {
     private func deletePreRegisteredVisitor(_ visitor: PreRegisteredVisitor) {
         store.deletePreRegisteredVisitor(context, visitor)
         if store.lastError != nil {
-            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+            activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
         }
     }
     
@@ -1064,7 +1064,7 @@ struct WelcomeView: View {
                 routeToInductionIfReady()
             }
         }) {
-            Label("Register", systemImage: "person.badge.plus")
+            Label(String(localized: "welcome.action.register"), systemImage: "person.badge.plus")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .imageScale(.large)
@@ -1072,23 +1072,23 @@ struct WelcomeView: View {
                 .frame(minHeight: 52)
         }
         .welcomePrimaryActionStyle(emphasizedShadow: true)
-        .accessibilityLabel("Register visitor")
-        .accessibilityHint("Starts the visitor induction and sign-in flow.")
+        .accessibilityLabel(String(localized: "welcome.a11y.register.label"))
+        .accessibilityHint(String(localized: "welcome.a11y.register.hint"))
     }
 
     private var leavingButton: some View {
         Button {
             activeSheet = .leaving
         } label: {
-            Label("I'm Leaving", systemImage: "door.right.hand.open")
+            Label(String(localized: "welcome.action.leaving"), systemImage: "door.right.hand.open")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 52)
         }
         .welcomeProminentActionStyle(tint: .orange)
-        .accessibilityLabel("I am leaving")
-        .accessibilityHint("Opens the check-out list to sign out a visitor.")
+        .accessibilityLabel(String(localized: "welcome.a11y.leaving.label"))
+        .accessibilityHint(String(localized: "welcome.a11y.leaving.hint"))
     }
 
     private var preRegisteredButton: some View {
@@ -1158,7 +1158,7 @@ struct WelcomeView: View {
             Button {
                 requestProtectedAccess(for: .kioskModeToggle)
             } label: {
-                Label(kioskModeEnabled ? "Disable Kiosk Mode" : "Enable Kiosk Mode",
+                Label(kioskModeEnabled ? String(localized: "welcome.menu.kiosk.disable") : String(localized: "welcome.menu.kiosk.enable"),
                       systemImage: kioskModeEnabled ? "lock.open.fill" : "lock.fill")
             }
 
@@ -1177,20 +1177,20 @@ struct WelcomeView: View {
             Button {
                 runManualBackup()
             } label: {
-                Label("Backup Now", systemImage: "externaldrive.fill.badge.plus")
+                Label(String(localized: "settings.backups.backup_now"), systemImage: "externaldrive.fill.badge.plus")
             }
 
             Button {
                 requestProtectedAccess(for: .exportCSV)
             } label: {
-                Label("Export CSV", systemImage: "square.and.arrow.up")
+                Label(String(localized: "welcome.menu.export_csv"), systemImage: "square.and.arrow.up")
             }
             .disabled(allVisitors.isEmpty)
 
             Button(role: .destructive) {
                 requestProtectedAccess(for: .fireRollCall)
             } label: {
-                Label("Fire Alarm Roll Call", systemImage: "alarm")
+                Label(String(localized: "welcome.menu.fire_roll_call"), systemImage: "alarm")
             }
         } label: {
             utilityIcon(systemName: "gearshape.fill", foreground: .blue)
@@ -1203,8 +1203,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "car.fill", foreground: .blue)
         }
-        .accessibilityLabel("Issue staff pager")
-        .accessibilityHint("Opens staff pager issue form.")
+        .accessibilityLabel(String(localized: "welcome.a11y.staff_pager.label"))
+        .accessibilityHint(String(localized: "welcome.a11y.staff_pager.hint"))
     }
 
     private var fireRollCallShortcutButton: some View {
@@ -1213,8 +1213,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "flame.fill", foreground: .red)
         }
-        .accessibilityLabel("Fire alarm roll call")
-        .accessibilityHint("Opens emergency roll call tools.")
+        .accessibilityLabel(String(localized: "welcome.a11y.fire_roll_call.label"))
+        .accessibilityHint(String(localized: "welcome.a11y.fire_roll_call.hint"))
     }
 
     private var returnPagersButton: some View {
@@ -1223,8 +1223,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: "dot.radiowaves.left.and.right", foreground: .green)
         }
-        .accessibilityLabel("Return pagers")
-        .accessibilityHint("Opens the list of issued pagers to mark returned.")
+        .accessibilityLabel(String(localized: "welcome.a11y.return_pagers.label"))
+        .accessibilityHint(String(localized: "welcome.a11y.return_pagers.hint"))
     }
 
     private var kioskModeButton: some View {
@@ -1233,8 +1233,8 @@ struct WelcomeView: View {
         } label: {
             utilityIcon(systemName: kioskModeEnabled ? "key.fill" : "key", foreground: .yellow)
         }
-        .accessibilityLabel(kioskModeEnabled ? "Disable kiosk mode" : "Enable kiosk mode")
-        .accessibilityHint("Requires admin PIN to change kiosk mode.")
+        .accessibilityLabel(kioskModeEnabled ? String(localized: "welcome.a11y.kiosk.disable") : String(localized: "welcome.a11y.kiosk.enable"))
+        .accessibilityHint(String(localized: "welcome.a11y.kiosk.hint"))
     }
 
     private func utilityIcon(systemName: String, foreground: Color) -> some View {
@@ -1256,10 +1256,10 @@ struct WelcomeView: View {
                 VStack {
                     Spacer(minLength: 0)
                     VStack(spacing: 8) {
-                        Text("Thank you for visiting. Have a safe journey")
+                        Text(String(localized: "welcome.checkout_banner.title"))
                             .font(.largeTitle).bold()
                             .multilineTextAlignment(.center)
-                        Text("Don't forget to return your badge and pager (if you have one) to reception. Thank you again.")
+                        Text(String(localized: "welcome.checkout_banner.message"))
                             .font(.title2)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(.white.opacity(0.9))
@@ -1273,7 +1273,7 @@ struct WelcomeView: View {
                             .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 6)
                     )
                     .overlay(alignment: .topTrailing) {
-                        Text("\(checkoutBannerSecondsRemaining)s")
+                        Text(String(format: String(localized: "welcome.checkout_banner.countdown_template"), checkoutBannerSecondsRemaining))
                             .font(.caption.bold())
                             .foregroundStyle(.white)
                             .padding(.horizontal, 10)
@@ -1312,12 +1312,12 @@ struct WelcomeView: View {
     private func protectedActionName(for action: ProtectedAction) -> String {
         switch action {
         case .settings: return String(localized: "welcome.protected.settings")
-        case .exportCSV: return "Export CSV"
+        case .exportCSV: return String(localized: "welcome.protected.export_csv")
         case .signInBook: return String(localized: "welcome.protected.signin_book")
-        case .fireRollCall: return "Fire Alarm Roll Call"
+        case .fireRollCall: return String(localized: "welcome.protected.fire_roll_call")
         case .analytics: return String(localized: "welcome.protected.analytics")
         case .preRegistrationAdmin: return String(localized: "welcome.prereg.admin_title")
-        case .kioskModeToggle: return "Kiosk Mode"
+        case .kioskModeToggle: return String(localized: "welcome.protected.kiosk_mode")
         }
     }
 
@@ -1325,8 +1325,8 @@ struct WelcomeView: View {
         switch action {
         case .kioskModeToggle:
             return kioskModeEnabled
-            ? "Click the lock again and enter your PIN to disable kiosk mode."
-            : "Enter PIN to activate kiosk mode."
+            ? String(localized: "welcome.kiosk.prompt.disable")
+            : String(localized: "welcome.kiosk.prompt.enable")
         default:
             return nil
         }
@@ -1340,8 +1340,8 @@ struct WelcomeView: View {
             if let url = exportCSV(from: allVisitors) {
                 shareItem = ShareItem(url: url)
             } else {
-                store.lastError = .importMessage("Export failed: could not create CSV file.")
-                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? "Unknown error")
+                store.lastError = .importMessage(String(localized: "welcome.export_csv.error_failed"))
+                activeAlert = .persistenceError(message: store.lastError?.localizedDescription ?? unknownErrorMessage)
             }
         case .signInBook:
             activeSheet = .signInBook
@@ -1443,14 +1443,14 @@ struct WelcomeView: View {
             Image(systemName: "person.2.fill")
                 .imageScale(.medium)
                 .foregroundStyle(.white)
-            Text("Signed in: \(visitorCount)")
+            Text(String(format: String(localized: "welcome.status.signed_in_template"), visitorCount))
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer(minLength: 12)
             Image(systemName: "dot.radiowaves.left.and.right")
                 .imageScale(.medium)
                 .foregroundStyle(.white)
-            Text("Staff pagers: \(pagerCount)")
+            Text(String(format: String(localized: "welcome.status.staff_pagers_template"), pagerCount))
                 .font(.headline)
                 .foregroundStyle(.white)
         }
@@ -1467,7 +1467,7 @@ struct WelcomeView: View {
                 .stroke(Color.white.opacity(0.25), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Signed in \(visitorCount). Staff pagers \(pagerCount)")
+        .accessibilityLabel(String(format: String(localized: "welcome.status.a11y_template"), visitorCount, pagerCount))
     }
     
     private func routeToInductionIfReady() {
@@ -1477,6 +1477,10 @@ struct WelcomeView: View {
               activeAlert != .blockedCarPrompt,
               !showingInduction else { return }
         showingInduction = true
+    }
+
+    private var unknownErrorMessage: String {
+        String(localized: "common.unknown_error")
     }
 }
 
@@ -1513,7 +1517,7 @@ private struct BrandHeader: View {
                         )
                         .accessibilityHidden(true)
 
-                    Text("Welcome to Cemex UK HQ")
+                    Text(String(localized: "welcome.header.title"))
                         .font(.system(size: 30, weight: .bold))
                         .foregroundStyle(.white)
                         .minimumScaleFactor(0.5)
@@ -1521,7 +1525,7 @@ private struct BrandHeader: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
 
-                    Text("Please sign in below")
+                    Text(String(localized: "welcome.header.subtitle"))
                         .font(.title3)
                         .foregroundStyle(.white.opacity(0.8))
                 }
@@ -1748,7 +1752,7 @@ private struct PagerSelectionSheet: View {
 
             Form {
                 Section {
-                    Text("Kindly obtain a pager from Reception; your vehicle is obstructing another vehicle. If the person you are blocking in needs to move their car, we will buzz you. We would appreciate your prompt attention if your pager buzzes. Please select an available pager from the list.")
+                    Text(String(localized: "welcome.pager.instructions"))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
@@ -1777,7 +1781,7 @@ private struct PagerSelectionSheet: View {
                                         Circle()
                                             .fill(isTaken ? Color.red : Color.green)
                                             .frame(width: 10, height: 10)
-                                        Text("Pager \(i)")
+                                        Text(String(format: String(localized: "welcome.pager.item_template"), i))
                                             .fontWeight(isSelected ? .bold : .regular)
                                         if isSelected {
                                             Image(systemName: "checkmark")
@@ -1803,10 +1807,10 @@ private struct PagerSelectionSheet: View {
                         .padding(.top, 4)
 
                         if pagerNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Text("Pager selection is required").font(.caption2).foregroundStyle(.red)
+                            Text(String(localized: "welcome.pager.error.required")).font(.caption2).foregroundStyle(.red)
                         }
                         if pagerInUseError {
-                            Text("That pager is currently in use. Please choose another.")
+                            Text(String(localized: "welcome.pager.error.in_use"))
                                 .font(.caption2)
                                 .foregroundStyle(.red)
                         }
@@ -1816,7 +1820,7 @@ private struct PagerSelectionSheet: View {
             .navigationTitle(String(localized: "welcome.pager.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") { onCancel() }
+                    Button(String(localized: "common.close")) { onCancel() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "common.save")) {
