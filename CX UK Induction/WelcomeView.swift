@@ -344,6 +344,7 @@ struct WelcomeView: View {
                             try? FileManager.default.removeItem(at: item.url)
                         }
                         shareItem = nil
+                        refocusFirstNameIfIdle()
                     }
             }
             .sheet(item: $activeSheet, onDismiss: {
@@ -357,6 +358,7 @@ struct WelcomeView: View {
                     requestProtectedAccess(for: action)
                 }
                 applyDeferredSelectionIfNeeded()
+                refocusFirstNameIfIdle()
             }) { sheet in
                 switch sheet {
                 case .about:
@@ -704,7 +706,9 @@ struct WelcomeView: View {
                 }
             }
             .onChange(of: activeAlert) { oldValue, newValue in
-                // No action needed here for activeAlert changes
+                if case .registered = oldValue, newValue == nil {
+                    refocusFirstNameIfIdle()
+                }
             }
             .onChange(of: store.lastError) { _, newValue in
                 if let newValue = newValue {
@@ -717,6 +721,7 @@ struct WelcomeView: View {
                 if shouldRunAutoCheckoutNow() {
                     performAutoCheckoutNow()
                 }
+                refocusFirstNameIfIdle()
             }
             .onDisappear {
                 scheduler.cancel()
@@ -875,6 +880,16 @@ struct WelcomeView: View {
         isSigningInPreRegisteredVisitor = false
         lastRegisteredName = name
         activeAlert = .registered(name: name)
+    }
+
+    private func refocusFirstNameIfIdle() {
+        guard activeSheet == nil,
+              activeAlert == nil,
+              !showPagerPrompt,
+              !showingInduction else { return }
+        DispatchQueue.main.async {
+            focusedField = .firstName
+        }
     }
     
     private func startScheduler() {
