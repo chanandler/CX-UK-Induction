@@ -71,7 +71,19 @@ struct AutoCheckoutSettingsView: View {
                         Text(String(localized: "settings.backups.none_found")).foregroundStyle(.secondary)
                     } else {
                         ForEach(existingBackups, id: \.self) { url in
-                            Text(url.lastPathComponent)
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(url.lastPathComponent)
+                                        .font(.body.weight(.medium))
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                    Text(backupMetadataSummary(for: url))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 8)
+                                backupQuickActions(for: url)
+                            }
                         }
                     }
                 }
@@ -107,6 +119,69 @@ struct AutoCheckoutSettingsView: View {
             }
         )
     }
+
+    @ViewBuilder
+    private func backupQuickActions(for url: URL) -> some View {
+        HStack(spacing: 14) {
+            Button {
+                openBackup(url)
+            } label: {
+                Image(systemName: "arrow.up.right.square")
+                    .imageScale(.medium)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "settings.backups.action.open"))
+
+            ShareLink(item: url) {
+                Image(systemName: "square.and.arrow.up")
+                    .imageScale(.medium)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "settings.backups.action.share"))
+        }
+        .foregroundStyle(.tint)
+    }
+
+    private func backupMetadataSummary(for url: URL) -> String {
+        let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+
+        let dateString = values?.contentModificationDate.map { Self.backupDateFormatter.string(from: $0) }
+            ?? String(localized: "settings.backups.unknown_date")
+
+        let sizeString: String
+        if let fileSize = values?.fileSize {
+            sizeString = Self.byteCountFormatter.string(fromByteCount: Int64(fileSize))
+        } else {
+            sizeString = String(localized: "settings.backups.unknown_size")
+        }
+
+        return String(
+            format: String(localized: "settings.backups.meta_template"),
+            dateString,
+            sizeString
+        )
+    }
+
+    private func openBackup(_ url: URL) {
+        #if canImport(UIKit)
+        UIApplication.shared.open(url)
+        #endif
+    }
+
+    private static let backupDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private static let byteCountFormatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB]
+        formatter.countStyle = .file
+        formatter.includesUnit = true
+        return formatter
+    }()
 }
 
 // MARK: - Leaving Search Sheet
@@ -1091,4 +1166,3 @@ private struct InductionSignatureSheet: View {
         }
     }
 }
-

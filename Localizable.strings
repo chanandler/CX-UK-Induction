@@ -146,6 +146,11 @@
 "settings.backups.backup_now" = "Backup Now";
 "settings.backups.import_csv" = "Import CSV…";
 "settings.backups.none_found" = "No backups found";
+"settings.backups.meta_template" = "%@ • %@";
+"settings.backups.unknown_date" = "Unknown date";
+"settings.backups.unknown_size" = "Unknown size";
+"settings.backups.action.open" = "Open backup";
+"settings.backups.action.share" = "Share backup";
 "settings.section.admin" = "Admin";
 "settings.admin.open_analytics" = "Open Analytics";
 "settings.admin.preregistration_admin" = "Pre-Registration Admin";
