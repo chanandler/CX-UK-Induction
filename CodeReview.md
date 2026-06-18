@@ -1,5 +1,5 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-06-10
+> Generated: 2026-03-23 | Last updated: 2026-06-18
 
 ---
 
@@ -19,7 +19,6 @@
 | BUG-080 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Heatmap chart uses non-unique identity (`id: \.hour`) for 7 rows per hour, which can produce unstable diffing/rendering in SwiftUI Chart updates. | `Chart(matrix, id: \.hour)` in `AnalyticsDashboardView.swift:112` while matrix contains repeated `hour` values across weekdays |
 | OPT-001 | 🟡 MEDIUM | AnalyticsDashboardView.swift | Analytics metrics are recomputed from scratch on every render, with multiple full-array passes and formatter creation in hot UI paths; this can stutter as history grows. | `metrics` computed property (`AnalyticsDashboardView.swift:51-59`) and heavy metric init loops (`AnalyticsDashboardView.swift:553-698`) |
 | QOL-001 | 🟢 LOW | AdminAndUtilitiesViews.swift | Backup list in Settings only shows filenames; adding formatted date/time, size, and a quick share/open action would reduce admin friction when restoring or auditing backups. | Current list shows only `url.lastPathComponent` in `AdminAndUtilitiesViews.swift:73-75` |
-| QOL-002 | 🟢 LOW | WelcomeView.swift | Main sign-in journey would be faster with automatic focus reset to first name after successful registration and after returning from sheets. | Field focus is wired (`WelcomeView.swift:103-106`) but no post-submit autofocus is set in reset flow (`WelcomeView.swift:854-863`) |
 
 ---
 
@@ -27,6 +26,7 @@
 
 | Date | Status | Description |
 |---|---|---|
+| 2026-06-18 | ✅ WelcomeView.swift | QOL-002 fixed — after successful registration and when returning from sheets, the first-name field is auto-focused to speed up the next sign-in |
 | 2026-06-10 | ✅ Models.swift + VisitorTabs.swift | BUG-077 fixed — import duplicate detection now supports second-precision timestamps while retaining minute-precision fallback for legacy CSV files; added second-aware CSV parsers and precision-aware duplicate key handling |
 | 2026-06-10 | ✅ AnalyticsDashboardView.swift | BUG-076 fixed — corrected Monday-first heatmap weekday label mapping so displayed day labels align with bucketed counts |
 | 2026-06-10 | ✅ CX_UK_InductionApp.swift | BUG-078 fixed — replaced startup `fatalError` with resilient launch flow: primary persistent ModelContainer, automatic in-memory fallback with visible warning banner, and a non-crashing startup error screen if both stores fail |
