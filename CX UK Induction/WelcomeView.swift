@@ -593,7 +593,9 @@ struct WelcomeView: View {
                     return Alert(
                         title: Text(String(localized: "welcome.alert.duplicate_signin.title")),
                         message: Text(String(localized: "welcome.alert.duplicate_signin.message")),
-                        primaryButton: .cancel(Text(String(localized: "common.cancel"))),
+                        primaryButton: .cancel(Text(String(localized: "common.cancel")), action: {
+                            clearRegistrationForm()
+                        }),
                         secondaryButton: .default(Text(String(localized: "welcome.alert.duplicate_signin.continue")), action: {
                             submit(allowDuplicateSignIn: true)
                         })
@@ -884,6 +886,24 @@ struct WelcomeView: View {
         isSigningInPreRegisteredVisitor = false
         lastRegisteredName = name
         activeAlert = .registered(name: name)
+    }
+
+    private func clearRegistrationForm() {
+        hasAttemptedSubmit = false
+        firstName = ""
+        lastName = ""
+        company = ""
+        visiting = ""
+        carRegistration = ""
+        badgeNumber = ""
+        blockedCar = false
+        pagerNumber = ""
+        selectedPreRegisteredVisitorID = nil
+        isSigningInPreRegisteredVisitor = false
+        registrationFlow = .idle
+        DispatchQueue.main.async {
+            focusedField = .firstName
+        }
     }
 
     private func refocusFirstNameIfIdle() {
