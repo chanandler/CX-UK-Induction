@@ -32,6 +32,7 @@ struct WelcomeView: View {
     @State private var deferredSelection: DeferredSelection?
     
     @State private var showingInduction = false
+    @State private var shouldSubmitAfterInductionDismiss = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
     
     @State private var lastRegisteredName: String = ""
@@ -659,7 +660,12 @@ struct WelcomeView: View {
     private var decoratedContentPart2: some View {
         decoratedContentPart1
             // Induction flow full-screen
-            .fullScreenCover(isPresented: $showingInduction) {
+            .fullScreenCover(isPresented: $showingInduction, onDismiss: {
+                if shouldSubmitAfterInductionDismiss {
+                    shouldSubmitAfterInductionDismiss = false
+                    submit()
+                }
+            }) {
                 InductionFlowView(
                     imageNames: inductionImages,
                     visitorFirstName: firstName,
@@ -667,9 +673,7 @@ struct WelcomeView: View {
                 ) { confirmed in
                     showingInduction = false
                     registrationFlow = .idle
-                    if confirmed {
-                        submit()
-                    }
+                    shouldSubmitAfterInductionDismiss = confirmed
                 }
                 .ignoresSafeArea()
             }
