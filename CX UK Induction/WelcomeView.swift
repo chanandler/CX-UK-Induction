@@ -33,6 +33,7 @@ struct WelcomeView: View {
     
     @State private var showingInduction = false
     @State private var shouldSubmitAfterInductionDismiss = false
+    @State private var pendingAllowDuplicateSignIn = false
     @State private var inductionImages: [String] = ["induction_1", "induction_2", "induction_3", "induction_4"]
     
     @State private var lastRegisteredName: String = ""
@@ -141,6 +142,12 @@ struct WelcomeView: View {
         case waitingPagerSelection
         case waitingForInduction
     }
+
+    private enum DuplicateSignInContext {
+        case beforeInduction
+        case beforeSubmit
+    }
+    @State private var duplicateSignInContext: DuplicateSignInContext = .beforeSubmit
 
     private enum DeferredSelection {
         case preRegistered(id: UUID, droveCarRegistration: String?)
@@ -597,7 +604,7 @@ struct WelcomeView: View {
                             clearRegistrationForm()
                         }),
                         secondaryButton: .default(Text(String(localized: "welcome.alert.duplicate_signin.continue")), action: {
-                            submit(allowDuplicateSignIn: true)
+                            continueAfterDuplicateSignInPrompt()
                         })
                     )
                 case .kioskConfirm(let enabled):
@@ -665,7 +672,9 @@ struct WelcomeView: View {
             .fullScreenCover(isPresented: $showingInduction, onDismiss: {
                 if shouldSubmitAfterInductionDismiss {
                     shouldSubmitAfterInductionDismiss = false
-                    submit()
+                    let allowDuplicateSignIn = pendingAllowDuplicateSignIn
+                    pendingAllowDuplicateSignIn = false
+                    submit(allowDuplicateSignIn: allowDuplicateSignIn)
                 }
             }) {
                 InductionFlowView(
@@ -835,6 +844,7 @@ struct WelcomeView: View {
             return
         }
         if !allowDuplicateSignIn && hasDuplicateActiveSignIn {
+            duplicateSignInContext = .beforeSubmit
             activeAlert = .duplicateSignIn
             return
         }
@@ -888,6 +898,38 @@ struct WelcomeView: View {
         activeAlert = .registered(name: name)
     }
 
+    private func startRegistrationFlow(allowDuplicateSignIn: Bool = false) {
+        hasAttemptedSubmit = true
+        guard isValid else { return }
+        guard !badgeAlreadyInUse else {
+            activeAlert = .badgeConflict
+            return
+        }
+        if !allowDuplicateSignIn && hasDuplicateActiveSignIn {
+            duplicateSignInContext = .beforeInduction
+            activeAlert = .duplicateSignIn
+            return
+        }
+
+        pendingAllowDuplicateSignIn = allowDuplicateSignIn
+        if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            registrationFlow = .waitingBlockedCarDecision
+            activeAlert = .blockedCarPrompt
+        } else {
+            registrationFlow = .waitingForInduction
+            routeToInductionIfReady()
+        }
+    }
+
+    private func continueAfterDuplicateSignInPrompt() {
+        switch duplicateSignInContext {
+        case .beforeInduction:
+            startRegistrationFlow(allowDuplicateSignIn: true)
+        case .beforeSubmit:
+            submit(allowDuplicateSignIn: true)
+        }
+    }
+
     private func clearRegistrationForm() {
         hasAttemptedSubmit = false
         firstName = ""
@@ -900,6 +942,9 @@ struct WelcomeView: View {
         pagerNumber = ""
         selectedPreRegisteredVisitorID = nil
         isSigningInPreRegisteredVisitor = false
+        pendingAllowDuplicateSignIn = false
+        shouldSubmitAfterInductionDismiss = false
+        duplicateSignInContext = .beforeSubmit
         registrationFlow = .idle
         DispatchQueue.main.async {
             focusedField = .firstName
@@ -1074,19 +1119,7 @@ struct WelcomeView: View {
     
     private var registerButton: some View {
         Button(action: {
-            hasAttemptedSubmit = true
-            guard isValid else { return }
-            guard !badgeAlreadyInUse else {
-                activeAlert = .badgeConflict
-                return
-            }
-            if !carRegistration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                registrationFlow = .waitingBlockedCarDecision
-                activeAlert = .blockedCarPrompt
-            } else {
-                registrationFlow = .waitingForInduction
-                routeToInductionIfReady()
-            }
+            startRegistrationFlow()
         }) {
             Label(String(localized: "welcome.action.register"), systemImage: "person.badge.plus")
                 .font(.title3)
