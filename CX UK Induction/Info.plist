@@ -2,16 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key>
-	<string>CX UK Induction</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>UILaunchScreen</key>
-	<dict/>
+	<key>BuildDate</key>
+	<string>ManualBuildDateHere</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -29,7 +21,7 @@
 			</array>
 		</dict>
 	</dict>
-	<key>BuildDate</key>
-	<string>ManualBuildDateHere</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

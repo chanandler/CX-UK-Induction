@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -42,10 +42,8 @@
 /* Begin PBXFrameworksBuildPhase section */
 		222169882EBE96B700020B39 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -83,14 +81,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				2221698D2EBE96B700020B39 /* CX UK Induction */,
 			);
 			name = "CX UK Induction";
-			packageProductDependencies = (
-			);
 			productName = "CX UK Induction";
 			productReference = 2221698B2EBE96B700020B39 /* CX UK Induction.app */;
 			productType = "com.apple.product-type.application";
@@ -119,7 +113,7 @@
 			);
 			mainGroup = 222169822EBE96B700020B39;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 100;
 			productRefGroup = 2221698C2EBE96B700020B39 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -132,26 +126,22 @@
 /* Begin PBXResourcesBuildPhase section */
 		222169892EBE96B700020B39 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				226C39CB2F9D1E0D0067BBFF /* Localizable.strings in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		222169872EBE96B700020B39 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		222169942EBE96B900020B39 /* Debug */ = {
+		222169942EBE96B900020B39 /* Debug configuration for PBXProject "CX UK Induction" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -216,7 +206,7 @@
 			};
 			name = Debug;
 		};
-		222169952EBE96B900020B39 /* Release */ = {
+		222169952EBE96B900020B39 /* Release configuration for PBXProject "CX UK Induction" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -274,23 +264,21 @@
 			};
 			name = Release;
 		};
-		222169972EBE96B900020B39 /* Debug */ = {
+		222169972EBE96B900020B39 /* Debug configuration for PBXNativeTarget "CX UK Induction" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 54GVQKRDJC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_FILE[sdk=iphone*]" = "CX UK Induction/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "HQ Induction";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -314,23 +302,21 @@
 			};
 			name = Debug;
 		};
-		222169982EBE96B900020B39 /* Release */ = {
+		222169982EBE96B900020B39 /* Release configuration for PBXNativeTarget "CX UK Induction" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 54GVQKRDJC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_FILE[sdk=iphone*]" = "CX UK Induction/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "HQ Induction";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -360,19 +346,17 @@
 		222169862EBE96B700020B39 /* Build configuration list for PBXProject "CX UK Induction" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				222169942EBE96B900020B39 /* Debug */,
-				222169952EBE96B900020B39 /* Release */,
+				222169942EBE96B900020B39 /* Debug configuration for PBXProject "CX UK Induction" */,
+				222169952EBE96B900020B39 /* Release configuration for PBXProject "CX UK Induction" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		222169962EBE96B900020B39 /* Build configuration list for PBXNativeTarget "CX UK Induction" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				222169972EBE96B900020B39 /* Debug */,
-				222169982EBE96B900020B39 /* Release */,
+				222169972EBE96B900020B39 /* Debug configuration for PBXNativeTarget "CX UK Induction" */,
+				222169982EBE96B900020B39 /* Release configuration for PBXNativeTarget "CX UK Induction" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

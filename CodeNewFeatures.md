@@ -15,7 +15,6 @@
 
 The following 20 features are proposed to improve usability, security, and operational value of the app. Each is rated by potential impact.
 
-
 ### 4. 🌟 Visitor Purpose Categories (Complexity: Low)
 Add a required visit-purpose selector (e.g. Contractor, Delivery, Meeting, Interview, Audit). Enables better operational reporting and downstream filtering.
 
