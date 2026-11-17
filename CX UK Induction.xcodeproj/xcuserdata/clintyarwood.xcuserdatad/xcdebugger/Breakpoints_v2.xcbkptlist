@@ -3,4 +3,80 @@
    uuid = "D429FD2A-ABC6-47B4-9B07-258639BA67A8"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8C56E69C-FACC-4CA5-B211-3C965397EAE4"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "CX UK Induction/AdminAndUtilitiesViews.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "607"
+            endingLineNumber = "607"
+            landmarkName = "filteredVisitors"
+            landmarkType = "24">
+            <Locations>
+               <Location
+                  uuid = "8C56E69C-FACC-4CA5-B211-3C965397EAE4 - 841311b265e994bc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #2 (CX_UK_Induction.PreRegisteredVisitor, CX_UK_Induction.PreRegisteredVisitor) -&gt; Swift.Bool in CX_UK_Induction.PreRegisteredListView.filteredVisitors.getter : Swift.Array&lt;CX_UK_Induction.PreRegisteredVisitor&gt;"
+                  moduleName = "CX UK Induction"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/clintyarwood/Documents/GitHub/CX-UK-Induction/CX%20UK%20Induction/AdminAndUtilitiesViews.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "607"
+                  endingLineNumber = "607">
+               </Location>
+               <Location
+                  uuid = "8C56E69C-FACC-4CA5-B211-3C965397EAE4 - 841311b265e994bc"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #2 (CX_UK_Induction.PreRegisteredVisitor, CX_UK_Induction.PreRegisteredVisitor) -&gt; Swift.Bool in CX_UK_Induction.PreRegisteredListView.filteredVisitors.getter : Swift.Array&lt;CX_UK_Induction.PreRegisteredVisitor&gt;"
+                  moduleName = "CX UK Induction"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/clintyarwood/Documents/GitHub/CX-UK-Induction/CX%20UK%20Induction/AdminAndUtilitiesViews.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "607"
+                  endingLineNumber = "607">
+               </Location>
+               <Location
+                  uuid = "8C56E69C-FACC-4CA5-B211-3C965397EAE4 - df9763bae9c5e0c9"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "function signature specialization &lt;Arg[3] = [Closure Propagated : $s15CX_UK_Induction21PreRegisteredListViewV16filteredVisitors33_618F48C0C6CC7F79439151483BB74BF1LLSayAA0dE7VisitorCGvgSbAG_AGtXEfU0_, Argument Types : []&gt; of generic specialization &lt;CX_UK_Induction.PreRegisteredVisitor&gt; of closure #1 (inout Swift.UnsafeMutableBufferPointer&lt;&#x3c4;_0_0&gt;, inout Swift.Int) throws -&gt; () in Swift.UnsafeMutableBufferPointer._stableSortImpl(by: (&#x3c4;_0_0, &#x3c4;_0_0) throws -&gt; Swift.Bool) throws -&gt; ()"
+                  moduleName = "CX UK Induction"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/clintyarwood/Documents/GitHub/CX-UK-Induction/CX%20UK%20Induction/AdminAndUtilitiesViews.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "607"
+                  endingLineNumber = "607">
+               </Location>
+               <Location
+                  uuid = "8C56E69C-FACC-4CA5-B211-3C965397EAE4 - df9763bae9c5e0c9"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "function signature specialization &lt;Arg[3] = [Closure Propagated : $s15CX_UK_Induction21PreRegisteredListViewV16filteredVisitors33_618F48C0C6CC7F79439151483BB74BF1LLSayAA0dE7VisitorCGvgSbAG_AGtXEfU0_, Argument Types : []&gt; of generic specialization &lt;CX_UK_Induction.PreRegisteredVisitor&gt; of closure #1 (inout Swift.UnsafeMutableBufferPointer&lt;&#x3c4;_0_0&gt;, inout Swift.Int) throws -&gt; () in Swift.UnsafeMutableBufferPointer._stableSortImpl(by: (&#x3c4;_0_0, &#x3c4;_0_0) throws -&gt; Swift.Bool) throws -&gt; ()"
+                  moduleName = "CX UK Induction"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/clintyarwood/Documents/GitHub/CX-UK-Induction/CX%20UK%20Induction/AdminAndUtilitiesViews.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "607"
+                  endingLineNumber = "607">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

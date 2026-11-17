@@ -1,6 +1,6 @@
 # Code Review Tracker
-> Generated: 2026-03-23 | Last updated: 2026-06-18
-
+> Generated: 2026-03-23 | Last updated: 2026-11-16
+> 
 ---
 
 ## Priority Legend
@@ -152,3 +152,27 @@
 | 2026-03-24 | ✅ `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
 
 ---
+## New Findings (2026-11-17)
+
+- 🟢 LOW — Models.swift: Visitor/PreRegisteredVisitor/StaffPagerIssue use `@Attribute(.unique) var id: UUID` with custom inits. Consider adding `@Attribute(.unique) var id: UUID = UUID()` default to the property or ensure all call sites always pass a stable UUID. Current inits do default correctly, but property-level default can reduce accidental nil/duplicate assignment during future refactors.
+- 🟢 LOW — Models.swift: `VisitorStore.validationFailed` messages are partially localized (via `String(localized:)`) but some hard-coded strings remain (e.g., in `issueStaffPager`, `addPreRegisteredVisitor`). Recommend localizing these remaining user-facing error messages for consistency.
+- 🟡 MEDIUM — VisitorTabs.swift: `DateFormatter` statics are good, but `TimeZone(identifier: "Europe/London") ?? .current` may cause DST edge quirks when devices roam. If the domain is strictly UK sites, keep as-is; otherwise prefer `.autoupdatingCurrent` or a settings-driven zone.
+- 🟡 MEDIUM — VisitorTabs.swift: `Color.cemexBlue` is defined as a static in an extension. Consider moving brand tokens into a small `AppTheme` struct/enum to centralize color and spacing, improving dark-mode and accessibility adjustments.
+- 🟡 MEDIUM — VisitorTabs.swift (Active/Archived): `.toolbarBackground(.hidden, for: .navigationBar)` and `.toolbarBackground(.hidden, for: .tabBar)` can lead to contrast issues in some appearances. Consider using `.toolbarBackground(.ultraThinMaterial, for: ...)` or a theme-aware background for readability.
+- 🟡 MEDIUM — VisitorTabs.swift: `List` uses translucent card rows over a dark background. Ensure sufficient contrast for secondary text in dark environments. Consider `blendMode` or theme-aware foreground styles for AA contrast compliance.
+- 🟢 LOW — VisitorTabs.swift: `searchText` resets share state via `onChange` but not vice versa. This is fine; consider also clearing `searchText` when presenting export to avoid accidental filtering differences between visible list and exported data.
+- 🟢 LOW — VisitorTabs.swift: `ExportShareSheet` cleans up temp file on dismiss—good. Consider adding a fallback cleanup on app foreground/termination to guard against rare dismissal failures.
+- 🟡 MEDIUM — Models.swift: `previewImport` fetches all `Visitor` and `PreRegisteredVisitor` to build duplicate sets and conflict checks. For very large datasets, consider fetching only needed columns or using `FetchDescriptor` with `propertiesToFetch` (when available) or adding lightweight indices. Current approach is acceptable for moderate data sizes.
+- 🟡 MEDIUM — Models.swift: `parseCSVRecords`/`parseCSVLine` implement a minimal CSV parser. It’s solid for quoted fields and CRLF, but does not handle multi-character delimiters or leading/trailing whitespace around delimiters consistently in all edge cases. Keep a suite of sample files in tests to prevent regressions.
+- 🟢 LOW — Models.swift: `StoreError.saveFailed`/`fetchFailed` user messages concatenate localized prefix + `localizedDescription`. Consider logging technical details but surfacing friendlier, action-oriented messages to end users.
+- 🟠 HIGH — AnalyticsDashboardView.swift (from existing tracker): Follow-up on OPT-001/BUG-080: ensure Chart identity uses a composite stable key for each cell (e.g., `id: \.(weekday) + "-" + \.(hour)` or a dedicated struct) and move heavy metric recomputation off the hot path using memoization or derived state updated on data changes.
+- 🟢 LOW — CX_UK_InductionApp.swift: Startup fallback logs errors—good. Consider surfacing a small info button on the banner to let admins copy diagnostics for support.
+- 🟢 LOW — General: Add lightweight unit/Swift Testing coverage for CSV round-trip (export → import) and auto-checkout logic boundaries (midnight transitions, DST changes). Include sample CSV fixtures.
+
+### Quick Wins
+
+- Replace remaining hard-coded strings with `String(localized:)` keys (issue messages in `VisitorStore`).
+- Create `AppTheme` for colors/spacing and adopt in `VisitorTabs` to improve contrast and dark-mode handling.
+- Update analytics heatmap identity to a composite stable key and cache metrics outside the view body.
+- Add Swift Testing fixtures for CSV parsing edge cases and auto-checkout date boundaries.
+
