@@ -152,7 +152,7 @@
 | 2026-03-24 | ✅ `WelcomeView` — `InductionFlowView` | Removed intermediate "Signed by / Confirm and Continue" step; `isSigned` state deleted; flow is now: slides → sign sheet → confirmation alert |
 
 ---
-## New Findings (2026-11-17)
+## New Findings (2026-11-18)
 
 - 🟢 LOW — Models.swift: Visitor/PreRegisteredVisitor/StaffPagerIssue use `@Attribute(.unique) var id: UUID` with custom inits. Consider adding `@Attribute(.unique) var id: UUID = UUID()` default to the property or ensure all call sites always pass a stable UUID. Current inits do default correctly, but property-level default can reduce accidental nil/duplicate assignment during future refactors.
 - 🟢 LOW — Models.swift: `VisitorStore.validationFailed` messages are partially localized (via `String(localized:)`) but some hard-coded strings remain (e.g., in `issueStaffPager`, `addPreRegisteredVisitor`). Recommend localizing these remaining user-facing error messages for consistency.
@@ -168,6 +168,7 @@
 - 🟠 HIGH — AnalyticsDashboardView.swift (from existing tracker): Follow-up on OPT-001/BUG-080: ensure Chart identity uses a composite stable key for each cell (e.g., `id: \.(weekday) + "-" + \.(hour)` or a dedicated struct) and move heavy metric recomputation off the hot path using memoization or derived state updated on data changes.
 - 🟢 LOW — CX_UK_InductionApp.swift: Startup fallback logs errors—good. Consider surfacing a small info button on the banner to let admins copy diagnostics for support.
 - 🟢 LOW — General: Add lightweight unit/Swift Testing coverage for CSV round-trip (export → import) and auto-checkout logic boundaries (midnight transitions, DST changes). Include sample CSV fixtures.
+
 
 ### Quick Wins
 
